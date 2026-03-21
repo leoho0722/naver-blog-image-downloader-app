@@ -9,14 +9,13 @@ The file `lib/data/models/photo_entity.dart` SHALL define a `PhotoEntity` class 
 - `PhotoEntity` SHALL have a required `id` property of type `String`.
 - `PhotoEntity` SHALL have a required `url` property of type `String`.
 - `PhotoEntity` SHALL have a required `filename` property of type `String`.
-- `PhotoEntity` SHALL have a required `blogTitle` property of type `String`.
 - `PhotoEntity` SHALL have an optional `width` property of type `int?`.
 - `PhotoEntity` SHALL have an optional `height` property of type `int?`.
 
 #### Scenario: PhotoEntity created with all required fields
 
-- **WHEN** a `PhotoEntity` is created with `id`, `url`, `filename`, and `blogTitle`
-- **THEN** all four properties SHALL be accessible on the instance
+- **WHEN** a `PhotoEntity` is created with `id`, `url`, and `filename`
+- **THEN** all three properties SHALL be accessible on the instance
 - **AND** `width` and `height` SHALL be `null`
 
 #### Scenario: PhotoEntity created with optional dimensions

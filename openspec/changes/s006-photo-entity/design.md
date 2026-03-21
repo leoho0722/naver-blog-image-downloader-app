@@ -7,7 +7,7 @@
 **Goals:**
 
 - 實作不可變的 `PhotoEntity` 類別，使用 `const` 建構子與 `final` 欄位
-- 定義照片的完整屬性：`id`、`url`、`filename`、`blogTitle`，以及可選的 `width` 與 `height`
+- 定義照片的完整屬性：`id`、`url`、`filename`，以及可選的 `width` 與 `height`
 - 確保資料不可被修改
 
 **Non-Goals:**
@@ -24,7 +24,6 @@
 - `id`（String）：照片唯一識別碼，必填
 - `url`（String）：照片原始 URL，必填
 - `filename`（String）：照片檔案名稱，必填
-- `blogTitle`（String）：所屬部落格標題，必填
 - `width`（int?）：照片寬度（像素），選填
 - `height`（int?）：照片高度（像素），選填
 
