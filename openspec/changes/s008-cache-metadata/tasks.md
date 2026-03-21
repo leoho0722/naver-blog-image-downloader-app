@@ -1,7 +1,7 @@
 ## 1. BlogCacheMetadata class defined（BlogCacheMetadata 欄位設計）
 
 - [x] 1.1 在 `lib/data/models/blog_cache_metadata.dart` 中實作 BlogCacheMetadata class defined：定義 `BlogCacheMetadata` 類別，所有欄位宣告為 `final`
-- [x] 1.2 宣告必填欄位：`blogId`（String）、`blogUrl`（String）、`blogTitle`（String）、`photoCount`（int）、`downloadedAt`（DateTime）、`isSavedToGallery`（bool）、`filenames`（List\<String\>）
+- [x] 1.2 宣告必填欄位：`blogId`（String）、`blogUrl`（String）、`photoCount`（int）、`downloadedAt`（DateTime）、`isSavedToGallery`（bool）、`filenames`（List\<String\>）
 
 ## 2. BlogCacheMetadata JSON serialization defined（JSON 序列化設計）
 

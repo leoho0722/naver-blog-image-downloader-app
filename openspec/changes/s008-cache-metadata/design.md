@@ -23,7 +23,6 @@
 定義 `BlogCacheMetadata` 類別，所有欄位宣告為 `final`，包含：
 - `blogId`（String）：部落格唯一識別碼
 - `blogUrl`（String）：部落格原始 URL
-- `blogTitle`（String）：部落格標題
 - `photoCount`（int）：照片數量
 - `downloadedAt`（DateTime）：下載時間
 - `isSavedToGallery`（bool）：是否已儲存至裝置相簿

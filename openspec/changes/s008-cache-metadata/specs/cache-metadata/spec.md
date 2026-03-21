@@ -7,7 +7,6 @@ The file `lib/data/models/blog_cache_metadata.dart` SHALL define a `BlogCacheMet
 - All fields of `BlogCacheMetadata` SHALL be declared as `final`.
 - `BlogCacheMetadata` SHALL have a required `blogId` property of type `String`.
 - `BlogCacheMetadata` SHALL have a required `blogUrl` property of type `String`.
-- `BlogCacheMetadata` SHALL have a required `blogTitle` property of type `String`.
 - `BlogCacheMetadata` SHALL have a required `photoCount` property of type `int`.
 - `BlogCacheMetadata` SHALL have a required `downloadedAt` property of type `DateTime`.
 - `BlogCacheMetadata` SHALL have a required `isSavedToGallery` property of type `bool`.
