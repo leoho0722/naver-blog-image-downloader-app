@@ -23,7 +23,6 @@
 定義 `FetchResult` 類別，所有欄位宣告為 `final`，包含：
 - `photos`（List\<PhotoEntity\>）：抓取到的照片列表
 - `blogId`（String）：部落格識別碼
-- `blogTitle`（String）：部落格標題
 - `isFullyCached`（bool）：是否所有照片均來自本地快取
 
 ### DownloadBatchResult 批次下載結果模型

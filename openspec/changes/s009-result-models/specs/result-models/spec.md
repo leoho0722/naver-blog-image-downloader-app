@@ -7,12 +7,11 @@ The file `lib/data/models/fetch_result.dart` SHALL define a `FetchResult` class 
 - All fields of `FetchResult` SHALL be declared as `final`.
 - `FetchResult` SHALL have a required `photos` property of type `List<PhotoEntity>`.
 - `FetchResult` SHALL have a required `blogId` property of type `String`.
-- `FetchResult` SHALL have a required `blogTitle` property of type `String`.
 - `FetchResult` SHALL have a required `isFullyCached` property of type `bool`.
 
 #### Scenario: FetchResult created with photo list
 
-- **WHEN** a `FetchResult` is created with a list of `PhotoEntity`, `blogId`, `blogTitle`, and `isFullyCached`
+- **WHEN** a `FetchResult` is created with a list of `PhotoEntity`, `blogId`, and `isFullyCached`
 - **THEN** all properties SHALL be accessible on the instance with their provided values
 
 #### Scenario: FetchResult with empty photo list
@@ -32,6 +31,9 @@ The file `lib/data/models/download_batch_result.dart` SHALL define a `DownloadBa
 - All fields of `DownloadBatchResult` SHALL be declared as `final`.
 - `DownloadBatchResult` SHALL have a required `successCount` property of type `int`.
 - `DownloadBatchResult` SHALL have a required `failedPhotos` property of type `List<PhotoEntity>`.
+- `DownloadBatchResult` SHALL have a `skippedCount` property of type `int` with a default value of `0`.
+- `DownloadBatchResult` SHALL have an `errors` property of type `List<String>` with a default value of `const []`.
+- `DownloadBatchResult` SHALL provide a `failureCount` getter of type `int` that returns `failedPhotos.length`.
 - `DownloadBatchResult` SHALL provide an `isAllSuccessful` getter of type `bool`.
 
 #### Scenario: DownloadBatchResult with all successful downloads

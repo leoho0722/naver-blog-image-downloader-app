@@ -1,7 +1,7 @@
 ## 1. FetchResult class defined（FetchResult 抓取結果模型）
 
 - [x] 1.1 在 `lib/data/models/fetch_result.dart` 中實作 FetchResult class defined：定義 `FetchResult` 類別，所有欄位宣告為 `final`
-- [x] 1.2 宣告必填欄位：`photos`（List\<PhotoEntity\>）、`blogId`（String）、`blogTitle`（String）、`isFullyCached`（bool）
+- [x] 1.2 宣告必填欄位：`photos`（List\<PhotoEntity\>）、`blogId`（String）、`isFullyCached`（bool）
 
 ## 2. DownloadBatchResult class defined（DownloadBatchResult 批次下載結果模型）
 
