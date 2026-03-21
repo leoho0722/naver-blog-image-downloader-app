@@ -4,7 +4,7 @@
 
 ## What Changes
 
-- 在 `lib/config/app_config.dart` 中實作 `AppConfig` 類別，提供 API base URL 等應用程式配置
+- 在 `lib/config/app_config.dart` 中實作 `ApiStage` 列舉與 `AppConfig` 類別，透過 `--dart-define=API_STAGE` 支援多環境部署階段切換
 - 在 `lib/utils/constants.dart` 中定義 `Constants` 類別，集中管理應用程式共用常數
 
 ## Capabilities
