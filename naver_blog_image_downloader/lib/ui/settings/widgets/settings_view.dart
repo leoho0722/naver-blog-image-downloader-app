@@ -32,7 +32,16 @@ class _SettingsViewState extends State<SettingsView> {
     final viewModel = context.watch<SettingsViewModel>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('設定')),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('設定'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
       body: viewModel.isClearing
           ? const Center(child: CircularProgressIndicator())
           : Column(

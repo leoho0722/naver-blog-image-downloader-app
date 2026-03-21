@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../data/models/fetch_result.dart';
 import '../../download/widgets/download_view.dart';
+import '../../settings/widgets/settings_view.dart';
 import '../view_model/blog_input_view_model.dart';
 
 /// Blog 網址輸入頁面，提供文字輸入欄位讓使用者貼上 Naver Blog 網址並取得照片列表。
@@ -60,7 +61,26 @@ class _BlogInputViewState extends State<BlogInputView> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        appBar: AppBar(title: const Text('照片下載器')),
+        appBar: AppBar(
+          title: const Text('照片下載器'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () => showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                ),
+                clipBehavior: Clip.antiAlias,
+                builder: (_) => const SettingsView(),
+              ),
+            ),
+          ],
+        ),
         body: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(

@@ -363,3 +363,36 @@ tests:
   - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
   - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
 -->
+
+---
+### Requirement: AppBar close button without back navigation
+
+The `SettingsView` AppBar SHALL set `automaticallyImplyLeading` to `false` to hide the default back button on the left side.
+
+The AppBar SHALL display a close icon button (`Icons.close`) in the `actions` area on the right side. When tapped, the close button SHALL call `Navigator.of(context).pop()` to dismiss the sheet.
+
+#### Scenario: No back button on the left
+
+- **GIVEN** the SettingsView is presented as a modal bottom sheet
+- **WHEN** the page renders
+- **THEN** the AppBar SHALL NOT display a back button on the left side
+
+#### Scenario: Close button is visible on the right
+
+- **GIVEN** the SettingsView is presented as a modal bottom sheet
+- **WHEN** the page renders
+- **THEN** the AppBar SHALL display a close icon button on the right side
+
+#### Scenario: Tapping close button dismisses the sheet
+
+- **GIVEN** the SettingsView is presented as a modal bottom sheet
+- **WHEN** the user taps the close button
+- **THEN** the sheet SHALL be dismissed via `Navigator.of(context).pop()`
+
+<!-- @trace
+source: add-settings-entry-to-home
+updated: 2026-03-22
+code:
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+-->
