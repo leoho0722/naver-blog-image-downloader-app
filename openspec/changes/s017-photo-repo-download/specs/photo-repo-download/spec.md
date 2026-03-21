@@ -7,7 +7,7 @@ The `PhotoRepository.downloadAllToCache` method SHALL call `CacheRepository.evic
 #### Scenario: Eviction triggered before downloads
 
 - **WHEN** `downloadAllToCache` is called
-- **THEN** `CacheRepository.evictIfNeeded()` SHALL be called before any `FileDownloadService.download` calls
+- **THEN** `CacheRepository.evictIfNeeded()` SHALL be called before any `FileDownloadService.downloadFile` calls
 
 ### Requirement: Parallel download with concurrency limit
 
@@ -44,11 +44,11 @@ Before downloading each photo, `downloadAllToCache` SHALL check whether the file
 
 ### Requirement: Download and store flow
 
-For each photo that is not cached, `downloadAllToCache` SHALL call `FileDownloadService.download(url)` to obtain a temporary file, then call `CacheRepository.storeFile(tempFile, filename, blogId)` to move it into the cache.
+For each photo that is not cached, `downloadAllToCache` SHALL call `FileDownloadService.downloadFileFile(url, savePath)` to download the file to the target path, then call `CacheRepository.storeFile(tempFile, filename, blogId)` to move it into the cache.
 
 #### Scenario: Successful download and store
 
-- **WHEN** `FileDownloadService.download` returns a temporary file
+- **WHEN** `FileDownloadService.downloadFileFile` returns a downloaded file
 - **THEN** `CacheRepository.storeFile` SHALL be called with that file
 - **AND** the success count SHALL be incremented
 
@@ -69,7 +69,7 @@ The `downloadAllToCache` method SHALL invoke the optional `onProgress` callback 
 
 ### Requirement: Single failure does not abort batch
 
-When a single photo download fails (either `FileDownloadService.download` or `CacheRepository.storeFile` throws), the error SHALL be caught and recorded. The remaining photos SHALL continue to be processed.
+When a single photo download fails (either `FileDownloadService.downloadFile` or `CacheRepository.storeFile` throws), the error SHALL be caught and recorded. The remaining photos SHALL continue to be processed.
 
 #### Scenario: One download fails among many
 
@@ -96,7 +96,7 @@ After all photos have been processed, `downloadAllToCache` SHALL call `CacheRepo
 
 ### Requirement: DownloadBatchResult return value
 
-The `downloadAllToCache` method SHALL return a `DownloadBatchResult` containing `successCount`, `failureCount`, `skippedCount`, and `errors` (a `List<String>` of error messages from failed downloads).
+The `downloadAllToCache` method SHALL return a `DownloadBatchResult` containing `successCount`, `skippedCount`, and `errors` (a `List<String>` of error messages from failed downloads). The `failureCount` SHALL be a computed getter (derived from `failedPhotos.length`), not a stored field.
 
 #### Scenario: All downloads succeed
 

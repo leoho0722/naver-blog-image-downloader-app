@@ -1,0 +1,766 @@
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:naver_blog_image_downloader/data/models/blog_cache_metadata.dart';
+import 'package:naver_blog_image_downloader/data/models/dtos/job_status_response.dart';
+import 'package:naver_blog_image_downloader/data/models/dtos/photo_download_response.dart';
+import 'package:naver_blog_image_downloader/data/models/fetch_result.dart';
+import 'package:naver_blog_image_downloader/data/models/photo_entity.dart';
+import 'package:naver_blog_image_downloader/data/repositories/cache_repository.dart';
+import 'package:naver_blog_image_downloader/data/repositories/photo_repository.dart';
+import 'package:naver_blog_image_downloader/data/services/api_service.dart';
+import 'package:naver_blog_image_downloader/data/services/file_download_service.dart';
+import 'package:naver_blog_image_downloader/data/services/gallery_service.dart';
+import 'package:naver_blog_image_downloader/ui/core/result.dart';
+
+class MockApiService extends Mock implements ApiService {}
+
+class MockFileDownloadService extends Mock implements FileDownloadService {}
+
+class MockGalleryService extends Mock implements GalleryService {}
+
+class MockCacheRepository extends Mock implements CacheRepository {}
+
+class FakeBlogCacheMetadata extends Fake implements BlogCacheMetadata {}
+
+class FakeFile extends Fake implements File {}
+
+class FakeDirectory extends Fake implements Directory {
+  final String _path;
+  FakeDirectory(this._path);
+
+  @override
+  String get path => _path;
+
+  @override
+  Directory get parent =>
+      FakeDirectory(path.substring(0, path.lastIndexOf('/')));
+}
+
+void main() {
+  late MockApiService mockApiService;
+  late MockFileDownloadService mockFileDownloadService;
+  late MockGalleryService mockGalleryService;
+  late MockCacheRepository mockCacheRepository;
+  late PhotoRepository repository;
+
+  const testBlogId = 'abc123def456ghij';
+
+  setUpAll(() {
+    registerFallbackValue(FakeBlogCacheMetadata());
+    registerFallbackValue(FakeFile());
+  });
+
+  setUp(() {
+    mockApiService = MockApiService();
+    mockFileDownloadService = MockFileDownloadService();
+    mockGalleryService = MockGalleryService();
+    mockCacheRepository = MockCacheRepository();
+    repository = PhotoRepository(
+      apiService: mockApiService,
+      fileDownloadService: mockFileDownloadService,
+      galleryService: mockGalleryService,
+      cacheRepository: mockCacheRepository,
+    );
+  });
+
+  group('PhotoRepository construction', () {
+    test('建構函式接受四個依賴並成功建立實例', () {
+      expect(repository, isNotNull);
+    });
+  });
+
+  group('fetchPhotos（非同步任務模式）', () {
+    const testBlogUrlWithPath = 'https://blog.naver.com/test/12345';
+    const testJobId = 'job-uuid-123';
+
+    JobStatusResponse completedStatus({
+      List<String> imageUrls = const [],
+    }) =>
+        JobStatusResponse(
+          jobId: testJobId,
+          status: JobStatus.completed,
+          result: PhotoDownloadResponse(
+            totalImages: imageUrls.length,
+            successfulDownloads: imageUrls.length,
+            failureDownloads: 0,
+            imageUrls: imageUrls,
+            errors: [],
+            elapsedTime: 1.0,
+          ),
+        );
+
+    void setupSubmitJob() {
+      when(() => mockCacheRepository.blogId(testBlogUrlWithPath))
+          .thenReturn(testBlogId);
+      when(() => mockApiService.submitJob(testBlogUrlWithPath))
+          .thenAnswer((_) async => testJobId);
+    }
+
+    test('任務完成時回傳照片列表', () async {
+      setupSubmitJob();
+      when(() => mockApiService.checkJobStatus(testJobId))
+          .thenAnswer((_) async => completedStatus(imageUrls: [
+                'https://example.com/photo1.jpg',
+                'https://example.com/photo2.jpg',
+              ]));
+      when(() => mockCacheRepository.isBlogFullyCached(testBlogId, any()))
+          .thenAnswer((_) async => false);
+
+      final result = await repository.fetchPhotos(testBlogUrlWithPath);
+
+      expect(result, isA<Ok<FetchResult>>());
+      final fetchResult = (result as Ok<FetchResult>).value;
+      expect(fetchResult.photos.length, 2);
+      expect(fetchResult.blogId, testBlogId);
+    });
+
+    test('submitJob 失敗時回傳 Result.error', () async {
+      when(() => mockCacheRepository.blogId(testBlogUrlWithPath))
+          .thenReturn(testBlogId);
+      when(() => mockApiService.submitJob(testBlogUrlWithPath))
+          .thenThrow(const ApiServiceException('伺服器錯誤（500）', statusCode: 500));
+
+      final result = await repository.fetchPhotos(testBlogUrlWithPath);
+
+      expect(result, isA<Error<FetchResult>>());
+    });
+
+    test('任務失敗時回傳 Result.error 含錯誤訊息', () async {
+      setupSubmitJob();
+      when(() => mockApiService.checkJobStatus(testJobId))
+          .thenAnswer((_) async => JobStatusResponse(
+                jobId: testJobId,
+                status: JobStatus.failed,
+                result: PhotoDownloadResponse(
+                  totalImages: 0,
+                  successfulDownloads: 0,
+                  failureDownloads: 1,
+                  imageUrls: const [],
+                  errors: const ['等待圖片元素超時'],
+                  elapsedTime: 10.0,
+                ),
+              ));
+
+      final result = await repository.fetchPhotos(testBlogUrlWithPath);
+
+      expect(result, isA<Error<FetchResult>>());
+      final error = (result as Error<FetchResult>).error;
+      expect(error.toString(), contains('等待圖片元素超時'));
+    });
+  });
+
+  group('downloadAllToCache', () {
+    PhotoEntity makePhoto(String id) => PhotoEntity(
+      id: id,
+      url: 'https://example.com/$id.jpg',
+      filename: '$id.jpg',
+    );
+
+    /// 設定共用 mock：evictIfNeeded、cacheDirectory
+    void setupBaseMocks() {
+      when(() => mockCacheRepository.evictIfNeeded()).thenAnswer((_) async {});
+      when(
+        () => mockCacheRepository.cacheDirectory(testBlogId),
+      ).thenAnswer((_) async => FakeDirectory('/tmp/cache/blogs/$testBlogId'));
+      when(
+        () => mockCacheRepository.updateMetadata(any()),
+      ).thenAnswer((_) async {});
+    }
+
+    /// 設定照片未快取的 mock
+    void setupNotCached(String filename) {
+      when(
+        () => mockCacheRepository.cachedFile(filename, testBlogId),
+      ).thenAnswer((_) async => null);
+    }
+
+    /// 設定照片已快取的 mock
+    void setupCached(String filename) {
+      when(
+        () => mockCacheRepository.cachedFile(filename, testBlogId),
+      ).thenAnswer((_) async => File('/tmp/cache/blogs/$testBlogId/$filename'));
+    }
+
+    /// 設定下載成功的 mock
+    void setupDownloadSuccess(String url, String filename) {
+      when(
+        () => mockFileDownloadService.downloadFile(url, any()),
+      ).thenAnswer((_) async => '/tmp/downloaded/$filename');
+      when(
+        () => mockCacheRepository.storeFile(any(), filename, testBlogId),
+      ).thenAnswer((_) async => File('/tmp/cache/blogs/$testBlogId/$filename'));
+    }
+
+    group('1. Cache eviction before download', () {
+      test('1.2 evictIfNeeded 在下載前被呼叫', () async {
+        // Arrange
+        setupBaseMocks();
+        final photos = [makePhoto('p1')];
+        setupNotCached('p1.jpg');
+        setupDownloadSuccess('https://example.com/p1.jpg', 'p1.jpg');
+
+        // Act
+        await repository.downloadAllToCache(photos: photos, blogId: testBlogId);
+
+        // Assert
+        verify(() => mockCacheRepository.evictIfNeeded()).called(1);
+      });
+    });
+
+    group('2. Parallel download with concurrency limit', () {
+      test('2.2 少於 4 張照片時全部並行處理', () async {
+        // Arrange
+        setupBaseMocks();
+        final photos = [makePhoto('p1'), makePhoto('p2')];
+        for (final photo in photos) {
+          setupNotCached(photo.filename);
+          setupDownloadSuccess(photo.url, photo.filename);
+        }
+
+        // Act
+        final result = await repository.downloadAllToCache(
+          photos: photos,
+          blogId: testBlogId,
+        );
+
+        // Assert — 兩張照片都成功下載
+        expect(result.successCount, 2);
+        expect(result.failedPhotos, isEmpty);
+      });
+
+      test('2.2 驗證 10 張照片全部被處理（並行度限制不影響最終結果）', () async {
+        // Arrange
+        setupBaseMocks();
+        final photos = List.generate(10, (i) => makePhoto('p$i'));
+        for (final photo in photos) {
+          setupNotCached(photo.filename);
+          setupDownloadSuccess(photo.url, photo.filename);
+        }
+
+        // Act
+        final result = await repository.downloadAllToCache(
+          photos: photos,
+          blogId: testBlogId,
+        );
+
+        // Assert
+        expect(result.successCount, 10);
+        expect(result.failedPhotos, isEmpty);
+        expect(result.failureCount, 0);
+      });
+    });
+
+    group('3. Cache skip logic', () {
+      test('3.2 已快取檔案被跳過、未快取檔案進行下載', () async {
+        // Arrange
+        setupBaseMocks();
+        final photos = [makePhoto('cached'), makePhoto('fresh')];
+        setupCached('cached.jpg');
+        setupNotCached('fresh.jpg');
+        setupDownloadSuccess('https://example.com/fresh.jpg', 'fresh.jpg');
+
+        // Act
+        final result = await repository.downloadAllToCache(
+          photos: photos,
+          blogId: testBlogId,
+        );
+
+        // Assert
+        expect(result.successCount, 1);
+        expect(result.skippedCount, 1);
+        expect(result.failedPhotos, isEmpty);
+        // 未對已快取檔案呼叫 downloadFile
+        verifyNever(
+          () => mockFileDownloadService.downloadFile(
+            'https://example.com/cached.jpg',
+            any(),
+          ),
+        );
+        // 對未快取檔案呼叫 downloadFile
+        verify(
+          () => mockFileDownloadService.downloadFile(
+            'https://example.com/fresh.jpg',
+            any(),
+          ),
+        ).called(1);
+      });
+    });
+
+    group('4. Download and store flow', () {
+      test('4.2 下載成功後呼叫 storeFile 存入快取', () async {
+        // Arrange
+        setupBaseMocks();
+        final photos = [makePhoto('dl')];
+        setupNotCached('dl.jpg');
+        setupDownloadSuccess('https://example.com/dl.jpg', 'dl.jpg');
+
+        // Act
+        final result = await repository.downloadAllToCache(
+          photos: photos,
+          blogId: testBlogId,
+        );
+
+        // Assert
+        expect(result.successCount, 1);
+        verify(
+          () => mockFileDownloadService.downloadFile(
+            'https://example.com/dl.jpg',
+            any(),
+          ),
+        ).called(1);
+        verify(
+          () => mockCacheRepository.storeFile(any(), 'dl.jpg', testBlogId),
+        ).called(1);
+      });
+    });
+
+    group('5. Progress callback', () {
+      test('5.2 回呼次數與參數正確', () async {
+        // Arrange
+        setupBaseMocks();
+        final photos = [makePhoto('a'), makePhoto('b'), makePhoto('c')];
+        // a 已快取、b 和 c 未快取
+        setupCached('a.jpg');
+        setupNotCached('b.jpg');
+        setupNotCached('c.jpg');
+        setupDownloadSuccess('https://example.com/b.jpg', 'b.jpg');
+        setupDownloadSuccess('https://example.com/c.jpg', 'c.jpg');
+
+        final progressCalls = <(int, int)>[];
+
+        // Act
+        await repository.downloadAllToCache(
+          photos: photos,
+          blogId: testBlogId,
+          onProgress: (completed, total) {
+            progressCalls.add((completed, total));
+          },
+        );
+
+        // Assert — 3 次回呼，total 始終為 3
+        expect(progressCalls.length, 3);
+        for (final call in progressCalls) {
+          expect(call.$2, 3); // total 始終為 3
+        }
+        // 最終 completed 值應為 3
+        expect(progressCalls.last.$1, 3);
+      });
+
+      test('5.2 未提供回呼時不報錯', () async {
+        // Arrange
+        setupBaseMocks();
+        final photos = [makePhoto('x')];
+        setupNotCached('x.jpg');
+        setupDownloadSuccess('https://example.com/x.jpg', 'x.jpg');
+
+        // Act & Assert — 不拋出例外
+        final result = await repository.downloadAllToCache(
+          photos: photos,
+          blogId: testBlogId,
+          // 不提供 onProgress
+        );
+        expect(result.successCount, 1);
+      });
+    });
+
+    group('6. Single failure does not abort batch', () {
+      test('6.2 單一失敗不影響其他照片的下載', () async {
+        // Arrange
+        setupBaseMocks();
+        final photos = [makePhoto('ok1'), makePhoto('fail'), makePhoto('ok2')];
+        setupNotCached('ok1.jpg');
+        setupNotCached('fail.jpg');
+        setupNotCached('ok2.jpg');
+        setupDownloadSuccess('https://example.com/ok1.jpg', 'ok1.jpg');
+        setupDownloadSuccess('https://example.com/ok2.jpg', 'ok2.jpg');
+
+        // 第二張照片下載失敗
+        when(
+          () => mockFileDownloadService.downloadFile(
+            'https://example.com/fail.jpg',
+            any(),
+          ),
+        ).thenThrow(Exception('Download failed'));
+
+        // Act
+        final result = await repository.downloadAllToCache(
+          photos: photos,
+          blogId: testBlogId,
+        );
+
+        // Assert
+        expect(result.successCount, 2);
+        expect(result.failureCount, 1);
+        expect(result.failedPhotos.length, 1);
+        expect(result.failedPhotos.first.id, 'fail');
+        expect(result.errors.length, 1);
+        expect(result.errors.first, contains('fail.jpg'));
+      });
+    });
+
+    group('7. Metadata update after completion', () {
+      test('7.2 即使部分失敗也會更新 metadata', () async {
+        // Arrange
+        setupBaseMocks();
+        final photos = [makePhoto('good'), makePhoto('bad')];
+        setupNotCached('good.jpg');
+        setupNotCached('bad.jpg');
+        setupDownloadSuccess('https://example.com/good.jpg', 'good.jpg');
+        when(
+          () => mockFileDownloadService.downloadFile(
+            'https://example.com/bad.jpg',
+            any(),
+          ),
+        ).thenThrow(Exception('fail'));
+
+        // Act
+        await repository.downloadAllToCache(photos: photos, blogId: testBlogId);
+
+        // Assert — updateMetadata 一定被呼叫
+        verify(() => mockCacheRepository.updateMetadata(any())).called(1);
+      });
+
+      test('7.1 metadata 內容包含正確的 blogId、照片數量與檔案列表', () async {
+        // Arrange
+        setupBaseMocks();
+        final photos = [makePhoto('m1'), makePhoto('m2')];
+        setupNotCached('m1.jpg');
+        setupNotCached('m2.jpg');
+        setupDownloadSuccess('https://example.com/m1.jpg', 'm1.jpg');
+        setupDownloadSuccess('https://example.com/m2.jpg', 'm2.jpg');
+
+        BlogCacheMetadata? capturedMetadata;
+        when(() => mockCacheRepository.updateMetadata(any())).thenAnswer((
+          invocation,
+        ) async {
+          capturedMetadata =
+              invocation.positionalArguments[0] as BlogCacheMetadata;
+        });
+
+        // Act
+        await repository.downloadAllToCache(photos: photos, blogId: testBlogId);
+
+        // Assert
+        expect(capturedMetadata, isNotNull);
+        expect(capturedMetadata!.blogId, testBlogId);
+        expect(capturedMetadata!.photoCount, 2);
+        expect(capturedMetadata!.filenames, ['m1.jpg', 'm2.jpg']);
+        expect(capturedMetadata!.isSavedToGallery, isFalse);
+      });
+    });
+
+    group('8. DownloadBatchResult return value', () {
+      test('8.2 全部成功時的結果', () async {
+        // Arrange
+        setupBaseMocks();
+        final photos = [makePhoto('s1'), makePhoto('s2'), makePhoto('s3')];
+        for (final photo in photos) {
+          setupNotCached(photo.filename);
+          setupDownloadSuccess(photo.url, photo.filename);
+        }
+
+        // Act
+        final result = await repository.downloadAllToCache(
+          photos: photos,
+          blogId: testBlogId,
+        );
+
+        // Assert
+        expect(result.successCount, 3);
+        expect(result.failureCount, 0);
+        expect(result.skippedCount, 0);
+        expect(result.errors, isEmpty);
+        expect(result.isAllSuccessful, isTrue);
+      });
+
+      test('8.2 混合結果（成功、失敗、跳過）', () async {
+        // Arrange
+        setupBaseMocks();
+        final photos = [
+          makePhoto('success'),
+          makePhoto('skipped'),
+          makePhoto('failed'),
+        ];
+        setupNotCached('success.jpg');
+        setupCached('skipped.jpg');
+        setupNotCached('failed.jpg');
+        setupDownloadSuccess('https://example.com/success.jpg', 'success.jpg');
+        when(
+          () => mockFileDownloadService.downloadFile(
+            'https://example.com/failed.jpg',
+            any(),
+          ),
+        ).thenThrow(Exception('Network error'));
+
+        // Act
+        final result = await repository.downloadAllToCache(
+          photos: photos,
+          blogId: testBlogId,
+        );
+
+        // Assert
+        expect(
+          result.successCount + result.failureCount + result.skippedCount,
+          3,
+        );
+        expect(result.successCount, 1);
+        expect(result.failureCount, 1);
+        expect(result.skippedCount, 1);
+        expect(result.errors.length, 1);
+        expect(result.errors.first, contains('failed.jpg'));
+        expect(result.isAllSuccessful, isFalse);
+      });
+    });
+  });
+
+  group('saveToGalleryFromCache', () {
+    const saveBlogId = 'test_blog_id';
+
+    final savePhotos = [
+      const PhotoEntity(
+        id: '1',
+        url: 'https://example.com/photo1.jpg',
+        filename: 'photo1.jpg',
+      ),
+      const PhotoEntity(
+        id: '2',
+        url: 'https://example.com/photo2.jpg',
+        filename: 'photo2.jpg',
+      ),
+      const PhotoEntity(
+        id: '3',
+        url: 'https://example.com/photo3.jpg',
+        filename: 'photo3.jpg',
+      ),
+    ];
+
+    group('快取檔案讀取策略', () {
+      test('所有快取檔案存在時，每張照片都應被儲存至相簿', () async {
+        // Arrange
+        final mockFile1 = FakeFile();
+        final mockFile2 = FakeFile();
+        final mockFile3 = FakeFile();
+
+        when(
+          () => mockCacheRepository.cachedFile('photo1.jpg', saveBlogId),
+        ).thenAnswer((_) async => mockFile1);
+        when(
+          () => mockCacheRepository.cachedFile('photo2.jpg', saveBlogId),
+        ).thenAnswer((_) async => mockFile2);
+        when(
+          () => mockCacheRepository.cachedFile('photo3.jpg', saveBlogId),
+        ).thenAnswer((_) async => mockFile3);
+
+        when(
+          () => mockGalleryService.saveToGallery(any()),
+        ).thenAnswer((_) async {});
+        when(
+          () => mockCacheRepository.markAsSavedToGallery(saveBlogId),
+        ).thenAnswer((_) async {});
+
+        // Act
+        final result = await repository.saveToGalleryFromCache(
+          photos: savePhotos,
+          blogId: saveBlogId,
+        );
+
+        // Assert
+        expect(result, isA<Ok<void>>());
+        verify(() => mockGalleryService.saveToGallery(any())).called(3);
+      });
+
+      test('部分快取檔案遺失時，應跳過遺失檔案並儲存存在的檔案', () async {
+        // Arrange
+        final mockFile1 = FakeFile();
+        final mockFile3 = FakeFile();
+
+        when(
+          () => mockCacheRepository.cachedFile('photo1.jpg', saveBlogId),
+        ).thenAnswer((_) async => mockFile1);
+        when(
+          () => mockCacheRepository.cachedFile('photo2.jpg', saveBlogId),
+        ).thenAnswer((_) async => null);
+        when(
+          () => mockCacheRepository.cachedFile('photo3.jpg', saveBlogId),
+        ).thenAnswer((_) async => mockFile3);
+
+        when(
+          () => mockGalleryService.saveToGallery(any()),
+        ).thenAnswer((_) async {});
+        when(
+          () => mockCacheRepository.markAsSavedToGallery(saveBlogId),
+        ).thenAnswer((_) async {});
+
+        // Act
+        final result = await repository.saveToGalleryFromCache(
+          photos: savePhotos,
+          blogId: saveBlogId,
+        );
+
+        // Assert
+        expect(result, isA<Ok<void>>());
+        verify(() => mockGalleryService.saveToGallery(any())).called(2);
+      });
+    });
+
+    group('循序儲存策略', () {
+      test('saveToGallery 應被依序呼叫正確次數', () async {
+        // Arrange
+        final mockFile1 = FakeFile();
+        final mockFile2 = FakeFile();
+        final mockFile3 = FakeFile();
+
+        when(
+          () => mockCacheRepository.cachedFile('photo1.jpg', saveBlogId),
+        ).thenAnswer((_) async => mockFile1);
+        when(
+          () => mockCacheRepository.cachedFile('photo2.jpg', saveBlogId),
+        ).thenAnswer((_) async => mockFile2);
+        when(
+          () => mockCacheRepository.cachedFile('photo3.jpg', saveBlogId),
+        ).thenAnswer((_) async => mockFile3);
+
+        final callOrder = <String>[];
+        when(() => mockGalleryService.saveToGallery(any())).thenAnswer((
+          invocation,
+        ) async {
+          callOrder.add(invocation.positionalArguments[0] as String);
+        });
+        when(
+          () => mockCacheRepository.markAsSavedToGallery(saveBlogId),
+        ).thenAnswer((_) async {});
+
+        // Act
+        await repository.saveToGalleryFromCache(
+          photos: savePhotos,
+          blogId: saveBlogId,
+        );
+
+        // Assert
+        expect(callOrder.length, 3);
+        verify(() => mockGalleryService.saveToGallery(any())).called(3);
+      });
+    });
+
+    group('markAsSavedToGallery 呼叫時機', () {
+      test('標記應在所有儲存完成後被呼叫', () async {
+        // Arrange
+        final mockFile1 = FakeFile();
+
+        when(
+          () => mockCacheRepository.cachedFile('photo1.jpg', saveBlogId),
+        ).thenAnswer((_) async => mockFile1);
+        when(
+          () => mockCacheRepository.cachedFile('photo2.jpg', saveBlogId),
+        ).thenAnswer((_) async => null);
+        when(
+          () => mockCacheRepository.cachedFile('photo3.jpg', saveBlogId),
+        ).thenAnswer((_) async => null);
+
+        when(
+          () => mockGalleryService.saveToGallery(any()),
+        ).thenAnswer((_) async {});
+        when(
+          () => mockCacheRepository.markAsSavedToGallery(saveBlogId),
+        ).thenAnswer((_) async {});
+
+        // Act
+        await repository.saveToGalleryFromCache(
+          photos: savePhotos,
+          blogId: saveBlogId,
+        );
+
+        // Assert
+        verify(
+          () => mockCacheRepository.markAsSavedToGallery(saveBlogId),
+        ).called(1);
+      });
+    });
+
+    group('錯誤處理策略', () {
+      test('成功時回傳 Result.ok', () async {
+        // Arrange
+        final mockFile1 = FakeFile();
+        when(
+          () => mockCacheRepository.cachedFile('photo1.jpg', saveBlogId),
+        ).thenAnswer((_) async => mockFile1);
+        when(
+          () => mockCacheRepository.cachedFile('photo2.jpg', saveBlogId),
+        ).thenAnswer((_) async => null);
+        when(
+          () => mockCacheRepository.cachedFile('photo3.jpg', saveBlogId),
+        ).thenAnswer((_) async => null);
+        when(
+          () => mockGalleryService.saveToGallery(any()),
+        ).thenAnswer((_) async {});
+        when(
+          () => mockCacheRepository.markAsSavedToGallery(saveBlogId),
+        ).thenAnswer((_) async {});
+
+        // Act
+        final result = await repository.saveToGalleryFromCache(
+          photos: savePhotos,
+          blogId: saveBlogId,
+        );
+
+        // Assert
+        expect(result, isA<Ok<void>>());
+      });
+
+      test('GalleryService 例外時回傳 Result.error', () async {
+        // Arrange
+        final mockFile1 = FakeFile();
+        when(
+          () => mockCacheRepository.cachedFile('photo1.jpg', saveBlogId),
+        ).thenAnswer((_) async => mockFile1);
+        when(
+          () => mockGalleryService.saveToGallery(any()),
+        ).thenThrow(Exception('Gallery save failed'));
+
+        // Act
+        final result = await repository.saveToGalleryFromCache(
+          photos: savePhotos,
+          blogId: saveBlogId,
+        );
+
+        // Assert
+        expect(result, isA<Error<void>>());
+        final error = result as Error<void>;
+        expect(error.error.toString(), contains('Gallery save failed'));
+      });
+
+      test('markAsSavedToGallery 例外時回傳 Result.error', () async {
+        // Arrange
+        final mockFile1 = FakeFile();
+        when(
+          () => mockCacheRepository.cachedFile('photo1.jpg', saveBlogId),
+        ).thenAnswer((_) async => mockFile1);
+        when(
+          () => mockCacheRepository.cachedFile('photo2.jpg', saveBlogId),
+        ).thenAnswer((_) async => null);
+        when(
+          () => mockCacheRepository.cachedFile('photo3.jpg', saveBlogId),
+        ).thenAnswer((_) async => null);
+        when(
+          () => mockGalleryService.saveToGallery(any()),
+        ).thenAnswer((_) async {});
+        when(
+          () => mockCacheRepository.markAsSavedToGallery(saveBlogId),
+        ).thenThrow(Exception('Mark failed'));
+
+        // Act
+        final result = await repository.saveToGalleryFromCache(
+          photos: savePhotos,
+          blogId: saveBlogId,
+        );
+
+        // Assert
+        expect(result, isA<Error<void>>());
+        final error = result as Error<void>;
+        expect(error.error.toString(), contains('Mark failed'));
+      });
+    });
+  });
+}
