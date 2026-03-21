@@ -1,12 +1,21 @@
 ## ADDED Requirements
 
+### Requirement: DownloadDialog as AlertDialog popup
+
+The `DownloadDialog` SHALL be an `AlertDialog` popup (not a routed page). It SHALL render download progress UI within the dialog content.
+
+#### Scenario: Dialog displayed as AlertDialog
+
+- **WHEN** the download flow is triggered
+- **THEN** a `DownloadDialog` SHALL be shown as an `AlertDialog` popup
+
 ### Requirement: Circular progress indicator with value
 
-The `DownloadView` SHALL render a `CircularProgressIndicator` with its `value` property bound to `viewModel.progress`. The progress value SHALL range from 0.0 to 1.0, representing the download completion ratio.
+The `DownloadDialog` SHALL render a `CircularProgressIndicator` with its `value` property bound to `viewModel.progress`. The progress value SHALL range from 0.0 to 1.0, representing the download completion ratio.
 
 #### Scenario: Progress indicator reflects download progress
 
-- **WHEN** the DownloadView is rendered
+- **WHEN** the DownloadDialog is rendered
 - **THEN** a CircularProgressIndicator SHALL be displayed with `value` equal to `viewModel.progress`
 
 #### Scenario: Progress updates in real time
@@ -16,16 +25,16 @@ The `DownloadView` SHALL render a `CircularProgressIndicator` with its `value` p
 
 ### Requirement: Completed count and total count text
 
-The `DownloadView` SHALL display a text showing the number of completed downloads and the total count in the format `"${viewModel.completed} / ${viewModel.total}"`.
+The `DownloadDialog` SHALL display a text showing the number of completed downloads and the total count in the format `"${viewModel.completed} / ${viewModel.total}"`.
 
 #### Scenario: Count text displayed
 
-- **WHEN** the DownloadView is rendered
+- **WHEN** the DownloadDialog is rendered
 - **THEN** a Text widget SHALL display the completed and total counts in "completed / total" format
 
 ### Requirement: Download status text
 
-The `DownloadView` SHALL display a status text that reads "下載中..." when `viewModel.isDownloading` is true, and "下載完成" when `viewModel.isDownloading` is false.
+The `DownloadDialog` SHALL display a status text that reads "下載中..." when `viewModel.isDownloading` is true, and "下載完成" when `viewModel.isDownloading` is false.
 
 #### Scenario: Downloading in progress
 
@@ -39,7 +48,7 @@ The `DownloadView` SHALL display a status text that reads "下載中..." when `v
 
 ### Requirement: Failed count display
 
-The `DownloadView` SHALL display the number of failed photo downloads when `viewModel.result` is not null and `viewModel.result.isAllSuccessful` is false. The text SHALL follow the format `"${viewModel.result.failedPhotos.length} 張下載失敗"`.
+The `DownloadDialog` SHALL display the number of failed photo downloads when `viewModel.result` is not null and `viewModel.result.isAllSuccessful` is false. The text SHALL follow the format `"${viewModel.result.failedPhotos.length} 張下載失敗"`.
 
 #### Scenario: All downloads successful
 
@@ -51,11 +60,12 @@ The `DownloadView` SHALL display the number of failed photo downloads when `view
 - **WHEN** `viewModel.result` is not null and `viewModel.result.isAllSuccessful` is false
 - **THEN** a Text widget SHALL display the number of failed photos followed by "張下載失敗"
 
-### Requirement: Auto-navigation on completion
+### Requirement: Auto-close on completion
 
-The `DownloadView` SHALL automatically navigate to the photo gallery page when the download process completes. The navigation SHALL occur without requiring user interaction.
+The `DownloadDialog` SHALL automatically close via `Navigator.pop(true)` when the download process completes. The caller SHALL handle navigation to the gallery page.
 
 #### Scenario: Download finishes
 
 - **WHEN** the download process completes (all photos downloaded or attempted)
-- **THEN** the app SHALL automatically navigate to the photo gallery page
+- **THEN** the dialog SHALL auto-close via `Navigator.pop(true)`
+- **AND** the caller SHALL be responsible for navigating to the photo gallery page
