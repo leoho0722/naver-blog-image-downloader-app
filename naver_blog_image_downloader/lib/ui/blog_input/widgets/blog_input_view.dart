@@ -71,9 +71,7 @@ class _BlogInputViewState extends State<BlogInputView> {
                 isScrollControlled: true,
                 useSafeArea: true,
                 shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 clipBehavior: Clip.antiAlias,
                 builder: (_) => const SettingsView(),
@@ -96,9 +94,7 @@ class _BlogInputViewState extends State<BlogInputView> {
               if (viewModel.errorMessage != null)
                 Text(
                   viewModel.errorMessage!,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               if (viewModel.statusMessage != null) ...[
                 const SizedBox(height: 12),

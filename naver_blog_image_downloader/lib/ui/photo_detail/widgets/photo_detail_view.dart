@@ -42,10 +42,7 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: viewModel.cachedFile == null
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -118,10 +115,7 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
           children: [
             Text('檔案資訊', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
-            _InfoRow(
-              label: '檔案名稱',
-              value: viewModel.photo?.filename ?? '-',
-            ),
+            _InfoRow(label: '檔案名稱', value: viewModel.photo?.filename ?? '-'),
             _InfoRow(label: '檔案大小', value: viewModel.formattedFileSize),
             _InfoRow(label: '照片尺寸', value: viewModel.formattedDimensions),
             _InfoRow(label: '下載網址', value: viewModel.photo?.url ?? '-'),
@@ -151,8 +145,8 @@ class _InfoRow extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
           Expanded(

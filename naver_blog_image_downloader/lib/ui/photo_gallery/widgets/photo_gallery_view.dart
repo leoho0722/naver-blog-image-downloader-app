@@ -35,9 +35,9 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             context.read<PhotoGalleryViewModel>().load(
-                  fetchResult.photos,
-                  fetchResult.blogId,
-                );
+              fetchResult.photos,
+              fetchResult.blogId,
+            );
           }
         });
       }
@@ -54,9 +54,7 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
         title: Text('照片瀏覽（${photos.length}）'),
         actions: [
           IconButton(
-            icon: Icon(
-              viewModel.isSelectMode ? Icons.close : Icons.select_all,
-            ),
+            icon: Icon(viewModel.isSelectMode ? Icons.close : Icons.select_all),
             tooltip: viewModel.isSelectMode ? '取消選取' : '選取模式',
             onPressed: viewModel.toggleSelectMode,
           ),
@@ -84,43 +82,37 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
       body: viewModel.isSaving
           ? const Center(child: CircularProgressIndicator())
           : photos.isEmpty
-              ? const Center(child: Text('沒有照片'))
-              : GridView.builder(
-                  padding: const EdgeInsets.all(4),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 4,
-                    crossAxisSpacing: 4,
-                  ),
-                  itemCount: photos.length,
-                  itemBuilder: (context, index) {
-                    final photo = photos[index];
-                    return FutureBuilder<File?>(
-                      future: viewModel.cachedFile(photo),
-                      builder: (context, snapshot) {
-                        return PhotoCard(
-                          photo: photo,
-                          cachedFile: snapshot.data,
-                          isSelected:
-                              viewModel.selectedIds.contains(photo.id),
-                          isSelectMode: viewModel.isSelectMode,
-                          onTap: () => _onPhotoTap(context, photo),
-                          onSelect: () =>
-                              viewModel.toggleSelection(photo.id),
-                        );
-                      },
+          ? const Center(child: Text('沒有照片'))
+          : GridView.builder(
+              padding: const EdgeInsets.all(4),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: 4,
+                crossAxisSpacing: 4,
+              ),
+              itemCount: photos.length,
+              itemBuilder: (context, index) {
+                final photo = photos[index];
+                return FutureBuilder<File?>(
+                  future: viewModel.cachedFile(photo),
+                  builder: (context, snapshot) {
+                    return PhotoCard(
+                      photo: photo,
+                      cachedFile: snapshot.data,
+                      isSelected: viewModel.selectedIds.contains(photo.id),
+                      isSelectMode: viewModel.isSelectMode,
+                      onTap: () => _onPhotoTap(context, photo),
+                      onSelect: () => viewModel.toggleSelection(photo.id),
                     );
                   },
-                ),
+                );
+              },
+            ),
     );
   }
 
   void _onPhotoTap(BuildContext context, PhotoEntity photo) {
     final blogId = context.read<PhotoGalleryViewModel>().blogId;
-    context.push(
-      '/detail/${photo.id}',
-      extra: (photo: photo, blogId: blogId),
-    );
+    context.push('/detail/${photo.id}', extra: (photo: photo, blogId: blogId));
   }
 }

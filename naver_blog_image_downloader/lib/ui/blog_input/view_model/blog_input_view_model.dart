@@ -12,7 +12,7 @@ import '../../core/result.dart';
 class BlogInputViewModel extends ChangeNotifier {
   /// 建立 [BlogInputViewModel]，需注入 [PhotoRepository] 以執行照片擷取。
   BlogInputViewModel({required PhotoRepository photoRepository})
-      : _photoRepository = photoRepository;
+    : _photoRepository = photoRepository;
 
   final PhotoRepository _photoRepository;
 

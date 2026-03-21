@@ -11,8 +11,8 @@ class PhotoGalleryViewModel extends ChangeNotifier {
   PhotoGalleryViewModel({
     required PhotoRepository photoRepository,
     required CacheRepository cacheRepository,
-  })  : _photoRepository = photoRepository,
-        _cacheRepository = cacheRepository;
+  }) : _photoRepository = photoRepository,
+       _cacheRepository = cacheRepository;
 
   final PhotoRepository _photoRepository;
   final CacheRepository _cacheRepository;
@@ -75,8 +75,7 @@ class PhotoGalleryViewModel extends ChangeNotifier {
     _isSaving = true;
     notifyListeners();
 
-    final selected =
-        _photos.where((p) => _selectedIds.contains(p.id)).toList();
+    final selected = _photos.where((p) => _selectedIds.contains(p.id)).toList();
     await _photoRepository.saveToGalleryFromCache(
       photos: selected,
       blogId: _blogId,

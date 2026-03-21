@@ -19,19 +19,16 @@ void main() {
       id: 'p1',
       url: 'https://example.com/p1.jpg',
       filename: 'p1.jpg',
-
     ),
     const PhotoEntity(
       id: 'p2',
       url: 'https://example.com/p2.jpg',
       filename: 'p2.jpg',
-
     ),
     const PhotoEntity(
       id: 'p3',
       url: 'https://example.com/p3.jpg',
       filename: 'p3.jpg',
-
     ),
   ];
 
@@ -77,13 +74,15 @@ void main() {
       // Arrange — 讓 downloadAllToCache 透過 onProgress 設定 completed/total
       double capturedProgress = 0.0;
 
-      when(() => mockPhotoRepository.downloadAllToCache(
-            photos: any(named: 'photos'),
-            blogId: any(named: 'blogId'),
-            onProgress: any(named: 'onProgress'),
-          )).thenAnswer((invocation) async {
-        final onProgress = invocation.namedArguments[#onProgress]
-            as void Function(int, int)?;
+      when(
+        () => mockPhotoRepository.downloadAllToCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+          onProgress: any(named: 'onProgress'),
+        ),
+      ).thenAnswer((invocation) async {
+        final onProgress =
+            invocation.namedArguments[#onProgress] as void Function(int, int)?;
         onProgress?.call(1, 3);
         capturedProgress = viewModel.progress;
         onProgress?.call(2, 3);
@@ -106,13 +105,15 @@ void main() {
       // Arrange
       final stateSnapshots = <Map<String, dynamic>>[];
 
-      when(() => mockPhotoRepository.downloadAllToCache(
-            photos: any(named: 'photos'),
-            blogId: any(named: 'blogId'),
-            onProgress: any(named: 'onProgress'),
-          )).thenAnswer((invocation) async {
-        final onProgress = invocation.namedArguments[#onProgress]
-            as void Function(int, int)?;
+      when(
+        () => mockPhotoRepository.downloadAllToCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+          onProgress: any(named: 'onProgress'),
+        ),
+      ).thenAnswer((invocation) async {
+        final onProgress =
+            invocation.namedArguments[#onProgress] as void Function(int, int)?;
 
         for (int i = 1; i <= testPhotos.length; i++) {
           onProgress?.call(i, testPhotos.length);
@@ -151,22 +152,26 @@ void main() {
       expect(lastSnapshot['result'], isNotNull);
       expect((lastSnapshot['result'] as DownloadBatchResult).successCount, 3);
 
-      verify(() => mockPhotoRepository.downloadAllToCache(
-            photos: testPhotos,
-            blogId: testBlogId,
-            onProgress: any(named: 'onProgress'),
-          )).called(1);
+      verify(
+        () => mockPhotoRepository.downloadAllToCache(
+          photos: testPhotos,
+          blogId: testBlogId,
+          onProgress: any(named: 'onProgress'),
+        ),
+      ).called(1);
     });
 
     test('下載前 isDownloading 設為 true、result 清為 null', () async {
       // Arrange
       bool isDownloadingBeforeCall = false;
 
-      when(() => mockPhotoRepository.downloadAllToCache(
-            photos: any(named: 'photos'),
-            blogId: any(named: 'blogId'),
-            onProgress: any(named: 'onProgress'),
-          )).thenAnswer((_) async {
+      when(
+        () => mockPhotoRepository.downloadAllToCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+          onProgress: any(named: 'onProgress'),
+        ),
+      ).thenAnswer((_) async {
         isDownloadingBeforeCall = viewModel.isDownloading;
         return successResult;
       });
@@ -187,11 +192,13 @@ void main() {
         errors: ['p3.jpg: Exception: fail'],
       );
 
-      when(() => mockPhotoRepository.downloadAllToCache(
-            photos: any(named: 'photos'),
-            blogId: any(named: 'blogId'),
-            onProgress: any(named: 'onProgress'),
-          )).thenAnswer((_) async => expectedResult);
+      when(
+        () => mockPhotoRepository.downloadAllToCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+          onProgress: any(named: 'onProgress'),
+        ),
+      ).thenAnswer((_) async => expectedResult);
 
       // Act
       await viewModel.startDownload(photos: testPhotos, blogId: testBlogId);
@@ -206,15 +213,19 @@ void main() {
       // Arrange
       final completer = Completer<DownloadBatchResult>();
 
-      when(() => mockPhotoRepository.downloadAllToCache(
-            photos: any(named: 'photos'),
-            blogId: any(named: 'blogId'),
-            onProgress: any(named: 'onProgress'),
-          )).thenAnswer((_) => completer.future);
+      when(
+        () => mockPhotoRepository.downloadAllToCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+          onProgress: any(named: 'onProgress'),
+        ),
+      ).thenAnswer((_) => completer.future);
 
       // Act — 啟動第一次下載（不完成）
-      final firstCall =
-          viewModel.startDownload(photos: testPhotos, blogId: testBlogId);
+      final firstCall = viewModel.startDownload(
+        photos: testPhotos,
+        blogId: testBlogId,
+      );
 
       // 下載中嘗試第二次呼叫
       await viewModel.startDownload(photos: testPhotos, blogId: testBlogId);
@@ -224,20 +235,24 @@ void main() {
       await firstCall;
 
       // Assert — downloadAllToCache 只被呼叫一次
-      verify(() => mockPhotoRepository.downloadAllToCache(
-            photos: any(named: 'photos'),
-            blogId: any(named: 'blogId'),
-            onProgress: any(named: 'onProgress'),
-          )).called(1);
+      verify(
+        () => mockPhotoRepository.downloadAllToCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+          onProgress: any(named: 'onProgress'),
+        ),
+      ).called(1);
     });
 
     test('total 設為照片清單長度', () async {
       // Arrange
-      when(() => mockPhotoRepository.downloadAllToCache(
-            photos: any(named: 'photos'),
-            blogId: any(named: 'blogId'),
-            onProgress: any(named: 'onProgress'),
-          )).thenAnswer((_) async => successResult);
+      when(
+        () => mockPhotoRepository.downloadAllToCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+          onProgress: any(named: 'onProgress'),
+        ),
+      ).thenAnswer((_) async => successResult);
 
       int? capturedTotal;
       viewModel.addListener(() {
@@ -257,13 +272,15 @@ void main() {
       // Arrange
       int notifyCount = 0;
 
-      when(() => mockPhotoRepository.downloadAllToCache(
-            photos: any(named: 'photos'),
-            blogId: any(named: 'blogId'),
-            onProgress: any(named: 'onProgress'),
-          )).thenAnswer((invocation) async {
-        final onProgress = invocation.namedArguments[#onProgress]
-            as void Function(int, int)?;
+      when(
+        () => mockPhotoRepository.downloadAllToCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+          onProgress: any(named: 'onProgress'),
+        ),
+      ).thenAnswer((invocation) async {
+        final onProgress =
+            invocation.namedArguments[#onProgress] as void Function(int, int)?;
         onProgress?.call(1, 3);
         onProgress?.call(2, 3);
         onProgress?.call(3, 3);

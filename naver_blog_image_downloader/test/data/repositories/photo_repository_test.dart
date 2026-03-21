@@ -75,9 +75,7 @@ void main() {
     const testBlogUrlWithPath = 'https://blog.naver.com/test/12345';
     const testJobId = 'job-uuid-123';
 
-    JobStatusResponse completedStatus({
-      List<String> imageUrls = const [],
-    }) =>
+    JobStatusResponse completedStatus({List<String> imageUrls = const []}) =>
         JobStatusResponse(
           jobId: testJobId,
           status: JobStatus.completed,
@@ -92,21 +90,27 @@ void main() {
         );
 
     void setupSubmitJob() {
-      when(() => mockCacheRepository.blogId(testBlogUrlWithPath))
-          .thenReturn(testBlogId);
-      when(() => mockApiService.submitJob(testBlogUrlWithPath))
-          .thenAnswer((_) async => testJobId);
+      when(
+        () => mockCacheRepository.blogId(testBlogUrlWithPath),
+      ).thenReturn(testBlogId);
+      when(
+        () => mockApiService.submitJob(testBlogUrlWithPath),
+      ).thenAnswer((_) async => testJobId);
     }
 
     test('任務完成時回傳照片列表', () async {
       setupSubmitJob();
-      when(() => mockApiService.checkJobStatus(testJobId))
-          .thenAnswer((_) async => completedStatus(imageUrls: [
-                'https://example.com/photo1.jpg',
-                'https://example.com/photo2.jpg',
-              ]));
-      when(() => mockCacheRepository.isBlogFullyCached(testBlogId, any()))
-          .thenAnswer((_) async => false);
+      when(() => mockApiService.checkJobStatus(testJobId)).thenAnswer(
+        (_) async => completedStatus(
+          imageUrls: [
+            'https://example.com/photo1.jpg',
+            'https://example.com/photo2.jpg',
+          ],
+        ),
+      );
+      when(
+        () => mockCacheRepository.isBlogFullyCached(testBlogId, any()),
+      ).thenAnswer((_) async => false);
 
       final result = await repository.fetchPhotos(testBlogUrlWithPath);
 
@@ -117,10 +121,12 @@ void main() {
     });
 
     test('submitJob 失敗時回傳 Result.error', () async {
-      when(() => mockCacheRepository.blogId(testBlogUrlWithPath))
-          .thenReturn(testBlogId);
-      when(() => mockApiService.submitJob(testBlogUrlWithPath))
-          .thenThrow(const ApiServiceException('伺服器錯誤（500）', statusCode: 500));
+      when(
+        () => mockCacheRepository.blogId(testBlogUrlWithPath),
+      ).thenReturn(testBlogId);
+      when(
+        () => mockApiService.submitJob(testBlogUrlWithPath),
+      ).thenThrow(const ApiServiceException('伺服器錯誤（500）', statusCode: 500));
 
       final result = await repository.fetchPhotos(testBlogUrlWithPath);
 
@@ -129,19 +135,20 @@ void main() {
 
     test('任務失敗時回傳 Result.error 含錯誤訊息', () async {
       setupSubmitJob();
-      when(() => mockApiService.checkJobStatus(testJobId))
-          .thenAnswer((_) async => JobStatusResponse(
-                jobId: testJobId,
-                status: JobStatus.failed,
-                result: PhotoDownloadResponse(
-                  totalImages: 0,
-                  successfulDownloads: 0,
-                  failureDownloads: 1,
-                  imageUrls: const [],
-                  errors: const ['等待圖片元素超時'],
-                  elapsedTime: 10.0,
-                ),
-              ));
+      when(() => mockApiService.checkJobStatus(testJobId)).thenAnswer(
+        (_) async => JobStatusResponse(
+          jobId: testJobId,
+          status: JobStatus.failed,
+          result: PhotoDownloadResponse(
+            totalImages: 0,
+            successfulDownloads: 0,
+            failureDownloads: 1,
+            imageUrls: const [],
+            errors: const ['等待圖片元素超時'],
+            elapsedTime: 10.0,
+          ),
+        ),
+      );
 
       final result = await repository.fetchPhotos(testBlogUrlWithPath);
 

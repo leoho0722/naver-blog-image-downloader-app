@@ -12,8 +12,8 @@ class PhotoDetailViewModel extends ChangeNotifier {
   PhotoDetailViewModel({
     required CacheRepository cacheRepository,
     required GalleryService galleryService,
-  })  : _cacheRepository = cacheRepository,
-        _galleryService = galleryService;
+  }) : _cacheRepository = cacheRepository,
+       _galleryService = galleryService;
 
   final CacheRepository _cacheRepository;
   final GalleryService _galleryService;

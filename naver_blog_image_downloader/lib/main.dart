@@ -74,8 +74,11 @@ Future<void> main() async {
           ),
           update: (_, repo, cache, vm) => vm!,
         ),
-        ChangeNotifierProxyProvider2<CacheRepository, GalleryService,
-            PhotoDetailViewModel>(
+        ChangeNotifierProxyProvider2<
+          CacheRepository,
+          GalleryService,
+          PhotoDetailViewModel
+        >(
           create: (context) => PhotoDetailViewModel(
             cacheRepository: context.read<CacheRepository>(),
             galleryService: context.read<GalleryService>(),

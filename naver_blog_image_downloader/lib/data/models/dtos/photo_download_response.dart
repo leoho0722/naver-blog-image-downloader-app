@@ -59,11 +59,7 @@ class PhotoDownloadResponse {
           ? p.basename(uri.path)
           : 'image_${entry.key}.jpg';
 
-      return PhotoEntity(
-        id: '${url.hashCode}',
-        url: url,
-        filename: filename,
-      );
+      return PhotoEntity(id: '${url.hashCode}', url: url, filename: filename);
     }).toList();
   }
 }

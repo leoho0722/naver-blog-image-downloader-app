@@ -15,21 +15,16 @@ import '../ui/settings/widgets/settings_view.dart';
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const BlogInputView(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const BlogInputView()),
     GoRoute(
       path: '/gallery/:blogId',
-      builder: (context, state) => PhotoGalleryView(
-        blogId: state.pathParameters['blogId']!,
-      ),
+      builder: (context, state) =>
+          PhotoGalleryView(blogId: state.pathParameters['blogId']!),
     ),
     GoRoute(
       path: '/detail/:photoId',
-      builder: (context, state) => PhotoDetailView(
-        photoId: state.pathParameters['photoId']!,
-      ),
+      builder: (context, state) =>
+          PhotoDetailView(photoId: state.pathParameters['photoId']!),
     ),
     GoRoute(
       path: '/settings',

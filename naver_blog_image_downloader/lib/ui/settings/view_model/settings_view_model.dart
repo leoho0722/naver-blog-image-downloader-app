@@ -6,7 +6,7 @@ import '../../../data/repositories/cache_repository.dart';
 /// 設定頁面的 ViewModel，負責快取資訊查詢與清除操作。
 class SettingsViewModel extends ChangeNotifier {
   SettingsViewModel({required CacheRepository cacheRepository})
-      : _cacheRepository = cacheRepository;
+    : _cacheRepository = cacheRepository;
 
   final CacheRepository _cacheRepository;
 
@@ -45,11 +45,5 @@ class SettingsViewModel extends ChangeNotifier {
     _cacheSizeBytes = 0;
     _cachedBlogs = [];
     notifyListeners();
-  }
-
-  /// 清除指定 Blog 的快取檔案與 metadata，完成後重新載入快取資訊。
-  Future<void> clearBlogCache(String blogId) async {
-    await _cacheRepository.clearBlog(blogId);
-    await loadCacheInfo();
   }
 }

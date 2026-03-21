@@ -79,8 +79,9 @@ void main() {
     test('成功取得照片', () async {
       viewModel.onUrlChanged(testBlogUrl);
 
-      when(() => mockPhotoRepository.fetchPhotos(testBlogUrl))
-          .thenAnswer((_) async => Result.ok(testFetchResult));
+      when(
+        () => mockPhotoRepository.fetchPhotos(testBlogUrl),
+      ).thenAnswer((_) async => Result.ok(testFetchResult));
 
       await viewModel.fetchPhotos();
 
@@ -93,7 +94,9 @@ void main() {
       viewModel.onUrlChanged(testBlogUrl);
 
       bool wasLoadingDuringFetch = false;
-      when(() => mockPhotoRepository.fetchPhotos(testBlogUrl)).thenAnswer((_) async {
+      when(() => mockPhotoRepository.fetchPhotos(testBlogUrl)).thenAnswer((
+        _,
+      ) async {
         wasLoadingDuringFetch = viewModel.isLoading;
         return Result.ok(testFetchResult);
       });
@@ -108,8 +111,9 @@ void main() {
       viewModel.onUrlChanged(testBlogUrl);
 
       final exception = Exception('Network error');
-      when(() => mockPhotoRepository.fetchPhotos(testBlogUrl))
-          .thenAnswer((_) async => Result.error(exception));
+      when(
+        () => mockPhotoRepository.fetchPhotos(testBlogUrl),
+      ).thenAnswer((_) async => Result.error(exception));
 
       await viewModel.fetchPhotos();
 
@@ -118,26 +122,30 @@ void main() {
       expect(viewModel.fetchResult, isNull);
     });
 
-    test('isLoading 為 true 時不重複呼叫 repository（duplicate fetch prevention）', () async {
-      viewModel.onUrlChanged(testBlogUrl);
+    test(
+      'isLoading 為 true 時不重複呼叫 repository（duplicate fetch prevention）',
+      () async {
+        viewModel.onUrlChanged(testBlogUrl);
 
-      final completer = Future<Result<FetchResult>>.delayed(
-        const Duration(milliseconds: 100),
-        () => Result.ok(testFetchResult),
-      );
+        final completer = Future<Result<FetchResult>>.delayed(
+          const Duration(milliseconds: 100),
+          () => Result.ok(testFetchResult),
+        );
 
-      when(() => mockPhotoRepository.fetchPhotos(testBlogUrl))
-          .thenAnswer((_) => completer);
+        when(
+          () => mockPhotoRepository.fetchPhotos(testBlogUrl),
+        ).thenAnswer((_) => completer);
 
-      // 同時觸發兩次 fetchPhotos
-      final future1 = viewModel.fetchPhotos();
-      final future2 = viewModel.fetchPhotos(); // 應該立即回傳
+        // 同時觸發兩次 fetchPhotos
+        final future1 = viewModel.fetchPhotos();
+        final future2 = viewModel.fetchPhotos(); // 應該立即回傳
 
-      await Future.wait([future1, future2]);
+        await Future.wait([future1, future2]);
 
-      // repository 只被呼叫一次
-      verify(() => mockPhotoRepository.fetchPhotos(testBlogUrl)).called(1);
-    });
+        // repository 只被呼叫一次
+        verify(() => mockPhotoRepository.fetchPhotos(testBlogUrl)).called(1);
+      },
+    );
 
     test('通知 listeners 在 loading 開始和結束時各一次（加上 URL 變更）', () async {
       final notifications = <bool>[];
@@ -147,15 +155,16 @@ void main() {
 
       viewModel.onUrlChanged(testBlogUrl);
 
-      when(() => mockPhotoRepository.fetchPhotos(testBlogUrl))
-          .thenAnswer((_) async => Result.ok(testFetchResult));
+      when(
+        () => mockPhotoRepository.fetchPhotos(testBlogUrl),
+      ).thenAnswer((_) async => Result.ok(testFetchResult));
 
       await viewModel.fetchPhotos();
 
       // onUrlChanged: 1 次, fetchPhotos: loading=true 1 次 + 完成 1 次 = 共 3 次
       expect(notifications.length, 3);
       expect(notifications[0], isFalse); // onUrlChanged 時 isLoading 仍為 false
-      expect(notifications[1], isTrue);  // fetchPhotos 開始 loading
+      expect(notifications[1], isTrue); // fetchPhotos 開始 loading
       expect(notifications[2], isFalse); // fetchPhotos 完成
     });
   });
@@ -164,8 +173,9 @@ void main() {
     test('reset 清除 fetchResult 和 errorMessage 並通知 listeners', () async {
       // 先取得一個成功結果
       viewModel.onUrlChanged(testBlogUrl);
-      when(() => mockPhotoRepository.fetchPhotos(testBlogUrl))
-          .thenAnswer((_) async => Result.ok(testFetchResult));
+      when(
+        () => mockPhotoRepository.fetchPhotos(testBlogUrl),
+      ).thenAnswer((_) async => Result.ok(testFetchResult));
       await viewModel.fetchPhotos();
       expect(viewModel.fetchResult, isNotNull);
 
@@ -181,8 +191,9 @@ void main() {
 
     test('reset 後仍可重新 fetchPhotos', () async {
       viewModel.onUrlChanged(testBlogUrl);
-      when(() => mockPhotoRepository.fetchPhotos(testBlogUrl))
-          .thenAnswer((_) async => Result.ok(testFetchResult));
+      when(
+        () => mockPhotoRepository.fetchPhotos(testBlogUrl),
+      ).thenAnswer((_) async => Result.ok(testFetchResult));
 
       await viewModel.fetchPhotos();
       viewModel.reset();
@@ -196,8 +207,9 @@ void main() {
     test('reset 清除 errorMessage', () async {
       viewModel.onUrlChanged(testBlogUrl);
       final exception = Exception('Some error');
-      when(() => mockPhotoRepository.fetchPhotos(testBlogUrl))
-          .thenAnswer((_) async => Result.error(exception));
+      when(
+        () => mockPhotoRepository.fetchPhotos(testBlogUrl),
+      ).thenAnswer((_) async => Result.error(exception));
 
       await viewModel.fetchPhotos();
       expect(viewModel.errorMessage, isNotNull);

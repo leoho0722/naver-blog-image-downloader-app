@@ -6,13 +6,13 @@
 class PhotoDownloadRequest {
   /// 建立下載請求。
   const PhotoDownloadRequest.download({required this.blogUrl})
-      : action = 'download',
-        jobId = null;
+    : action = 'download',
+      jobId = null;
 
   /// 建立狀態查詢請求。
   const PhotoDownloadRequest.status({required String this.jobId})
-      : action = 'status',
-        blogUrl = null;
+    : action = 'status',
+      blogUrl = null;
 
   /// 操作類型：`download` 或 `status`。
   final String action;

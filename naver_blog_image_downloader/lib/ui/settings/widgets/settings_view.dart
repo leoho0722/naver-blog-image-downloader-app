@@ -1,9 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../view_model/settings_view_model.dart';
 
-/// 設定頁面，提供快取管理介面，包含快取大小顯示、Blog 列表與清除功能。
+/// 設定頁面，提供快取管理介面與版本資訊。
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
 
@@ -13,15 +15,21 @@ class SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<SettingsView> {
   bool _loaded = false;
+  String _version = '';
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_loaded) {
       _loaded = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        context.read<SettingsViewModel>().loadCacheInfo();
+        final info = await PackageInfo.fromPlatform();
         if (mounted) {
-          context.read<SettingsViewModel>().loadCacheInfo();
+          setState(() {
+            _version = '${info.version} (${info.buildNumber})';
+          });
         }
       });
     }
@@ -32,6 +40,9 @@ class _SettingsViewState extends State<SettingsView> {
     final viewModel = context.watch<SettingsViewModel>();
 
     return Scaffold(
+      backgroundColor: CupertinoColors.systemGroupedBackground.resolveFrom(
+        context,
+      ),
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('設定'),
@@ -44,47 +55,68 @@ class _SettingsViewState extends State<SettingsView> {
       ),
       body: viewModel.isClearing
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          : ListView(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    '快取大小：${viewModel.formattedCacheSize}',
-                    style: Theme.of(context).textTheme.titleMedium,
+                CupertinoListSection.insetGrouped(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  header: const Padding(
+                    padding: EdgeInsets.only(left: 20, top: 20),
+                    child: Text('快取'),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: FilledButton.tonal(
-                    onPressed: viewModel.cachedBlogs.isEmpty
-                        ? null
-                        : () => _showClearAllDialog(context, viewModel),
-                    child: const Text('清除全部快取'),
-                  ),
-                ),
-                const Divider(),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: viewModel.cachedBlogs.length,
-                    itemBuilder: (context, index) {
-                      final blog = viewModel.cachedBlogs[index];
-                      return ListTile(
-                        title: Text(blog.blogUrl),
-                        subtitle: Text('${blog.photoCount} 張照片'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          tooltip: '清除此 Blog 快取',
-                          onPressed: () => _showClearBlogDialog(
-                            context,
-                            viewModel,
-                            blog.blogId,
-                            blog.blogUrl,
+                  children: [
+                    CupertinoListTile(
+                      title: const Text('快取大小', style: TextStyle(fontSize: 18)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            viewModel.formattedCacheSize,
+                            style: const TextStyle(fontSize: 18),
                           ),
-                        ),
-                      );
-                    },
+                          if (viewModel.cachedBlogs.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () =>
+                                  _showClearAllDialog(context, viewModel),
+                              child: Icon(
+                                Icons.cleaning_services,
+                                size: 20,
+                                color: CupertinoColors.systemRed.resolveFrom(
+                                  context,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      padding: const EdgeInsetsDirectional.symmetric(
+                        horizontal: 20,
+                        vertical: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                CupertinoListSection.insetGrouped(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  header: const Padding(
+                    padding: EdgeInsets.only(left: 20),
+                    child: Text('關於'),
                   ),
+                  children: [
+                    CupertinoListTile(
+                      title: const Text('版本', style: TextStyle(fontSize: 18)),
+                      additionalInfo: Text(
+                        _version,
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                      padding: const EdgeInsetsDirectional.symmetric(
+                        horizontal: 20,
+                        vertical: 11,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -114,34 +146,6 @@ class _SettingsViewState extends State<SettingsView> {
     );
     if (confirmed == true) {
       await viewModel.clearAllCache();
-    }
-  }
-
-  Future<void> _showClearBlogDialog(
-    BuildContext context,
-    SettingsViewModel viewModel,
-    String blogId,
-    String blogUrl,
-  ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('清除 Blog 快取'),
-        content: Text('確定要清除「$blogUrl」的快取照片嗎？此操作無法復原。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('確認'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) {
-      await viewModel.clearBlogCache(blogId);
     }
   }
 }
