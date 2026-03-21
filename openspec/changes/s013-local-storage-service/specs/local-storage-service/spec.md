@@ -5,7 +5,7 @@
 The file `lib/data/services/local_storage_service.dart` SHALL define a `LocalStorageService` class that accepts a `SharedPreferences` instance via its constructor.
 
 - `LocalStorageService` SHALL store the injected `SharedPreferences` as a private final field.
-- The constructor SHALL require a single positional parameter of type `SharedPreferences`.
+- The constructor SHALL require a named parameter `prefs` of type `SharedPreferences` (i.e., `required SharedPreferences prefs`).
 
 #### Scenario: LocalStorageService is instantiated with SharedPreferences
 
