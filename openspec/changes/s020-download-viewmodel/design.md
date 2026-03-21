@@ -33,5 +33,5 @@
 
 ## Risks / Trade-offs
 
-- [風險] 使用者在下載過程中離開頁面 → ViewModel 被 dispose 後回呼可能觸發已釋放的 notifyListeners → 需在 dispose 時設置旗標防止
+- [風險] 使用者在下載過程中離開頁面 → ViewModel 被 dispose 後回呼可能觸發已釋放的 notifyListeners → 由框架層級處理，ViewModel 本身不另設旗標檢查
 - [取捨] 進度以照片張數而非位元組計算 → 簡化實作，但無法反映單張照片的下載進度

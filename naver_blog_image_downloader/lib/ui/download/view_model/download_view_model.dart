@@ -1,0 +1,76 @@
+import 'package:flutter/foundation.dart';
+
+import '../../../data/models/download_batch_result.dart';
+import '../../../data/models/photo_entity.dart';
+import '../../../data/repositories/photo_repository.dart';
+
+export '../../../data/models/download_batch_result.dart';
+
+/// 下載頁面的 ViewModel，負責管理批次照片下載進度與結果。
+class DownloadViewModel extends ChangeNotifier {
+  /// 建立 [DownloadViewModel]，需注入 [PhotoRepository] 以執行下載操作。
+  DownloadViewModel({required PhotoRepository photoRepository})
+    : _photoRepository = photoRepository;
+
+  final PhotoRepository _photoRepository;
+
+  int _completed = 0;
+  int _total = 0;
+  bool _isDownloading = false;
+  DownloadBatchResult? _result;
+
+  /// 已完成下載的照片數量。
+  int get completed => _completed;
+
+  /// 需下載的照片總數。
+  int get total => _total;
+
+  /// 是否正在下載中。
+  bool get isDownloading => _isDownloading;
+
+  /// 批次下載結果，下載完成後可檢查失敗項目。
+  DownloadBatchResult? get result => _result;
+
+  /// 下載進度比例（0.0 ~ 1.0），用於進度條顯示。
+  double get progress => _total > 0 ? _completed / _total : 0.0;
+
+  /// 開始批次下載指定的照片至本機快取。
+  ///
+  /// [photos] 為要下載的照片清單，[blogId] 用於建立快取目錄結構。
+  Future<void> startDownload({
+    required List<PhotoEntity> photos,
+    required String blogId,
+  }) async {
+    if (_isDownloading) return;
+
+    _isDownloading = true;
+    _completed = 0;
+    _total = photos.length;
+    _result = null;
+    notifyListeners();
+
+    debugPrint('[DownloadVM] 開始下載 ${photos.length} 張照片 (blogId: $blogId)');
+    for (final photo in photos) {
+      debugPrint('[DownloadVM]   - ${photo.filename}: ${photo.url}');
+    }
+
+    _result = await _photoRepository.downloadAllToCache(
+      photos: photos,
+      blogId: blogId,
+      onProgress: (completed, total) {
+        _completed = completed;
+        _total = total;
+        debugPrint('[DownloadVM] 進度: $completed/$total');
+        notifyListeners();
+      },
+    );
+
+    debugPrint(
+      '[DownloadVM] 下載完成 — 成功: ${_result!.successCount}, '
+      '失敗: ${_result!.failureCount}, 跳過: ${_result!.skippedCount}',
+    );
+
+    _isDownloading = false;
+    notifyListeners();
+  }
+}
