@@ -41,27 +41,26 @@ The `formattedCacheSize` getter SHALL convert `cacheSizeBytes` to a human-readab
 
 ### Requirement: Clear all cache
 
-The `clearAllCache` method SHALL clear all cached files and metadata via `CacheRepository.clearAll()`, then reload cache info.
+The `clearAllCache` method SHALL clear all cached files and metadata via `CacheRepository.clearAll()`, then directly reset `cacheSizeBytes` to `0`, `cachedBlogs` to an empty list, and `formattedCacheSize` to its zero-state value. It SHALL NOT call `loadCacheInfo()`.
 
 #### Scenario: Clear all cache successfully
 
 - **WHEN** `clearAllCache()` is called
 - **THEN** `isClearing` SHALL be set to `true` before the clear operation
 - **AND** `CacheRepository.clearAll()` SHALL be called
-- **AND** `loadCacheInfo()` SHALL be called after clearing
+- **AND** `cacheSizeBytes` SHALL be reset to `0`
+- **AND** `cachedBlogs` SHALL be reset to an empty list
 - **AND** `isClearing` SHALL be set to `false` after the operation completes
 - **AND** `notifyListeners` SHALL be called
 
 ### Requirement: Clear blog cache
 
-The `clearBlogCache` method SHALL clear the cached files and metadata for a specific blog via `CacheRepository.clearBlog(blogId)`, then reload cache info.
+The `clearBlogCache` method SHALL clear the cached files and metadata for a specific blog via `CacheRepository.clearBlog(blogId)`, then reload cache info. It SHALL NOT set the `isClearing` flag.
 
 #### Scenario: Clear specific blog cache
 
 - **GIVEN** a valid `blogId`
 - **WHEN** `clearBlogCache(blogId)` is called
-- **THEN** `isClearing` SHALL be set to `true` before the clear operation
-- **AND** `CacheRepository.clearBlog(blogId)` SHALL be called
+- **THEN** `CacheRepository.clearBlog(blogId)` SHALL be called
 - **AND** `loadCacheInfo()` SHALL be called after clearing
-- **AND** `isClearing` SHALL be set to `false` after the operation completes
 - **AND** `notifyListeners` SHALL be called
