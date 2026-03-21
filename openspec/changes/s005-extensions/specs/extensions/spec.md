@@ -48,7 +48,7 @@ The `StringExtension` extension SHALL provide a `sanitizeFileName` method that p
 
 The file `lib/utils/extensions.dart` SHALL define an `IntExtension` extension on `int` that provides a `toFileSizeString` method.
 
-- `toFileSizeString` SHALL convert byte counts to human-readable file size strings (e.g., "1.5 MB", "500 KB").
+- `toFileSizeString` SHALL convert byte counts to human-readable file size strings with two decimal places (e.g., "1.50 MB", "500.00 KB").
 - `toFileSizeString` SHALL use appropriate units: B, KB, MB, GB.
 
 #### Scenario: Bytes displayed correctly
@@ -59,4 +59,4 @@ The file `lib/utils/extensions.dart` SHALL define an `IntExtension` extension on
 #### Scenario: Megabytes displayed correctly
 
 - **WHEN** `toFileSizeString` is called on an integer representing megabytes (e.g., 1572864)
-- **THEN** it SHALL return a string with the "MB" unit (e.g., "1.5 MB")
+- **THEN** it SHALL return a string with the "MB" unit (e.g., "1.50 MB")
