@@ -82,3 +82,240 @@ then a second `PhotoRepository.downloadAllToCache` call SHALL NOT be initiated.
 Given a DownloadViewModel that has been disposed,
 when a progress callback fires,
 then `notifyListeners()` SHALL NOT be called.
+
+## Requirements
+
+### Requirement: Download state properties
+
+The `DownloadViewModel` class SHALL extend `ChangeNotifier` and provide a constructor that accepts a `PhotoRepository` instance via the `required` named parameter `photoRepository`.
+
+The ViewModel SHALL expose the following read-only properties:
+- `completed` (int) — the number of photos that have finished downloading
+- `total` (int) — the total number of photos to download
+- `isDownloading` (bool) — whether a download operation is in progress
+- `result` (DownloadBatchResult?) — the batch download result, or null
+- `progress` (double) — the download progress ratio from 0.0 to 1.0
+
+#### Scenario: Initial state
+
+- **WHEN** a new `DownloadViewModel` is created
+- **THEN** `completed` SHALL be `0`
+- **AND** `total` SHALL be `0`
+- **AND** `isDownloading` SHALL be `false`
+- **AND** `result` SHALL be `null`
+- **AND** `progress` SHALL be `0.0`
+
+
+<!-- @trace
+source: s020-download-viewmodel
+updated: 2026-03-21
+code:
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
+  - naver_blog_image_downloader/lib/routing/app_router.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_card.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_request.dart
+  - Naver Blog 照片下載器-Flutter-系統架構設計書-完整版.md
+  - naver_blog_image_downloader/ios/Podfile.lock
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/job_status_response.dart
+  - naver_blog_image_downloader/ios/Runner.xcodeproj/project.pbxproj
+  - naver_blog_image_downloader/ios/Flutter/Debug.xcconfig
+  - naver_blog_image_downloader/lib/config/theme.dart
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/ios/Runner.xcworkspace/contents.xcworkspacedata
+  - naver_blog_image_downloader/lib/data/models/blog_cache_metadata.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/lib/config/app_config.dart
+  - naver_blog_image_downloader/lib/utils/constants.dart
+  - naver_blog_image_downloader/lib/ui/core/result.dart
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/ios/Flutter/Release.xcconfig
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/devtools_options.yaml
+  - naver_blog_image_downloader/lib/data/services/api_service.dart
+  - naver_blog_image_downloader/lib/data/services/file_download_service.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/ios/Podfile
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/amplifyconfiguration.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/utils/extensions.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/data/models/download_batch_result.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/lib/data/models/photo_entity.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/ios/Runner/Info.plist
+  - naver_blog_image_downloader/lib/app.dart
+tests:
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/data/services/api_service_test.dart
+  - naver_blog_image_downloader/test/data/repositories/cache_repository_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+-->
+
+---
+### Requirement: Progress calculation
+
+The `progress` getter SHALL compute the download progress as `completed / total`.
+
+#### Scenario: Progress with valid total
+
+- **GIVEN** `total` is greater than 0
+- **WHEN** `progress` is accessed
+- **THEN** the value SHALL equal `completed / total` as a double
+
+#### Scenario: Progress with zero total
+
+- **GIVEN** `total` is `0`
+- **WHEN** `progress` is accessed
+- **THEN** the value SHALL be `0.0`
+
+
+<!-- @trace
+source: s020-download-viewmodel
+updated: 2026-03-21
+code:
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
+  - naver_blog_image_downloader/lib/routing/app_router.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_card.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_request.dart
+  - Naver Blog 照片下載器-Flutter-系統架構設計書-完整版.md
+  - naver_blog_image_downloader/ios/Podfile.lock
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/job_status_response.dart
+  - naver_blog_image_downloader/ios/Runner.xcodeproj/project.pbxproj
+  - naver_blog_image_downloader/ios/Flutter/Debug.xcconfig
+  - naver_blog_image_downloader/lib/config/theme.dart
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/ios/Runner.xcworkspace/contents.xcworkspacedata
+  - naver_blog_image_downloader/lib/data/models/blog_cache_metadata.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/lib/config/app_config.dart
+  - naver_blog_image_downloader/lib/utils/constants.dart
+  - naver_blog_image_downloader/lib/ui/core/result.dart
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/ios/Flutter/Release.xcconfig
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/devtools_options.yaml
+  - naver_blog_image_downloader/lib/data/services/api_service.dart
+  - naver_blog_image_downloader/lib/data/services/file_download_service.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/ios/Podfile
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/amplifyconfiguration.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/utils/extensions.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/data/models/download_batch_result.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/lib/data/models/photo_entity.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/ios/Runner/Info.plist
+  - naver_blog_image_downloader/lib/app.dart
+tests:
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/data/services/api_service_test.dart
+  - naver_blog_image_downloader/test/data/repositories/cache_repository_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+-->
+
+---
+### Requirement: Start download with progress tracking
+
+The `startDownload` method SHALL accept `required List<PhotoEntity> photos` and `required String blogId` parameters, set the downloading state, invoke `PhotoRepository.downloadAllToCache`, track progress via callback, and store the result.
+
+#### Scenario: Successful batch download
+
+- **GIVEN** a list of `PhotoEntity` objects and a `blogId`
+- **WHEN** `startDownload` is called
+- **THEN** `isDownloading` SHALL be set to `true` before the repository call
+- **AND** `total` SHALL be set to the length of the photos list
+- **AND** `completed` SHALL be updated incrementally as each photo completes
+- **AND** `notifyListeners` SHALL be called on each progress update
+- **AND** after the repository call completes, `result` SHALL hold the returned `DownloadBatchResult`
+- **AND** `isDownloading` SHALL be set to `false`
+
+#### Scenario: Duplicate download prevention
+
+- **GIVEN** `isDownloading` is `true`
+- **WHEN** `startDownload` is called again
+- **THEN** the method SHALL return immediately without starting another download
+
+<!-- @trace
+source: s020-download-viewmodel
+updated: 2026-03-21
+code:
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
+  - naver_blog_image_downloader/lib/routing/app_router.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_card.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_request.dart
+  - Naver Blog 照片下載器-Flutter-系統架構設計書-完整版.md
+  - naver_blog_image_downloader/ios/Podfile.lock
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/job_status_response.dart
+  - naver_blog_image_downloader/ios/Runner.xcodeproj/project.pbxproj
+  - naver_blog_image_downloader/ios/Flutter/Debug.xcconfig
+  - naver_blog_image_downloader/lib/config/theme.dart
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/ios/Runner.xcworkspace/contents.xcworkspacedata
+  - naver_blog_image_downloader/lib/data/models/blog_cache_metadata.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/lib/config/app_config.dart
+  - naver_blog_image_downloader/lib/utils/constants.dart
+  - naver_blog_image_downloader/lib/ui/core/result.dart
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/ios/Flutter/Release.xcconfig
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/devtools_options.yaml
+  - naver_blog_image_downloader/lib/data/services/api_service.dart
+  - naver_blog_image_downloader/lib/data/services/file_download_service.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/ios/Podfile
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/amplifyconfiguration.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/utils/extensions.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/data/models/download_batch_result.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/lib/data/models/photo_entity.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/ios/Runner/Info.plist
+  - naver_blog_image_downloader/lib/app.dart
+tests:
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/data/services/api_service_test.dart
+  - naver_blog_image_downloader/test/data/repositories/cache_repository_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+-->

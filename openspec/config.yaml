@@ -6,6 +6,8 @@ context: |
   Git Commit 風格：使用正體中文撰寫 conventional commits 風格的 commit message
   Domain: Mobile app development for a photo gallery application
 locale: tw
+parallel_tasks: true
+audit: true
 
 # Project context (optional)
 # This is shown to AI when creating artifacts.
