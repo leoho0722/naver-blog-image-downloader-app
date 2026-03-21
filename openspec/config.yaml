@@ -5,6 +5,17 @@ context: |
   開發風格：遵循 Dart 與 Flutter 官方 Agent Skills，並使用 MVVM 設計模式
   Git Commit 風格：使用正體中文撰寫 conventional commits 風格的 commit message
   Domain: Mobile app development for a photo gallery application
+
+rules:
+  design:
+    - 請使用正體中文進行撰寫
+  proposal:
+    - 請使用正體中文進行撰寫
+  specs:
+    - 請使用正體中文進行撰寫
+    - 使用 Given/When/Then 格式
+  tasks:
+    - 請使用正體中文進行撰寫
 locale: tw
 parallel_tasks: true
 audit: true
