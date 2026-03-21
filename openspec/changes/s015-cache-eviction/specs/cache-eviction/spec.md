@@ -33,7 +33,7 @@ The `CacheRepository.totalCacheSize()` method SHALL return the total size in byt
 
 The `CacheRepository.evictIfNeeded()` method SHALL check whether the total cache size exceeds the soft limit of 300MB (`300 * 1024 * 1024` bytes). If exceeded, it SHALL evict cached blogs in the following priority order:
 
-1. Blogs marked with `isSavedToGallery == true`, ordered by `createdAt` ascending (oldest first)
+1. Blogs marked with `isSavedToGallery == true`, ordered by `downloadedAt` ascending (oldest first)
 2. Eviction SHALL stop once the total cache size falls below the soft limit or all eligible blogs have been evicted
 
 #### Scenario: Cache below soft limit
@@ -46,7 +46,7 @@ The `CacheRepository.evictIfNeeded()` method SHALL check whether the total cache
 - **GIVEN** total cache size exceeds 300MB
 - **AND** multiple blogs are marked as saved to gallery
 - **WHEN** `evictIfNeeded` is called
-- **THEN** blogs marked `isSavedToGallery == true` SHALL be evicted in ascending `createdAt` order
+- **THEN** blogs marked `isSavedToGallery == true` SHALL be evicted in ascending `downloadedAt` order
 - **AND** eviction SHALL stop once total size falls below 300MB
 
 #### Scenario: Unsaved blogs preserved
