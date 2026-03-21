@@ -28,7 +28,7 @@
 | go_router | ^14.8.0 | 導航 |
 | dio | ^5.7.0 | HTTP 串流下載 |
 | http | ^1.3.0 | 輕量 HTTP API 呼叫 |
-| gal | ^2.3.0 | 相簿存取 |
+| image_gallery_saver | ^2.0.3 | 相簿存取 |
 | crypto | ^3.0.6 | SHA-256 hash |
 | path_provider | ^2.1.5 | 臨時/快取目錄 |
 | path | ^1.9.1 | 路徑操作 |

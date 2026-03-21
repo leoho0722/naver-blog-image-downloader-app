@@ -2,12 +2,12 @@
 
 ### Requirement: Runtime dependencies declared
 
-The `pubspec.yaml` file SHALL declare the following runtime dependencies: `provider`, `go_router`, `dio`, `http`, `gal`, `crypto`, `path_provider`, `path`, `shared_preferences`.
+The `pubspec.yaml` file SHALL declare the following runtime dependencies: `provider`, `go_router`, `dio`, `image_gallery_saver`, `crypto`, `path_provider`, `path`, `shared_preferences`, `amplify_flutter`, `amplify_api`.
 
 #### Scenario: All runtime packages present
 
 - **WHEN** the pubspec.yaml is inspected
-- **THEN** all nine runtime dependencies SHALL be listed under `dependencies`
+- **THEN** all ten runtime dependencies SHALL be listed under `dependencies`
 
 #### Scenario: Flutter pub get succeeds
 

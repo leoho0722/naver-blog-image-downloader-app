@@ -4,7 +4,7 @@
 
 ## What Changes
 
-- 在 `pubspec.yaml` 加入所有 runtime 依賴：`provider`、`go_router`、`dio`、`http`、`gal`、`crypto`、`path_provider`、`path`、`shared_preferences`
+- 在 `pubspec.yaml` 加入所有 runtime 依賴：`provider`、`go_router`、`dio`、`http`、`image_gallery_saver`、`crypto`、`path_provider`、`path`、`shared_preferences`
 - 在 `pubspec.yaml` 加入 dev 依賴：`mocktail`
 - 建立完整的 `lib/` 目錄骨架，涵蓋 MVVM 分層架構所需的所有目錄：
   - `config/`（應用配置與主題）
