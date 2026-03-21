@@ -5,17 +5,17 @@
 The file `lib/routing/app_router.dart` SHALL define a top-level `appRouter` variable of type `GoRouter`.
 
 - The `appRouter` SHALL set `initialLocation` to `'/'`.
-- The `appRouter` SHALL contain exactly 5 route definitions.
+- The `appRouter` SHALL contain exactly 4 route definitions.
 
 #### Scenario: Initial location is root
 
 - **WHEN** `appRouter.routeInformationProvider.value` is inspected
 - **THEN** the initial location SHALL be `'/'`
 
-#### Scenario: Five routes are configured
+#### Scenario: Four routes are configured
 
 - **WHEN** the `routes` list of `appRouter` is inspected
-- **THEN** it SHALL contain exactly 5 `GoRoute` entries
+- **THEN** it SHALL contain exactly 4 `GoRoute` entries
 
 ### Requirement: Static routes configured
 
@@ -38,15 +38,10 @@ The `appRouter` SHALL define routes for paths that do not require parameters:
 
 The `appRouter` SHALL define routes that accept path parameters:
 
-- A `GoRoute` with path `'/download/:blogId'` that builds a `DownloadView` widget.
 - A `GoRoute` with path `'/gallery/:blogId'` that builds a `PhotoGalleryView` widget.
 - A `GoRoute` with path `'/detail/:photoId'` that builds a `PhotoDetailView` widget.
 
-#### Scenario: Download path accepts blogId
-
-- **WHEN** navigating to `'/download/abc123'`
-- **THEN** the router SHALL build a `DownloadView` widget
-- **AND** the `blogId` path parameter SHALL be `'abc123'`
+Note: Download is handled as a dialog (not a routed page), so there is no `/download/:blogId` route.
 
 #### Scenario: Gallery path accepts blogId
 
@@ -63,11 +58,6 @@ The `appRouter` SHALL define routes that accept path parameters:
 ### Requirement: Path parameters extracted from state
 
 Each parameterized route SHALL extract its path parameter from `GoRouterState.pathParameters` and pass it to the corresponding view widget constructor.
-
-#### Scenario: blogId passed to DownloadView
-
-- **WHEN** the `/download/:blogId` route builder is invoked with state containing `pathParameters['blogId']`
-- **THEN** the extracted `blogId` value SHALL be passed to `DownloadView`
 
 #### Scenario: blogId passed to PhotoGalleryView
 
