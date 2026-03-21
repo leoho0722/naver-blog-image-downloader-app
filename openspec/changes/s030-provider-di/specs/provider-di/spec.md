@@ -4,14 +4,14 @@
 
 The `lib/main.dart` file SHALL register the following services using `Provider` within a `MultiProvider`:
 
-- `ApiService` SHALL be created with `AppConfig.baseUrl` as its constructor argument.
-- `FileDownloadService` SHALL be created with no arguments.
+- `ApiService` SHALL be created with no arguments (uses Amplify config).
+- `FileDownloadService` SHALL be created with a positional `Dio()` argument (i.e., `FileDownloadService(Dio())`).
 - `GalleryService` SHALL be created with no arguments.
 
-#### Scenario: ApiService receives base URL from AppConfig
+#### Scenario: ApiService created with no arguments
 
 - **WHEN** the `MultiProvider` initializes the `ApiService`
-- **THEN** it SHALL pass `AppConfig.baseUrl` to the `ApiService` constructor
+- **THEN** it SHALL create `ApiService()` with no constructor arguments (uses Amplify config)
 
 #### Scenario: All three services are available in the widget tree
 
@@ -44,6 +44,7 @@ The `lib/main.dart` file SHALL register the following ViewModels as `ChangeNotif
 - `BlogInputViewModel` SHALL be registered using `ChangeNotifierProxyProvider` with `PhotoRepository` as its dependency.
 - `DownloadViewModel` SHALL be registered using `ChangeNotifierProxyProvider` with `PhotoRepository` as its dependency.
 - `PhotoGalleryViewModel` SHALL be registered using `ChangeNotifierProxyProvider2` with `PhotoRepository` and `CacheRepository` as its dependencies.
+- `PhotoDetailViewModel` SHALL be registered using `ChangeNotifierProxyProvider2` with `CacheRepository` and `GalleryService` as its dependencies.
 - `SettingsViewModel` SHALL be registered using `ChangeNotifierProxyProvider` with `CacheRepository` as its dependency.
 
 #### Scenario: BlogInputViewModel depends on PhotoRepository
@@ -55,6 +56,11 @@ The `lib/main.dart` file SHALL register the following ViewModels as `ChangeNotif
 
 - **WHEN** the `ChangeNotifierProxyProvider2` for `PhotoGalleryViewModel` is configured
 - **THEN** it SHALL receive both `PhotoRepository` and `CacheRepository`
+
+#### Scenario: PhotoDetailViewModel depends on CacheRepository and GalleryService
+
+- **WHEN** the `ChangeNotifierProxyProvider2` for `PhotoDetailViewModel` is configured
+- **THEN** it SHALL receive both `CacheRepository` and `GalleryService`
 
 #### Scenario: All ViewModels are accessible
 
