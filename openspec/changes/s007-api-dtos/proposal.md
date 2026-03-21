@@ -1,11 +1,11 @@
 ## Why
 
-應用程式需要與後端 Lambda API 進行 HTTP 通訊，需定義請求與回應的 DTO（Data Transfer Object）來處理 JSON 序列化與反序列化。`PhotoDownloadRequest` 負責將請求參數轉為 JSON，`PhotoDownloadResponse` 與 `PhotoDto` 負責將 API 回傳的 JSON 解析為結構化物件，並提供 `toEntity` 方法將 DTO 轉換為 domain model `PhotoEntity`。
+應用程式需要與後端 Lambda API 進行 HTTP 通訊，需定義請求與回應的 DTO（Data Transfer Object）來處理 JSON 序列化與反序列化。`PhotoDownloadRequest` 負責將請求參數轉為 JSON，`PhotoDownloadResponse` 負責將 API 回傳的 JSON 解析為結構化物件，並提供 `toEntities` 方法將圖片 URL 列表轉換為 domain model `PhotoEntity` 列表。
 
 ## What Changes
 
 - 在 `lib/data/models/dtos/photo_download_request.dart` 中實作 `PhotoDownloadRequest` DTO，提供 `toJson` 方法
-- 在 `lib/data/models/dtos/photo_download_response.dart` 中實作 `PhotoDownloadResponse` 與 `PhotoDto` DTO，提供 `fromJson` 方法與 `toEntity` 轉換
+- 在 `lib/data/models/dtos/photo_download_response.dart` 中實作 `PhotoDownloadResponse` DTO，提供 `fromJson` 方法與 `toEntities` 轉換
 
 ## Capabilities
 

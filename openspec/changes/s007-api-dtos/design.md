@@ -7,8 +7,8 @@
 **Goals:**
 
 - 實作 `PhotoDownloadRequest` DTO，將請求參數序列化為 JSON
-- 實作 `PhotoDownloadResponse` DTO，從 JSON 反序列化 API 回應，包含 `blogTitle` 與 `List<PhotoDto>`
-- 實作 `PhotoDto` DTO，從 JSON 反序列化單張照片資訊，並提供 `toEntity` 方法轉換為 `PhotoEntity`
+- 實作 `PhotoDownloadResponse` DTO，從 JSON 反序列化 API 回應，包含下載統計資訊與圖片 URL 列表
+- 提供 `toEntities()` 方法將 URL 列表轉換為 `PhotoEntity` 列表
 
 **Non-Goals:**
 
@@ -20,21 +20,23 @@
 
 ### PhotoDownloadRequest 請求 DTO
 
-定義 `PhotoDownloadRequest` 類別，包含發送 API 請求所需的參數，並提供 `toJson()` 方法回傳 `Map<String, dynamic>`。
+定義 `PhotoDownloadRequest` 類別，包含發送 API 請求所需的參數，並提供 `toJson()` 方法回傳 `Map<String, dynamic>`。請求使用 `blog_url`（snake_case）作為 JSON 欄位名稱。
 
 ### PhotoDownloadResponse 回應 DTO
 
 定義 `PhotoDownloadResponse` 類別，包含：
-- `blogTitle`（String）：部落格標題
-- `photos`（List\<PhotoDto\>）：照片列表
+- `totalImages`（int）：圖片總數（JSON 欄位：`total_images`）
+- `successfulDownloads`（int）：成功下載數（JSON 欄位：`successful_downloads`）
+- `failureDownloads`（int）：失敗下載數（JSON 欄位：`failure_downloads`）
+- `imageUrls`（List\<String\>）：圖片 URL 列表（JSON 欄位：`image_urls`）
+- `errors`（List\<String\>）：錯誤訊息列表（JSON 欄位：`errors`）
+- `elapsedTime`（String）：執行耗時（JSON 欄位：`elapsed_time`）
 
 提供 `factory PhotoDownloadResponse.fromJson(Map<String, dynamic> json)` 建構子。
 
-### PhotoDto 照片 DTO 與 toEntity 轉換
+### toEntities 轉換
 
-定義 `PhotoDto` 類別，包含從 API 回傳的單張照片原始資訊，並提供：
-- `factory PhotoDto.fromJson(Map<String, dynamic> json)` 建構子
-- `PhotoEntity toEntity()` 方法，將 DTO 轉換為 domain model
+`PhotoDownloadResponse` 提供 `List<PhotoEntity> toEntities()` 方法，將 `imageUrls` 列表轉換為 `PhotoEntity` 列表，從 URL 中提取 filename 與 id。
 
 ## Risks / Trade-offs
 
