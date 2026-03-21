@@ -9,6 +9,7 @@ The ViewModel SHALL expose the following read-only properties:
 - `isLoading` (bool) — whether a fetch operation is in progress
 - `errorMessage` (String?) — the current error message, or null
 - `fetchResult` (FetchResult?) — the fetch result, or null
+- `statusMessage` (String?) — the current status message reflecting the async job progress, or null
 
 #### Scenario: Initial state
 
@@ -17,6 +18,7 @@ The ViewModel SHALL expose the following read-only properties:
 - **AND** `isLoading` SHALL be `false`
 - **AND** `errorMessage` SHALL be `null`
 - **AND** `fetchResult` SHALL be `null`
+- **AND** `statusMessage` SHALL be `null`
 
 #### Scenario: URL value updated
 
@@ -36,9 +38,14 @@ The `fetchPhotos()` method SHALL validate that `blogUrl` is not empty before ini
 - **AND** `isLoading` SHALL remain `false`
 - **AND** no call to `PhotoRepository.fetchPhotos` SHALL be made
 
-### Requirement: Fetch photos with loading state
+### Requirement: Fetch photos with loading state and status message
 
-The `fetchPhotos()` method SHALL manage the loading state and delegate to `PhotoRepository.fetchPhotos`.
+The `fetchPhotos()` method SHALL manage the loading state, status message, and delegate to `PhotoRepository.fetchPhotos`.
+
+- `fetchPhotos()` SHALL pass an `onStatusChanged` callback to `PhotoRepository.fetchPhotos`.
+- The `onStatusChanged` callback receives a `JobStatus` enum value. The ViewModel SHALL map the `JobStatus` enum to a user-facing string internally.
+- When the callback is invoked, `statusMessage` SHALL be updated with the mapped string and `notifyListeners()` SHALL be called.
+- After the fetch operation completes (success or failure), `statusMessage` SHALL be cleared to `null`.
 
 #### Scenario: Successful fetch
 
@@ -49,6 +56,7 @@ The `fetchPhotos()` method SHALL manage the loading state and delegate to `Photo
 - **AND** `isLoading` SHALL be set to `false` after the repository call completes
 - **AND** `fetchResult` SHALL hold the returned `FetchResult`
 - **AND** `errorMessage` SHALL be `null`
+- **AND** `statusMessage` SHALL be `null` after completion
 
 #### Scenario: Failed fetch
 
@@ -59,6 +67,15 @@ The `fetchPhotos()` method SHALL manage the loading state and delegate to `Photo
 - **AND** `isLoading` SHALL be set to `false` after the repository call completes
 - **AND** `errorMessage` SHALL contain the error description
 - **AND** `fetchResult` SHALL remain `null`
+- **AND** `statusMessage` SHALL be `null` after completion
+
+#### Scenario: Status message updates during fetch
+
+- **GIVEN** `blogUrl` is a non-empty string
+- **AND** the `onStatusChanged` callback is invoked during `PhotoRepository.fetchPhotos`
+- **WHEN** the callback receives a `JobStatus` enum value
+- **THEN** `statusMessage` SHALL be updated to the corresponding user-facing string mapped internally by the ViewModel
+- **AND** `notifyListeners()` SHALL be called
 
 #### Scenario: Duplicate fetch prevention
 
@@ -68,7 +85,7 @@ The `fetchPhotos()` method SHALL manage the loading state and delegate to `Photo
 
 ### Requirement: Reset state
 
-The `reset()` method SHALL clear the fetch result and restore the ViewModel to a clean state for a new query.
+The `reset()` method SHALL clear `fetchResult`, `errorMessage`, and `statusMessage`. It SHALL NOT reset `blogUrl`.
 
 #### Scenario: Reset after successful fetch
 
@@ -76,4 +93,6 @@ The `reset()` method SHALL clear the fetch result and restore the ViewModel to a
 - **WHEN** `reset()` is called
 - **THEN** `fetchResult` SHALL be `null`
 - **AND** `errorMessage` SHALL be `null`
+- **AND** `statusMessage` SHALL be `null`
+- **AND** `blogUrl` SHALL remain unchanged
 - **AND** `notifyListeners` SHALL be called
