@@ -82,6 +82,12 @@ flutter build apk --dart-define=API_STAGE=prod  # 正式環境
 
 支援階段：`default`、`ut`、`stg`、`uat`、`prod`
 
+## 開發規範
+
+1. **遵循 Spectra 流程**：所有功能變更皆須走 `propose → apply ⇄ ingest → archive` 流程。建立 change 時，若 `openspec/specs/` 已有相關 spec 存在，須在 proposal 的 Modified Capabilities 中自動關聯，確保 archive 時 delta spec 能同步回主 spec。
+2. **遵循 Flutter 官方規範**：所有 Flutter 相關檔案皆需符合 `flutter/skills` 官方規範（包括 Widget 建構、狀態管理、導航、測試等）。
+3. **Analyze + Format**：執行 `flutter analyze` 後，須自動接續執行 `dart format .`，確保所有 Flutter 相關檔案排版格式一致。
+
 ## Commit 風格
 
 使用正體中文撰寫 conventional commits，例如：
