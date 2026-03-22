@@ -11,6 +11,9 @@ class FetchResult {
     required this.blogId,
     required this.blogUrl,
     required this.isFullyCached,
+    this.totalImages = 0,
+    this.failureDownloads = 0,
+    this.fetchErrors = const [],
   });
 
   /// 擷取到的照片實體清單。
@@ -24,4 +27,13 @@ class FetchResult {
 
   /// 此次結果是否完全來自本地快取，而非從遠端重新擷取。
   final bool isFullyCached;
+
+  /// Lambda API 回傳的總照片數量。
+  final int totalImages;
+
+  /// Lambda API 回傳的擷取失敗照片數量。
+  final int failureDownloads;
+
+  /// Lambda API 回傳的擷取失敗錯誤訊息清單，無錯誤時為空清單。
+  final List<String> fetchErrors;
 }

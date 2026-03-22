@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 import '../photo_entity.dart';
@@ -49,17 +50,36 @@ class PhotoDownloadResponse {
   /// 將 [imageUrls] 轉換為 [PhotoEntity] 清單。
   ///
   /// 由於 API 僅回傳 URL，因此：
-  /// - `id` 由 URL 的 hash 產生
-  /// - `filename` 從 URL 路徑中擷取
+  /// - `id` 以 index 產生，確保唯一
+  /// - `filename` 以 index prefix + URL 路徑末段組成，避免不同路徑同檔名碰撞
   List<PhotoEntity> toEntities() {
-    return imageUrls.asMap().entries.map((entry) {
+    final seen = <String>{};
+    final entities = <PhotoEntity>[];
+
+    for (final entry in imageUrls.asMap().entries) {
+      final index = entry.key;
       final url = entry.value;
       final uri = Uri.tryParse(url);
-      final filename = uri != null
-          ? p.basename(uri.path)
-          : 'image_${entry.key}.jpg';
+      final baseName = uri != null ? p.basename(uri.path) : 'image.jpg';
+      final filename = '${index}_$baseName';
 
-      return PhotoEntity(id: '${url.hashCode}', url: url, filename: filename);
-    }).toList();
+      if (!seen.add(baseName)) {
+        debugPrint(
+          '[toEntities] ⚠ baseName 重複: $baseName (index=$index)\n'
+          '  url: $url\n'
+          '  → 已加 prefix: $filename',
+        );
+      }
+
+      entities.add(
+        PhotoEntity(id: 'photo_$index', url: url, filename: filename),
+      );
+    }
+
+    debugPrint(
+      '[toEntities] 共 ${entities.length} 張，'
+      '唯一 baseName ${seen.length} 個',
+    );
+    return entities;
   }
 }

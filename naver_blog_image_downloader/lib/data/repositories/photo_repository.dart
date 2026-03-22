@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -94,6 +93,9 @@ class PhotoRepository {
                 blogId: blogId,
                 blogUrl: blogUrl,
                 isFullyCached: isFullyCached,
+                totalImages: response.totalImages,
+                failureDownloads: response.failureDownloads,
+                fetchErrors: response.errors,
               ),
             );
 
@@ -137,7 +139,7 @@ class PhotoRepository {
 
   /// 將照片列表並行下載至本地快取。
   ///
-  /// - 最多 4 條並行下載（信號量模式）
+  /// - 最多 _maxConcurrency 條並行下載（分批 Future.wait）
   /// - 已快取的檔案自動跳過
   /// - 單一下載失敗不中斷整批下載
   /// - 完成後更新 [BlogCacheMetadata]
@@ -200,28 +202,13 @@ class PhotoRepository {
       onProgress?.call(completed, photos.length);
     }
 
-    // 並行池：最多 _maxConcurrency 條並行下載（信號量模式）
-    int running = 0;
-    final pending = <Completer<void>>[];
-
-    Future<void> throttled(PhotoEntity photo) async {
-      if (running >= _maxConcurrency) {
-        final gate = Completer<void>();
-        pending.add(gate);
-        await gate.future;
-      }
-      running++;
-      try {
-        await downloadOne(photo);
-      } finally {
-        running--;
-        if (pending.isNotEmpty) {
-          pending.removeAt(0).complete();
-        }
-      }
+    // 分批並行下載：每批最多 _maxConcurrency 張，一批完成再下一批
+    for (var i = 0; i < photos.length; i += _maxConcurrency) {
+      final end = (i + _maxConcurrency < photos.length)
+          ? i + _maxConcurrency
+          : photos.length;
+      await Future.wait(photos.sublist(i, end).map(downloadOne));
     }
-
-    await Future.wait(photos.map(throttled));
 
     // 更新 metadata
     await _cacheRepository.updateMetadata(

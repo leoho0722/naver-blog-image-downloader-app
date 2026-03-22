@@ -35,12 +35,10 @@ void main() {
           Provider.value(value: cacheRepository),
           Provider.value(value: photoRepository),
           ChangeNotifierProvider(
-            create: (_) =>
-                BlogInputViewModel(photoRepository: photoRepository),
+            create: (_) => BlogInputViewModel(photoRepository: photoRepository),
           ),
           ChangeNotifierProvider(
-            create: (_) =>
-                DownloadViewModel(photoRepository: photoRepository),
+            create: (_) => DownloadViewModel(photoRepository: photoRepository),
           ),
           ChangeNotifierProvider(
             create: (_) => PhotoGalleryViewModel(
@@ -55,8 +53,7 @@ void main() {
             ),
           ),
           ChangeNotifierProvider(
-            create: (_) =>
-                SettingsViewModel(cacheRepository: cacheRepository),
+            create: (_) => SettingsViewModel(cacheRepository: cacheRepository),
           ),
         ],
         child: const NaverPhotoApp(),

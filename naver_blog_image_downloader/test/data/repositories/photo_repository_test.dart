@@ -76,19 +76,21 @@ void main() {
     const testBlogUrlWithPath = 'https://blog.naver.com/test/12345';
     const testJobId = 'job-uuid-123';
 
-    JobStatusResponse completedStatus({List<String> imageUrls = const []}) =>
-        JobStatusResponse(
-          jobId: testJobId,
-          status: JobStatus.completed,
-          result: PhotoDownloadResponse(
-            totalImages: imageUrls.length,
-            successfulDownloads: imageUrls.length,
-            failureDownloads: 0,
-            imageUrls: imageUrls,
-            errors: [],
-            elapsedTime: 1.0,
-          ),
-        );
+    JobStatusResponse completedStatus({
+      List<String> imageUrls = const [],
+      List<String> errors = const [],
+    }) => JobStatusResponse(
+      jobId: testJobId,
+      status: JobStatus.completed,
+      result: PhotoDownloadResponse(
+        totalImages: imageUrls.length,
+        successfulDownloads: imageUrls.length - errors.length,
+        failureDownloads: errors.length,
+        imageUrls: imageUrls,
+        errors: errors,
+        elapsedTime: 1.0,
+      ),
+    );
 
     void setupSubmitJob() {
       when(
@@ -119,6 +121,27 @@ void main() {
       final fetchResult = (result as Ok<FetchResult>).value;
       expect(fetchResult.photos.length, 2);
       expect(fetchResult.blogId, testBlogId);
+      expect(fetchResult.fetchErrors, isEmpty);
+    });
+
+    test('任務完成但部分圖片擷取失敗時，fetchErrors 包含錯誤訊息', () async {
+      setupSubmitJob();
+      when(() => mockApiService.checkJobStatus(testJobId)).thenAnswer(
+        (_) async => completedStatus(
+          imageUrls: ['https://example.com/photo1.jpg'],
+          errors: ['第2張圖片無法擷取'],
+        ),
+      );
+      when(
+        () => mockCacheRepository.isBlogFullyCached(testBlogId, any()),
+      ).thenAnswer((_) async => false);
+
+      final result = await repository.fetchPhotos(testBlogUrlWithPath);
+
+      expect(result, isA<Ok<FetchResult>>());
+      final fetchResult = (result as Ok<FetchResult>).value;
+      expect(fetchResult.photos.length, 1);
+      expect(fetchResult.fetchErrors, ['第2張圖片無法擷取']);
     });
 
     test('submitJob 失敗時回傳 Result.error', () async {

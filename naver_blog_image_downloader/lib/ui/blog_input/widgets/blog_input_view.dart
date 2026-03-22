@@ -39,6 +39,12 @@ class _BlogInputViewState extends State<BlogInputView> {
   }
 
   Future<void> _handleFetchResult(FetchResult fetchResult) async {
+    // 有擷取失敗時，先顯示警告對話框
+    if (fetchResult.failureDownloads > 0) {
+      final shouldContinue = await _showFetchFailureDialog(fetchResult);
+      if (shouldContinue != true || !mounted) return;
+    }
+
     if (fetchResult.isFullyCached) {
       // 已完整快取，直接跳到照片瀏覽頁
       _navigateToGallery(fetchResult);
@@ -50,6 +56,31 @@ class _BlogInputViewState extends State<BlogInputView> {
     if (completed == true && mounted) {
       _navigateToGallery(fetchResult);
     }
+  }
+
+  Future<bool?> _showFetchFailureDialog(FetchResult fetchResult) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('部分照片擷取失敗'),
+        content: Text(
+          '總共有 ${fetchResult.totalImages} 張照片，'
+          '成功取得 ${fetchResult.photos.length} 張，'
+          '無法取得 ${fetchResult.failureDownloads} 張。\n\n'
+          '請問是否繼續下載已取得的照片？',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消下載'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('繼續下載'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _navigateToGallery(FetchResult fetchResult) {
