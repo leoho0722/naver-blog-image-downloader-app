@@ -54,43 +54,52 @@ tests:
 
 The cache tile trailing area SHALL contain a clear button with a broom icon (`Icons.cleaning_services`). Tapping the button SHALL display a confirmation dialog before clearing. The button SHALL be hidden when no cached blogs exist.
 
+After the confirmation dialog is dismissed with `true`, the view SHALL check `mounted` before calling `viewModel.clearAllCache()`.
+
 #### Scenario: Clear button tapped
 
 - **GIVEN** cached blogs exist
 - **WHEN** the user taps the clear button (broom icon)
-- **THEN** a confirmation `AlertDialog` SHALL be displayed before any data is deleted
+- **THEN** a confirmation dialog SHALL appear asking for confirmation
 
-#### Scenario: Clear button hidden when no cache
+#### Scenario: Clear confirmed with mounted check
 
-- **GIVEN** no cached blogs exist
-- **WHEN** the SettingsView is rendered
-- **THEN** the clear button SHALL NOT be displayed
+- **GIVEN** the user confirms clearing in the dialog
+- **WHEN** the dialog returns `true`
+- **THEN** the view SHALL check `mounted` before calling `viewModel.clearAllCache()`
+
+#### Scenario: Widget unmounted before confirmation
+
+- **GIVEN** the confirmation dialog is open
+- **WHEN** the widget is disposed before the user confirms
+- **THEN** `viewModel.clearAllCache()` SHALL NOT be called
 
 
 <!-- @trace
-source: settings-ui-refinement
+source: flutter-best-practices-compliance
 updated: 2026-03-22
 code:
-  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
-  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
-  - naver_blog_image_downloader/lib/amplifyconfiguration.dart
-  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
-  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
   - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
-  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
-  - naver_blog_image_downloader/lib/routing/app_router.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
-  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_request.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
   - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
-  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/analysis_options.yaml
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
   - naver_blog_image_downloader/lib/main.dart
-  - naver_blog_image_downloader/ios/Podfile.lock
   - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
 tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
   - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
-  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
   - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
 -->
 
 ---

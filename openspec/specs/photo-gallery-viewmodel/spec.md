@@ -42,6 +42,34 @@ when `load` is called with a list of 10 photos and a blogId,
 then `photos` SHALL contain 10 items,
 and `blogId` SHALL equal the provided value.
 
+
+<!-- @trace
+source: flutter-best-practices-compliance
+updated: 2026-03-22
+code:
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/analysis_options.yaml
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+-->
+
 ### Requirement: toggle select mode
 
 PhotoGalleryViewModel SHALL provide a `toggleSelectMode()` method.
@@ -738,5 +766,49 @@ tests:
   - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
   - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
   - naver_blog_image_downloader/test/data/repositories/cache_repository_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+-->
+
+---
+### Requirement: cachedFiles property
+
+PhotoGalleryViewModel SHALL expose a read-only `cachedFiles` property of type `Map<String, File?>`.
+
+The map key SHALL be the photo ID, and the value SHALL be the cached `File` or `null` if not cached.
+
+#### Scenario: initial cachedFiles state
+
+- **WHEN** a PhotoGalleryViewModel is newly created
+- **THEN** `cachedFiles` SHALL be an empty map
+
+#### Scenario: cachedFiles populated after load
+
+- **WHEN** `load` has completed for 5 photos where 3 are cached
+- **THEN** `cachedFiles` SHALL contain 5 entries, with 3 having non-null `File` values and 2 having `null` values
+
+<!-- @trace
+source: flutter-best-practices-compliance
+updated: 2026-03-22
+code:
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/analysis_options.yaml
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
   - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
 -->

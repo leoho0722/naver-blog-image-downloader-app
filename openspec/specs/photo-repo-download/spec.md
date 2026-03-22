@@ -597,3 +597,45 @@ tests:
   - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
   - naver_blog_image_downloader/test/data/repositories/cache_repository_test.dart
 -->
+
+---
+### Requirement: BlogCacheMetadata stores original blog URL
+
+The `PhotoRepository.downloadAllToCache` method SHALL accept a required `blogUrl` parameter of type `String`. When creating `BlogCacheMetadata`, the `blogUrl` field SHALL be set to this parameter value, NOT to a photo image URL.
+
+#### Scenario: Metadata records original blog URL
+
+- **WHEN** `downloadAllToCache` completes with `blogUrl` "https://blog.naver.com/user/123"
+- **THEN** the persisted `BlogCacheMetadata.blogUrl` SHALL be "https://blog.naver.com/user/123"
+
+#### Scenario: blogUrl parameter is required
+
+- **WHEN** `downloadAllToCache` is called
+- **THEN** the `blogUrl` parameter SHALL be required at compile time
+
+<!-- @trace
+source: flutter-best-practices-compliance
+updated: 2026-03-22
+code:
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/analysis_options.yaml
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+-->

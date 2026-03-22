@@ -63,6 +63,36 @@ class PhotoRepository {
     try {
       final blogId = _cacheRepository.blogId(blogUrl);
 
+      // 快取優先：若 metadata 存在且所有檔案完整快取，直接回傳
+      final metadata = await _cacheRepository.metadata(blogId);
+      if (metadata != null) {
+        final isFullyCached = await _cacheRepository.isBlogFullyCached(
+          blogId,
+          metadata.filenames,
+        );
+        if (isFullyCached) {
+          final photos = metadata.filenames
+              .asMap()
+              .entries
+              .map(
+                (e) => PhotoEntity(
+                  id: 'photo_${e.key}',
+                  url: '',
+                  filename: e.value,
+                ),
+              )
+              .toList();
+          return Result.ok(
+            FetchResult(
+              photos: photos,
+              blogId: blogId,
+              blogUrl: blogUrl,
+              isFullyCached: true,
+            ),
+          );
+        }
+      }
+
       // 提交非同步任務
       final jobId = await _apiService.submitJob(blogUrl);
       onStatusChanged?.call(JobStatus.processing);

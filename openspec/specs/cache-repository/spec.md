@@ -608,3 +608,45 @@ tests:
   - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
   - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
 -->
+
+---
+### Requirement: Cache eviction uses named constant for size estimation
+
+The `CacheRepository.evictIfNeeded` method SHALL use a named constant `_estimatedPhotoSizeBytes` (value: 500000) for estimating per-photo disk usage during eviction calculations, instead of an inline magic number.
+
+#### Scenario: Eviction size estimation uses constant
+
+- **WHEN** `evictIfNeeded` calculates freed space for a blog
+- **THEN** it SHALL multiply `meta.photoCount` by `_estimatedPhotoSizeBytes`
+
+#### Scenario: Constant value is 500000
+
+- **WHEN** `_estimatedPhotoSizeBytes` is inspected
+- **THEN** its value SHALL be `500000`
+
+<!-- @trace
+source: flutter-best-practices-compliance
+updated: 2026-03-22
+code:
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/analysis_options.yaml
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+-->

@@ -15,42 +15,53 @@ The file `lib/data/models/fetch_result.dart` SHALL define a `FetchResult` class 
 - `FetchResult` SHALL have a required `blogId` property of type `String`.
 - `FetchResult` SHALL have a required `blogUrl` property of type `String`.
 - `FetchResult` SHALL have a required `isFullyCached` property of type `bool`.
-- `FetchResult` SHALL have a `totalImages` property of type `int` with a default value of `0`.
-- `FetchResult` SHALL have a `failureDownloads` property of type `int` with a default value of `0`.
-- `FetchResult` SHALL have a `fetchErrors` property of type `List<String>` with a default value of `const []`.
 
 #### Scenario: FetchResult created with photo list
 
 - **WHEN** a `FetchResult` is created with a list of `PhotoEntity`, `blogId`, `blogUrl`, and `isFullyCached`
 - **THEN** all properties SHALL be accessible on the instance with their provided values
-- **AND** `totalImages` SHALL default to `0`
-- **AND** `failureDownloads` SHALL default to `0`
-- **AND** `fetchErrors` SHALL default to an empty list
 
-#### Scenario: FetchResult with fetch failure info
+#### Scenario: FetchResult with empty photo list
 
-- **WHEN** a `FetchResult` is created with `totalImages: 31`, `failureDownloads: 1`, and a non-empty `fetchErrors` list
-- **THEN** the `totalImages` property SHALL return `31`
-- **AND** the `failureDownloads` property SHALL return `1`
-- **AND** the `fetchErrors` property SHALL return the provided error messages
+- **WHEN** a `FetchResult` is created with an empty `photos` list
+- **THEN** the `photos` property SHALL return an empty list
 
 #### Scenario: FetchResult fields are immutable
 
 - **WHEN** a `FetchResult` instance is created
 - **THEN** none of its properties SHALL be reassignable after construction
 
+#### Scenario: FetchResult blogUrl holds the original blog URL
+
+- **WHEN** a `FetchResult` is created with `blogUrl` "https://blog.naver.com/user/123"
+- **THEN** the `blogUrl` property SHALL return "https://blog.naver.com/user/123"
+
 
 <!-- @trace
-source: fetch-failure-notification
+source: flutter-best-practices-compliance
 updated: 2026-03-22
 code:
-  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
-  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
   - naver_blog_image_downloader/lib/data/models/fetch_result.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/analysis_options.yaml
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
   - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
 tests:
-  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
   - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
 -->
 
 ---

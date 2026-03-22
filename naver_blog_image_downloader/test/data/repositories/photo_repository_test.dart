@@ -97,6 +97,9 @@ void main() {
         () => mockCacheRepository.blogId(testBlogUrlWithPath),
       ).thenReturn(testBlogId);
       when(
+        () => mockCacheRepository.metadata(testBlogId),
+      ).thenAnswer((_) async => null);
+      when(
         () => mockApiService.submitJob(testBlogUrlWithPath),
       ).thenAnswer((_) async => testJobId);
     }
@@ -149,6 +152,9 @@ void main() {
         () => mockCacheRepository.blogId(testBlogUrlWithPath),
       ).thenReturn(testBlogId);
       when(
+        () => mockCacheRepository.metadata(testBlogId),
+      ).thenAnswer((_) async => null);
+      when(
         () => mockApiService.submitJob(testBlogUrlWithPath),
       ).thenThrow(const ApiServiceException('伺服器錯誤（500）', statusCode: 500));
 
@@ -182,6 +188,122 @@ void main() {
       final appError = error as AppError;
       expect(appError.type, AppErrorType.serverError);
       expect(appError.toString(), contains('等待圖片元素超時'));
+    });
+  });
+
+  group('fetchPhotos（快取優先檢查）', () {
+    const testBlogUrlWithPath = 'https://blog.naver.com/test/12345';
+    const testFilenames = ['0_photo1.jpg', '1_photo2.jpg'];
+
+    test('metadata 存在且完整快取時，不呼叫 API 並回傳 isFullyCached=true', () async {
+      when(
+        () => mockCacheRepository.blogId(testBlogUrlWithPath),
+      ).thenReturn(testBlogId);
+      when(() => mockCacheRepository.metadata(testBlogId)).thenAnswer(
+        (_) async => BlogCacheMetadata(
+          blogId: testBlogId,
+          blogUrl: testBlogUrlWithPath,
+          photoCount: 2,
+          downloadedAt: DateTime(2026),
+          isSavedToGallery: false,
+          filenames: testFilenames,
+        ),
+      );
+      when(
+        () => mockCacheRepository.isBlogFullyCached(testBlogId, testFilenames),
+      ).thenAnswer((_) async => true);
+
+      final result = await repository.fetchPhotos(testBlogUrlWithPath);
+
+      expect(result, isA<Ok<FetchResult>>());
+      final fetchResult = (result as Ok<FetchResult>).value;
+      expect(fetchResult.isFullyCached, isTrue);
+      expect(fetchResult.photos.length, 2);
+      expect(fetchResult.photos[0].filename, '0_photo1.jpg');
+      expect(fetchResult.photos[1].filename, '1_photo2.jpg');
+      expect(fetchResult.blogId, testBlogId);
+
+      // 不應呼叫 API
+      verifyNever(() => mockApiService.submitJob(any()));
+      verifyNever(() => mockApiService.checkJobStatus(any()));
+    });
+
+    test('metadata 不存在時，走正常 API 流程', () async {
+      when(
+        () => mockCacheRepository.blogId(testBlogUrlWithPath),
+      ).thenReturn(testBlogId);
+      when(
+        () => mockCacheRepository.metadata(testBlogId),
+      ).thenAnswer((_) async => null);
+      when(
+        () => mockApiService.submitJob(testBlogUrlWithPath),
+      ).thenAnswer((_) async => 'job-123');
+      when(() => mockApiService.checkJobStatus('job-123')).thenAnswer(
+        (_) async => const JobStatusResponse(
+          jobId: 'job-123',
+          status: JobStatus.completed,
+          result: PhotoDownloadResponse(
+            totalImages: 1,
+            successfulDownloads: 1,
+            failureDownloads: 0,
+            imageUrls: ['https://example.com/photo.jpg'],
+            errors: [],
+            elapsedTime: 1.0,
+          ),
+        ),
+      );
+      when(
+        () => mockCacheRepository.isBlogFullyCached(testBlogId, any()),
+      ).thenAnswer((_) async => false);
+
+      final result = await repository.fetchPhotos(testBlogUrlWithPath);
+
+      expect(result, isA<Ok<FetchResult>>());
+      verify(() => mockApiService.submitJob(testBlogUrlWithPath)).called(1);
+    });
+
+    test('metadata 存在但快取不完整時，走正常 API 流程', () async {
+      when(
+        () => mockCacheRepository.blogId(testBlogUrlWithPath),
+      ).thenReturn(testBlogId);
+      when(() => mockCacheRepository.metadata(testBlogId)).thenAnswer(
+        (_) async => BlogCacheMetadata(
+          blogId: testBlogId,
+          blogUrl: testBlogUrlWithPath,
+          photoCount: 2,
+          downloadedAt: DateTime(2026),
+          isSavedToGallery: false,
+          filenames: testFilenames,
+        ),
+      );
+      when(
+        () => mockCacheRepository.isBlogFullyCached(testBlogId, testFilenames),
+      ).thenAnswer((_) async => false);
+      when(
+        () => mockApiService.submitJob(testBlogUrlWithPath),
+      ).thenAnswer((_) async => 'job-123');
+      when(() => mockApiService.checkJobStatus('job-123')).thenAnswer(
+        (_) async => const JobStatusResponse(
+          jobId: 'job-123',
+          status: JobStatus.completed,
+          result: PhotoDownloadResponse(
+            totalImages: 1,
+            successfulDownloads: 1,
+            failureDownloads: 0,
+            imageUrls: ['https://example.com/photo.jpg'],
+            errors: [],
+            elapsedTime: 1.0,
+          ),
+        ),
+      );
+      when(
+        () => mockCacheRepository.isBlogFullyCached(testBlogId, any()),
+      ).thenAnswer((_) async => false);
+
+      final result = await repository.fetchPhotos(testBlogUrlWithPath);
+
+      expect(result, isA<Ok<FetchResult>>());
+      verify(() => mockApiService.submitJob(testBlogUrlWithPath)).called(1);
     });
   });
 
