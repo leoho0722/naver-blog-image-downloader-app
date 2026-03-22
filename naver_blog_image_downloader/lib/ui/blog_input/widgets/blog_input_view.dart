@@ -128,11 +128,37 @@ class _BlogInputViewState extends State<BlogInputView>
   }
 
   void _onViewModelChanged() {
+    final errorMessage = _viewModel.errorMessage;
+    if (errorMessage != null) {
+      _viewModel.onUrlChanged(_viewModel.blogUrl);
+      _showErrorDialog(errorMessage);
+      return;
+    }
+
     final fetchResult = _viewModel.fetchResult;
     if (fetchResult != null) {
       _viewModel.reset();
       _handleFetchResult(fetchResult);
     }
+  }
+
+  void _showErrorDialog(String message) {
+    if (!mounted) return;
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('發生錯誤'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('好的'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _handleFetchResult(FetchResult fetchResult) async {
@@ -227,11 +253,6 @@ class _BlogInputViewState extends State<BlogInputView>
                 ),
               ),
               const SizedBox(height: 16),
-              if (viewModel.errorMessage != null)
-                Text(
-                  viewModel.errorMessage!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
               if (viewModel.statusMessage != null) ...[
                 const SizedBox(height: 12),
                 Row(

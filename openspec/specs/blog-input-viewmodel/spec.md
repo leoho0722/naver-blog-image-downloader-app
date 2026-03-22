@@ -428,3 +428,36 @@ tests:
   - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
   - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
 -->
+
+---
+### Requirement: Human-readable error messages
+
+The `BlogInputViewModel` SHALL convert all error types to human-readable Chinese messages before setting `errorMessage`. For `AppError` with `AppErrorType.serverError`, the message SHALL be "伺服器處理失敗，請稍後再試". For `AppError` with `AppErrorType.networkError`, the message SHALL be "網路連線異常，請檢查網路設定". For any other `AppError` type, the message SHALL be "發生錯誤，請稍後再試". The `errorMessage` property SHALL NOT contain raw JSON, technical details, or unicode escape sequences.
+
+#### Scenario: Server error produces human-readable message
+
+- **GIVEN** `PhotoRepository.fetchPhotos()` returns `Result.error` with `AppError(type: AppErrorType.serverError)`
+- **WHEN** the error is processed
+- **THEN** `errorMessage` SHALL be "伺服器處理失敗，請稍後再試"
+
+#### Scenario: Network error produces human-readable message
+
+- **GIVEN** `PhotoRepository.fetchPhotos()` returns `Result.error` with `AppError(type: AppErrorType.networkError)`
+- **WHEN** the error is processed
+- **THEN** `errorMessage` SHALL be "網路連線異常，請檢查網路設定"
+
+#### Scenario: Unknown error produces generic message
+
+- **GIVEN** an unexpected error type is encountered
+- **WHEN** the error is processed
+- **THEN** `errorMessage` SHALL be "發生錯誤，請稍後再試"
+
+<!-- @trace
+source: lambda-error-dialog
+updated: 2026-03-22
+code:
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+tests:
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+-->

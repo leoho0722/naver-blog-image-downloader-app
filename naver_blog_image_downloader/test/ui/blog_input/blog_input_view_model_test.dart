@@ -132,7 +132,7 @@ void main() {
       await viewModel.fetchPhotos();
 
       expect(viewModel.isLoading, isFalse);
-      expect(viewModel.errorMessage, exception.toString());
+      expect(viewModel.errorMessage, '發生錯誤，請稍後再試');
       expect(viewModel.fetchResult, isNull);
     });
 

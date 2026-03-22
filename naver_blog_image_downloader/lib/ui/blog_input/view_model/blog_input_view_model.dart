@@ -6,6 +6,7 @@ import '../../../data/models/dtos/job_status_response.dart';
 import '../../../data/models/fetch_result.dart';
 import '../../../data/repositories/photo_repository.dart';
 import '../../../data/services/api_service.dart' show ApiServiceException;
+import '../../core/app_error.dart';
 import '../../core/result.dart';
 
 /// Blog 網址輸入頁面的 ViewModel，負責管理使用者輸入的網址並發起照片擷取請求。
@@ -96,9 +97,17 @@ class BlogInputViewModel extends ChangeNotifier {
       if (error.isRetryable) {
         return '伺服器暫時無法使用（${error.statusCode}），請稍後再試';
       }
-      return error.message;
+      return 'API 呼叫失敗，請稍後再試';
     }
-    return error.toString();
+    if (error is AppError) {
+      return switch (error.type) {
+        AppErrorType.serverError => '伺服器處理失敗，請稍後再試',
+        AppErrorType.network => '網路連線異常，請檢查網路設定',
+        AppErrorType.timeout => '請求逾時，請稍後再試',
+        _ => '發生錯誤，請稍後再試',
+      };
+    }
+    return '發生錯誤，請稍後再試';
   }
 
   /// 重設擷取結果與錯誤訊息，回到初始狀態。
