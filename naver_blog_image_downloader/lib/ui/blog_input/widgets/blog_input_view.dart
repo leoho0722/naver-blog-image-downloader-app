@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../data/models/fetch_result.dart';
+import '../../core/naver_url_validator.dart';
 import '../../download/widgets/download_view.dart';
 import '../../settings/widgets/settings_view.dart';
 import '../view_model/blog_input_view_model.dart';
@@ -14,20 +18,113 @@ class BlogInputView extends StatefulWidget {
   State<BlogInputView> createState() => _BlogInputViewState();
 }
 
-class _BlogInputViewState extends State<BlogInputView> {
+class _BlogInputViewState extends State<BlogInputView>
+    with WidgetsBindingObserver {
   late final BlogInputViewModel _viewModel;
+  final _controller = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _viewModel = context.read<BlogInputViewModel>();
     _viewModel.addListener(_onViewModelChanged);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _viewModel.removeListener(_onViewModelChanged);
+    _controller.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkClipboardOnResume();
+    }
+  }
+
+  Future<void> _checkClipboardOnResume() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim();
+    if (text == null || text.isEmpty) return;
+    if (!NaverUrlValidator.isValid(text)) return;
+    if (text == _controller.text) return;
+    if (!mounted) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('偵測到 Blog 網址'),
+        content: Text(text),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('貼上'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      _pasteUrl(text);
+    }
+  }
+
+  Future<void> _onPasteButtonPressed() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim();
+    if (!mounted) return;
+
+    if (text == null || text.isEmpty) {
+      unawaited(
+        showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('剪貼板沒有內容'),
+            content: const Text('目前剪貼板中沒有可貼上的文字。'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('好的'),
+              ),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!NaverUrlValidator.isValid(text)) {
+      unawaited(
+        showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('無法貼上'),
+            content: const Text('目前剪貼板的內容似乎不是 Naver Blog 網址，請確認後再試一次。'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('好的'),
+              ),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+
+    _pasteUrl(text);
+  }
+
+  void _pasteUrl(String url) {
+    _controller.text = url;
+    _viewModel.onUrlChanged(url);
   }
 
   void _onViewModelChanged() {
@@ -117,10 +214,16 @@ class _BlogInputViewState extends State<BlogInputView> {
           child: Column(
             children: [
               TextField(
+                controller: _controller,
                 onChanged: viewModel.onUrlChanged,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Naver Blog 網址',
                   hintText: 'https://blog.naver.com/...',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.content_paste),
+                    tooltip: '從剪貼板貼上',
+                    onPressed: _onPasteButtonPressed,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
