@@ -90,7 +90,14 @@ flutter build apk --dart-define=API_STAGE=prod  # 正式環境
 
 ## Commit 風格
 
-使用正體中文撰寫 conventional commits，例如：
+使用正體中文撰寫 conventional commits，description（body）使用列點格式，例如：
 
 - `feat(s010): 實作 ApiService（AWS Amplify SDK + 非同步任務模式）`
 - `fix: 修正下載進度對話框在 build 期間觸發 setState`
+
+```
+refactor(settings-view): 設定頁面 Cupertino → Material 3 重構
+
+- 移除所有 Cupertino 元件
+- 統一採用 Material 3 Card.filled + ListTile 呈現
+```
