@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -40,11 +39,10 @@ class _SettingsViewState extends State<SettingsView> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<SettingsViewModel>();
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground.resolveFrom(
-        context,
-      ),
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('設定'),
@@ -59,66 +57,71 @@ class _SettingsViewState extends State<SettingsView> {
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               children: [
-                CupertinoListSection.insetGrouped(
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  header: const Padding(
-                    padding: EdgeInsets.only(left: 20, top: 20),
-                    child: Text('快取'),
+                Padding(
+                  padding: const EdgeInsets.only(left: 28, top: 20, bottom: 8),
+                  child: Text(
+                    '快取',
+                    style: textTheme.titleSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                  children: [
-                    CupertinoListTile(
-                      title: const Text('快取大小', style: TextStyle(fontSize: 18)),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Card.filled(
+                    child: ListTile(
+                      title: const Text('快取大小'),
+                      contentPadding: const EdgeInsets.only(
+                        left: 16,
+                        right: 12,
+                      ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
                             viewModel.formattedCacheSize,
-                            style: const TextStyle(fontSize: 18),
-                          ),
-                          if (viewModel.cachedBlogs.isNotEmpty) ...[
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () =>
-                                  _showClearAllDialog(context, viewModel),
-                              child: Icon(
-                                Icons.cleaning_services,
-                                size: 20,
-                                color: CupertinoColors.systemRed.resolveFrom(
-                                  context,
-                                ),
-                              ),
+                            style: textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
                             ),
-                          ],
+                          ),
+                          if (viewModel.cachedBlogs.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(Icons.cleaning_services),
+                              iconSize: 20,
+                              color: colorScheme.error,
+                              tooltip: '清除所有快取',
+                              padding: const EdgeInsets.only(left: 4),
+                              constraints: const BoxConstraints(),
+                              onPressed: () =>
+                                  _showClearAllDialog(context, viewModel),
+                            ),
                         ],
                       ),
-                      padding: const EdgeInsetsDirectional.symmetric(
-                        horizontal: 20,
-                        vertical: 11,
-                      ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                CupertinoListSection.insetGrouped(
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  header: const Padding(
-                    padding: EdgeInsets.only(left: 20),
-                    child: Text('關於'),
                   ),
-                  children: [
-                    CupertinoListTile(
-                      title: const Text('版本', style: TextStyle(fontSize: 18)),
-                      additionalInfo: Text(
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 28, top: 20, bottom: 8),
+                  child: Text(
+                    '關於',
+                    style: textTheme.titleSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Card.filled(
+                    child: ListTile(
+                      title: const Text('版本'),
+                      trailing: Text(
                         _version,
-                        style: const TextStyle(fontSize: 18),
-                      ),
-                      padding: const EdgeInsetsDirectional.symmetric(
-                        horizontal: 20,
-                        vertical: 11,
+                        style: textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
