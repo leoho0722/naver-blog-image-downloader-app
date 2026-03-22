@@ -1,37 +1,42 @@
-import 'dart:io';
-import 'dart:typed_data';
-
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:flutter/services.dart';
 
 import '../../ui/core/app_error.dart';
 
-/// 系統相簿存取服務，使用 [ImageGallerySaver] 將照片存入相簿。
+/// 系統相簿存取服務，透過 MethodChannel 呼叫原生 API 儲存照片。
 ///
-/// 透過 bytes 方式寫入，讓 iOS 系統自動產生 IMG_xxxx 檔名。
+/// iOS 使用 PhotoKit `PHAssetCreationRequest.addResource(fileURL:)` 直接寫入，
+/// Android 使用 MediaStore + FileInputStream 直接複製，
+/// 兩者皆不轉碼，保留原始編碼與檔案大小。
 class GalleryService {
+  static const _channel = MethodChannel(
+    'com.example.naver_blog_image_downloader/gallery',
+  );
+
   /// 將指定路徑的圖片檔案儲存至系統相簿。
   ///
-  /// 讀取檔案為 bytes 後透過 [ImageGallerySaver.saveImage] 存入，
-  /// iOS 會自動指派 IMG_xxxx 格式的檔名。
-  Future<void> saveToGallery(String filePath) async {
-    final bytes = await File(filePath).readAsBytes();
-    final result = await ImageGallerySaver.saveImage(
-      Uint8List.fromList(bytes),
-      quality: 100,
-    );
-
-    if (result == null || result['isSuccess'] != true) {
-      throw const AppError(type: AppErrorType.gallery, message: '儲存至相簿失敗');
+  /// 透過原生 API 直接寫入檔案，不經過 UIImage 或其他轉碼處理，
+  /// 保留原始編碼與大小。iOS 會自動指派 IMG_xxxx 格式的檔名。
+  Future<void> saveToGallery(String filePath, {int totalCount = 1}) async {
+    try {
+      await _channel.invokeMethod<bool>('saveToGallery', {
+        'filePath': filePath,
+        'totalCount': totalCount,
+      });
+    } on PlatformException catch (e) {
+      throw AppError(
+        type: AppErrorType.gallery,
+        message: e.message ?? '儲存至相簿失敗',
+      );
     }
   }
 
   /// 請求相簿存取權限。
-  ///
-  /// [ImageGallerySaver] 在儲存時會自動觸發權限請求，
-  /// 此方法保留供需要預先請求權限的場景使用。
   Future<bool> requestPermission() async {
-    // image_gallery_saver 在 saveImage 時自動請求權限，
-    // 這裡回傳 true 表示可以繼續操作。
-    return true;
+    try {
+      final result = await _channel.invokeMethod<bool>('requestPermission');
+      return result ?? false;
+    } on PlatformException {
+      return false;
+    }
   }
 }

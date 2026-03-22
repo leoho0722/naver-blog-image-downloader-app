@@ -158,7 +158,10 @@ class PhotoRepository {
       for (final photo in photos) {
         final file = await _cacheRepository.cachedFile(photo.filename, blogId);
         if (file == null) continue;
-        await _galleryService.saveToGallery(file.path);
+        await _galleryService.saveToGallery(
+          file.path,
+          totalCount: photos.length,
+        );
       }
       await _cacheRepository.markAsSavedToGallery(blogId);
       return Result.ok(null);

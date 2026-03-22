@@ -1,10 +1,4 @@
-# gallery-service Specification
-
-## Purpose
-
-TBD - created by archiving change 's012-gallery-service'. Update Purpose after archive.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: GalleryService saveToGallery method
 
@@ -36,26 +30,6 @@ The file `lib/data/services/gallery_service.dart` SHALL define a `GalleryService
 - **WHEN** `saveToGallery` saves the file to the gallery
 - **THEN** the saved file in the gallery SHALL have the same size as the original cached file
 
-
-<!-- @trace
-source: gallery-native-impl
-updated: 2026-03-23
-code:
-  - naver_blog_image_downloader/ios/Podfile.lock
-  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
-  - naver_blog_image_downloader/ios/Runner/AppDelegate.swift
-  - naver_blog_image_downloader/android/app/src/main/kotlin/com/example/naver_blog_image_downloader/MainActivity.kt
-  - naver_blog_image_downloader/pubspec.lock
-  - naver_blog_image_downloader/android/app/build.gradle.kts
-  - naver_blog_image_downloader/android/app/src/main/kotlin/com/example/naver_blog_image_downloader/GallerySaver.kt
-  - naver_blog_image_downloader/ios/Runner.xcodeproj/project.pbxproj
-  - naver_blog_image_downloader/ios/Runner/GallerySaver.swift
-  - naver_blog_image_downloader/android/app/src/main/AndroidManifest.xml
-  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
-  - naver_blog_image_downloader/pubspec.yaml
--->
-
----
 ### Requirement: GalleryService requestPermission method
 
 The `GalleryService` class SHALL provide a `requestPermission` method that requests photo library access permission from the native platform via the same `MethodChannel`.
@@ -76,21 +50,3 @@ The `GalleryService` class SHALL provide a `requestPermission` method that reque
 - **GIVEN** the user denies photo library permission
 - **WHEN** `requestPermission` is called
 - **THEN** it SHALL return `false`
-
-<!-- @trace
-source: gallery-native-impl
-updated: 2026-03-23
-code:
-  - naver_blog_image_downloader/ios/Podfile.lock
-  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
-  - naver_blog_image_downloader/ios/Runner/AppDelegate.swift
-  - naver_blog_image_downloader/android/app/src/main/kotlin/com/example/naver_blog_image_downloader/MainActivity.kt
-  - naver_blog_image_downloader/pubspec.lock
-  - naver_blog_image_downloader/android/app/build.gradle.kts
-  - naver_blog_image_downloader/android/app/src/main/kotlin/com/example/naver_blog_image_downloader/GallerySaver.kt
-  - naver_blog_image_downloader/ios/Runner.xcodeproj/project.pbxproj
-  - naver_blog_image_downloader/ios/Runner/GallerySaver.swift
-  - naver_blog_image_downloader/android/app/src/main/AndroidManifest.xml
-  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
-  - naver_blog_image_downloader/pubspec.yaml
--->

@@ -8,12 +8,12 @@ TBD - created by archiving change 's001-project-dependencies'. Update Purpose af
 
 ### Requirement: Runtime dependencies declared
 
-The `pubspec.yaml` file SHALL declare the following runtime dependencies: `provider`, `go_router`, `dio`, `image_gallery_saver`, `crypto`, `path_provider`, `path`, `shared_preferences`, `amplify_flutter`, `amplify_api`, `package_info_plus`.
+The `pubspec.yaml` file SHALL declare the following runtime dependencies: `provider`, `go_router`, `dio`, `crypto`, `path_provider`, `path`, `shared_preferences`, `amplify_flutter`, `amplify_api`, `package_info_plus`.
 
 #### Scenario: All runtime packages present
 
 - **WHEN** the pubspec.yaml is inspected
-- **THEN** all eleven runtime dependencies SHALL be listed under `dependencies`
+- **THEN** all ten runtime dependencies SHALL be listed under `dependencies`
 
 #### Scenario: Flutter pub get succeeds
 
@@ -46,6 +46,24 @@ tests:
   - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
   - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
 -->
+
+---
+### Requirement: Platform minimum version
+
+The project SHALL enforce minimum platform versions to ensure access to required native APIs.
+
+- iOS deployment target (`IPHONEOS_DEPLOYMENT_TARGET`) SHALL be set to `17.0` (iOS 17.0).
+- Android minimum SDK (`minSdk`) SHALL be set to `34` (Android 14.0).
+
+#### Scenario: iOS minimum version
+
+- **WHEN** the Xcode project build settings are inspected
+- **THEN** `IPHONEOS_DEPLOYMENT_TARGET` SHALL be `17.0`
+
+#### Scenario: Android minimum version
+
+- **WHEN** `android/app/build.gradle.kts` is inspected
+- **THEN** `minSdk` SHALL be `34`
 
 ---
 ### Requirement: Dev dependencies declared
