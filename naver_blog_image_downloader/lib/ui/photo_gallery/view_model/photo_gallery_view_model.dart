@@ -19,6 +19,7 @@ class PhotoGalleryViewModel extends ChangeNotifier {
 
   List<PhotoEntity> _photos = [];
   String _blogId = '';
+  final Map<String, File?> _cachedFiles = {};
   Set<String> _selectedIds = {};
   bool _isSelectMode = false;
   bool _isSaving = false;
@@ -29,6 +30,9 @@ class PhotoGalleryViewModel extends ChangeNotifier {
   /// 目前操作的 Blog 識別碼。
   String get blogId => _blogId;
 
+  /// 預先解析的快取檔案對應表（photoId → File?）。
+  Map<String, File?> get cachedFiles => _cachedFiles;
+
   /// 已選取的照片 ID 集合。
   Set<String> get selectedIds => _selectedIds;
 
@@ -38,10 +42,19 @@ class PhotoGalleryViewModel extends ChangeNotifier {
   /// 是否正在執行儲存至相簿操作。
   bool get isSaving => _isSaving;
 
-  /// 載入照片清單與 Blog 識別碼。
-  void load(List<PhotoEntity> photos, String blogId) {
+  /// 載入照片清單與 Blog 識別碼，並預先解析所有快取檔案。
+  Future<void> load(List<PhotoEntity> photos, String blogId) async {
     _photos = photos;
     _blogId = blogId;
+    _cachedFiles.clear();
+    notifyListeners();
+
+    for (final photo in photos) {
+      _cachedFiles[photo.id] = await _cacheRepository.cachedFile(
+        photo.filename,
+        blogId,
+      );
+    }
     notifyListeners();
   }
 
@@ -99,10 +112,5 @@ class PhotoGalleryViewModel extends ChangeNotifier {
 
     _isSaving = false;
     notifyListeners();
-  }
-
-  /// 取得指定照片的快取檔案。
-  Future<File?> cachedFile(PhotoEntity photo) {
-    return _cacheRepository.cachedFile(photo.filename, _blogId);
   }
 }

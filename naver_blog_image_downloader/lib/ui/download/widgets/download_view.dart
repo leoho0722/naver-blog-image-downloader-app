@@ -35,6 +35,7 @@ class _DownloadDialogState extends State<DownloadDialog> {
     await viewModel.startDownload(
       photos: widget.fetchResult.photos,
       blogId: widget.fetchResult.blogId,
+      blogUrl: widget.fetchResult.blogUrl,
     );
 
     // 下載完成，關閉對話框並回傳 true

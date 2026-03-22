@@ -9,6 +9,7 @@ class FetchResult {
   const FetchResult({
     required this.photos,
     required this.blogId,
+    required this.blogUrl,
     required this.isFullyCached,
   });
 
@@ -17,6 +18,9 @@ class FetchResult {
 
   /// 部落格的唯一識別碼。
   final String blogId;
+
+  /// 原始的 Blog 網址。
+  final String blogUrl;
 
   /// 此次結果是否完全來自本地快取，而非從遠端重新擷取。
   final bool isFullyCached;

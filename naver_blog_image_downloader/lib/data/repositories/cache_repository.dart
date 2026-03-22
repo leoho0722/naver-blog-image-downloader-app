@@ -14,6 +14,9 @@ class CacheRepository {
   static const _metadataKey = 'cache_metadata';
   static const _softLimit = 300 * 1024 * 1024; // 300 MB
 
+  /// 單張照片的預估平均檔案大小（bytes），用於淘汰策略的空間估算。
+  static const _estimatedPhotoSizeBytes = 500000;
+
   bool _initialized = false;
   late Directory _cacheDir;
   final Map<String, BlogCacheMetadata> _metadataStore = {};
@@ -145,7 +148,7 @@ class CacheRepository {
       if (freed >= target) break;
       if (!meta.isSavedToGallery) continue;
       await clearBlog(meta.blogId);
-      freed += meta.photoCount * 500000; // estimate
+      freed += meta.photoCount * _estimatedPhotoSizeBytes;
     }
   }
 

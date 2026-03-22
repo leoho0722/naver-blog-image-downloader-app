@@ -51,45 +51,32 @@ Future<void> main() async {
           ),
         ),
         // ViewModel 層
-        ChangeNotifierProxyProvider<PhotoRepository, BlogInputViewModel>(
+        ChangeNotifierProvider(
           create: (context) => BlogInputViewModel(
             photoRepository: context.read<PhotoRepository>(),
           ),
-          update: (_, repo, vm) => vm!,
         ),
-        ChangeNotifierProxyProvider<PhotoRepository, DownloadViewModel>(
+        ChangeNotifierProvider(
           create: (context) => DownloadViewModel(
             photoRepository: context.read<PhotoRepository>(),
           ),
-          update: (_, repo, vm) => vm!,
         ),
-        ChangeNotifierProxyProvider2<
-          PhotoRepository,
-          CacheRepository,
-          PhotoGalleryViewModel
-        >(
+        ChangeNotifierProvider(
           create: (context) => PhotoGalleryViewModel(
             photoRepository: context.read<PhotoRepository>(),
             cacheRepository: context.read<CacheRepository>(),
           ),
-          update: (_, repo, cache, vm) => vm!,
         ),
-        ChangeNotifierProxyProvider2<
-          CacheRepository,
-          GalleryService,
-          PhotoDetailViewModel
-        >(
+        ChangeNotifierProvider(
           create: (context) => PhotoDetailViewModel(
             cacheRepository: context.read<CacheRepository>(),
             galleryService: context.read<GalleryService>(),
           ),
-          update: (_, cache, gallery, vm) => vm!,
         ),
-        ChangeNotifierProxyProvider<CacheRepository, SettingsViewModel>(
+        ChangeNotifierProvider(
           create: (context) => SettingsViewModel(
             cacheRepository: context.read<CacheRepository>(),
           ),
-          update: (_, cache, vm) => vm!,
         ),
       ],
       child: const NaverPhotoApp(),

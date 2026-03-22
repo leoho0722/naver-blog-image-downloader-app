@@ -3,6 +3,8 @@ import 'dart:typed_data';
 
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 
+import '../../ui/core/app_error.dart';
+
 /// 系統相簿存取服務，使用 [ImageGallerySaver] 將照片存入相簿。
 ///
 /// 透過 bytes 方式寫入，讓 iOS 系統自動產生 IMG_xxxx 檔名。
@@ -19,7 +21,7 @@ class GalleryService {
     );
 
     if (result == null || result['isSuccess'] != true) {
-      throw Exception('儲存至相簿失敗');
+      throw const AppError(type: AppErrorType.gallery, message: '儲存至相簿失敗');
     }
   }
 

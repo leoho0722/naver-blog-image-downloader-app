@@ -15,23 +15,25 @@ class BlogInputView extends StatefulWidget {
 }
 
 class _BlogInputViewState extends State<BlogInputView> {
+  late final BlogInputViewModel _viewModel;
+
   @override
   void initState() {
     super.initState();
-    context.read<BlogInputViewModel>().addListener(_onViewModelChanged);
+    _viewModel = context.read<BlogInputViewModel>();
+    _viewModel.addListener(_onViewModelChanged);
   }
 
   @override
   void dispose() {
-    context.read<BlogInputViewModel>().removeListener(_onViewModelChanged);
+    _viewModel.removeListener(_onViewModelChanged);
     super.dispose();
   }
 
   void _onViewModelChanged() {
-    final viewModel = context.read<BlogInputViewModel>();
-    final fetchResult = viewModel.fetchResult;
+    final fetchResult = _viewModel.fetchResult;
     if (fetchResult != null) {
-      viewModel.reset();
+      _viewModel.reset();
       _handleFetchResult(fetchResult);
     }
   }

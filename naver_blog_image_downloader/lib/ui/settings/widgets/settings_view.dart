@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -24,7 +26,7 @@ class _SettingsViewState extends State<SettingsView> {
       _loaded = true;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
-        context.read<SettingsViewModel>().loadCacheInfo();
+        unawaited(context.read<SettingsViewModel>().loadCacheInfo());
         final info = await PackageInfo.fromPlatform();
         if (mounted) {
           setState(() {
@@ -144,7 +146,7 @@ class _SettingsViewState extends State<SettingsView> {
         ],
       ),
     );
-    if (confirmed == true) {
+    if (confirmed == true && mounted) {
       await viewModel.clearAllCache();
     }
   }

@@ -6,6 +6,15 @@ enum AppErrorType {
   /// 資料解析錯誤（如 JSON 格式不符預期）。
   parsing,
 
+  /// 操作逾時錯誤（如輪詢超過上限）。
+  timeout,
+
+  /// 相簿儲存錯誤（如儲存至相簿失敗）。
+  gallery,
+
+  /// 伺服器端處理錯誤（如任務處理失敗）。
+  serverError,
+
   /// 無法歸類的未知錯誤。
   unknown,
 }

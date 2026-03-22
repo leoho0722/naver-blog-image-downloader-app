@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -93,18 +91,13 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
               itemCount: photos.length,
               itemBuilder: (context, index) {
                 final photo = photos[index];
-                return FutureBuilder<File?>(
-                  future: viewModel.cachedFile(photo),
-                  builder: (context, snapshot) {
-                    return PhotoCard(
-                      photo: photo,
-                      cachedFile: snapshot.data,
-                      isSelected: viewModel.selectedIds.contains(photo.id),
-                      isSelectMode: viewModel.isSelectMode,
-                      onTap: () => _onPhotoTap(context, photo),
-                      onSelect: () => viewModel.toggleSelection(photo.id),
-                    );
-                  },
+                return PhotoCard(
+                  photo: photo,
+                  cachedFile: viewModel.cachedFiles[photo.id],
+                  isSelected: viewModel.selectedIds.contains(photo.id),
+                  isSelectMode: viewModel.isSelectMode,
+                  onTap: () => _onPhotoTap(context, photo),
+                  onSelect: () => viewModel.toggleSelection(photo.id),
                 );
               },
             ),

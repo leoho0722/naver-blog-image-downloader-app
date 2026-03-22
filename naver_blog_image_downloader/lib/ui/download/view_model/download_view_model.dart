@@ -36,10 +36,12 @@ class DownloadViewModel extends ChangeNotifier {
 
   /// 開始批次下載指定的照片至本機快取。
   ///
-  /// [photos] 為要下載的照片清單，[blogId] 用於建立快取目錄結構。
+  /// [photos] 為要下載的照片清單，[blogId] 用於建立快取目錄結構，
+  /// [blogUrl] 為原始 Blog 網址，用於記錄快取 metadata。
   Future<void> startDownload({
     required List<PhotoEntity> photos,
     required String blogId,
+    required String blogUrl,
   }) async {
     if (_isDownloading) return;
 
@@ -57,6 +59,7 @@ class DownloadViewModel extends ChangeNotifier {
     _result = await _photoRepository.downloadAllToCache(
       photos: photos,
       blogId: blogId,
+      blogUrl: blogUrl,
       onProgress: (completed, total) {
         _completed = completed;
         _total = total;

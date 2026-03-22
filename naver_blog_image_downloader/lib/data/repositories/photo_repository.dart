@@ -12,6 +12,7 @@ import '../models/photo_entity.dart';
 import '../services/api_service.dart';
 import '../services/file_download_service.dart';
 import '../services/gallery_service.dart';
+import '../../ui/core/app_error.dart';
 import '../../ui/core/result.dart';
 import 'cache_repository.dart';
 
@@ -41,6 +42,9 @@ class PhotoRepository {
 
   /// 輪詢最大次數（3 秒 × 200 次 = 10 分鐘上限）。
   static const _maxPollAttempts = 200;
+
+  /// 並行下載最大併發數。
+  static const _maxConcurrency = 4;
 
   /// 取得指定 Blog URL 的照片列表（非同步任務模式）。
   ///
@@ -88,6 +92,7 @@ class PhotoRepository {
               FetchResult(
                 photos: photos,
                 blogId: blogId,
+                blogUrl: blogUrl,
                 isFullyCached: isFullyCached,
               ),
             );
@@ -95,11 +100,15 @@ class PhotoRepository {
           case JobStatus.failed:
             final errors = jobStatus.result?.errors ?? [];
             final message = errors.isNotEmpty ? errors.join('; ') : '伺服器處理失敗';
-            return Result.error(Exception(message));
+            return Result.error(
+              AppError(type: AppErrorType.serverError, message: message),
+            );
         }
       }
 
-      return Result.error(Exception('任務處理逾時，請稍後再試'));
+      return Result.error(
+        const AppError(type: AppErrorType.timeout, message: '任務處理逾時，請稍後再試'),
+      );
     } on Exception catch (e) {
       return Result.error(e);
     }
@@ -136,6 +145,7 @@ class PhotoRepository {
   Future<DownloadBatchResult> downloadAllToCache({
     required List<PhotoEntity> photos,
     required String blogId,
+    required String blogUrl,
     void Function(int completed, int total)? onProgress,
   }) async {
     // 下載前先清理快取空間
@@ -190,24 +200,34 @@ class PhotoRepository {
       onProgress?.call(completed, photos.length);
     }
 
-    // 並行池：最多 4 條並行下載（信號量模式）
-    final active = <Future<void>>[];
-    for (final photo in photos) {
-      if (active.length >= 4) {
-        await Future.any(active);
-        active.removeWhere((f) => f == Future.value());
+    // 並行池：最多 _maxConcurrency 條並行下載（信號量模式）
+    int running = 0;
+    final pending = <Completer<void>>[];
+
+    Future<void> throttled(PhotoEntity photo) async {
+      if (running >= _maxConcurrency) {
+        final gate = Completer<void>();
+        pending.add(gate);
+        await gate.future;
       }
-      final future = downloadOne(photo);
-      active.add(future);
-      future.then((_) => active.remove(future));
+      running++;
+      try {
+        await downloadOne(photo);
+      } finally {
+        running--;
+        if (pending.isNotEmpty) {
+          pending.removeAt(0).complete();
+        }
+      }
     }
-    await Future.wait(active);
+
+    await Future.wait(photos.map(throttled));
 
     // 更新 metadata
     await _cacheRepository.updateMetadata(
       BlogCacheMetadata(
         blogId: blogId,
-        blogUrl: photos.firstOrNull?.url ?? '',
+        blogUrl: blogUrl,
         photoCount: photos.length,
         downloadedAt: DateTime.now(),
         isSavedToGallery: false,

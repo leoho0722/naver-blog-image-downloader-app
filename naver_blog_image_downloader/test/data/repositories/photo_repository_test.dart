@@ -12,6 +12,7 @@ import 'package:naver_blog_image_downloader/data/repositories/photo_repository.d
 import 'package:naver_blog_image_downloader/data/services/api_service.dart';
 import 'package:naver_blog_image_downloader/data/services/file_download_service.dart';
 import 'package:naver_blog_image_downloader/data/services/gallery_service.dart';
+import 'package:naver_blog_image_downloader/ui/core/app_error.dart';
 import 'package:naver_blog_image_downloader/ui/core/result.dart';
 
 class MockApiService extends Mock implements ApiService {}
@@ -136,15 +137,15 @@ void main() {
     test('任務失敗時回傳 Result.error 含錯誤訊息', () async {
       setupSubmitJob();
       when(() => mockApiService.checkJobStatus(testJobId)).thenAnswer(
-        (_) async => JobStatusResponse(
+        (_) async => const JobStatusResponse(
           jobId: testJobId,
           status: JobStatus.failed,
           result: PhotoDownloadResponse(
             totalImages: 0,
             successfulDownloads: 0,
             failureDownloads: 1,
-            imageUrls: const [],
-            errors: const ['等待圖片元素超時'],
+            imageUrls: [],
+            errors: ['等待圖片元素超時'],
             elapsedTime: 10.0,
           ),
         ),
@@ -154,11 +155,16 @@ void main() {
 
       expect(result, isA<Error<FetchResult>>());
       final error = (result as Error<FetchResult>).error;
-      expect(error.toString(), contains('等待圖片元素超時'));
+      expect(error, isA<AppError>());
+      final appError = error as AppError;
+      expect(appError.type, AppErrorType.serverError);
+      expect(appError.toString(), contains('等待圖片元素超時'));
     });
   });
 
   group('downloadAllToCache', () {
+    const testBlogUrl = 'https://blog.naver.com/test';
+
     PhotoEntity makePhoto(String id) => PhotoEntity(
       id: id,
       url: 'https://example.com/$id.jpg',
@@ -209,7 +215,11 @@ void main() {
         setupDownloadSuccess('https://example.com/p1.jpg', 'p1.jpg');
 
         // Act
-        await repository.downloadAllToCache(photos: photos, blogId: testBlogId);
+        await repository.downloadAllToCache(
+          photos: photos,
+          blogId: testBlogId,
+          blogUrl: testBlogUrl,
+        );
 
         // Assert
         verify(() => mockCacheRepository.evictIfNeeded()).called(1);
@@ -230,6 +240,7 @@ void main() {
         final result = await repository.downloadAllToCache(
           photos: photos,
           blogId: testBlogId,
+          blogUrl: testBlogUrl,
         );
 
         // Assert — 兩張照片都成功下載
@@ -250,6 +261,7 @@ void main() {
         final result = await repository.downloadAllToCache(
           photos: photos,
           blogId: testBlogId,
+          blogUrl: testBlogUrl,
         );
 
         // Assert
@@ -272,6 +284,7 @@ void main() {
         final result = await repository.downloadAllToCache(
           photos: photos,
           blogId: testBlogId,
+          blogUrl: testBlogUrl,
         );
 
         // Assert
@@ -307,6 +320,7 @@ void main() {
         final result = await repository.downloadAllToCache(
           photos: photos,
           blogId: testBlogId,
+          blogUrl: testBlogUrl,
         );
 
         // Assert
@@ -341,6 +355,7 @@ void main() {
         await repository.downloadAllToCache(
           photos: photos,
           blogId: testBlogId,
+          blogUrl: testBlogUrl,
           onProgress: (completed, total) {
             progressCalls.add((completed, total));
           },
@@ -366,6 +381,7 @@ void main() {
         final result = await repository.downloadAllToCache(
           photos: photos,
           blogId: testBlogId,
+          blogUrl: testBlogUrl,
           // 不提供 onProgress
         );
         expect(result.successCount, 1);
@@ -395,6 +411,7 @@ void main() {
         final result = await repository.downloadAllToCache(
           photos: photos,
           blogId: testBlogId,
+          blogUrl: testBlogUrl,
         );
 
         // Assert
@@ -423,7 +440,11 @@ void main() {
         ).thenThrow(Exception('fail'));
 
         // Act
-        await repository.downloadAllToCache(photos: photos, blogId: testBlogId);
+        await repository.downloadAllToCache(
+          photos: photos,
+          blogId: testBlogId,
+          blogUrl: testBlogUrl,
+        );
 
         // Assert — updateMetadata 一定被呼叫
         verify(() => mockCacheRepository.updateMetadata(any())).called(1);
@@ -447,11 +468,16 @@ void main() {
         });
 
         // Act
-        await repository.downloadAllToCache(photos: photos, blogId: testBlogId);
+        await repository.downloadAllToCache(
+          photos: photos,
+          blogId: testBlogId,
+          blogUrl: testBlogUrl,
+        );
 
         // Assert
         expect(capturedMetadata, isNotNull);
         expect(capturedMetadata!.blogId, testBlogId);
+        expect(capturedMetadata!.blogUrl, testBlogUrl);
         expect(capturedMetadata!.photoCount, 2);
         expect(capturedMetadata!.filenames, ['m1.jpg', 'm2.jpg']);
         expect(capturedMetadata!.isSavedToGallery, isFalse);
@@ -472,6 +498,7 @@ void main() {
         final result = await repository.downloadAllToCache(
           photos: photos,
           blogId: testBlogId,
+          blogUrl: testBlogUrl,
         );
 
         // Assert
@@ -505,6 +532,7 @@ void main() {
         final result = await repository.downloadAllToCache(
           photos: photos,
           blogId: testBlogId,
+          blogUrl: testBlogUrl,
         );
 
         // Assert

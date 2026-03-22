@@ -13,6 +13,7 @@ void main() {
   late DownloadViewModel viewModel;
 
   const testBlogId = 'test_blog_id';
+  const testBlogUrl = 'https://blog.naver.com/test';
 
   final testPhotos = [
     const PhotoEntity(
@@ -32,10 +33,7 @@ void main() {
     ),
   ];
 
-  final successResult = DownloadBatchResult(
-    successCount: 3,
-    failedPhotos: const [],
-  );
+  const successResult = DownloadBatchResult(successCount: 3, failedPhotos: []);
 
   setUp(() {
     mockPhotoRepository = MockPhotoRepository();
@@ -78,6 +76,7 @@ void main() {
         () => mockPhotoRepository.downloadAllToCache(
           photos: any(named: 'photos'),
           blogId: any(named: 'blogId'),
+          blogUrl: any(named: 'blogUrl'),
           onProgress: any(named: 'onProgress'),
         ),
       ).thenAnswer((invocation) async {
@@ -91,7 +90,11 @@ void main() {
       });
 
       // Act
-      await viewModel.startDownload(photos: testPhotos, blogId: testBlogId);
+      await viewModel.startDownload(
+        photos: testPhotos,
+        blogId: testBlogId,
+        blogUrl: testBlogUrl,
+      );
 
       // Assert — 在 1/3 時 progress 應約為 0.333
       expect(capturedProgress, closeTo(1 / 3, 0.001));
@@ -109,6 +112,7 @@ void main() {
         () => mockPhotoRepository.downloadAllToCache(
           photos: any(named: 'photos'),
           blogId: any(named: 'blogId'),
+          blogUrl: any(named: 'blogUrl'),
           onProgress: any(named: 'onProgress'),
         ),
       ).thenAnswer((invocation) async {
@@ -132,7 +136,11 @@ void main() {
       });
 
       // Act
-      await viewModel.startDownload(photos: testPhotos, blogId: testBlogId);
+      await viewModel.startDownload(
+        photos: testPhotos,
+        blogId: testBlogId,
+        blogUrl: testBlogUrl,
+      );
 
       // Assert
       // 第一次通知：isDownloading = true, total = 3, completed = 0, result = null
@@ -156,6 +164,7 @@ void main() {
         () => mockPhotoRepository.downloadAllToCache(
           photos: testPhotos,
           blogId: testBlogId,
+          blogUrl: testBlogUrl,
           onProgress: any(named: 'onProgress'),
         ),
       ).called(1);
@@ -169,6 +178,7 @@ void main() {
         () => mockPhotoRepository.downloadAllToCache(
           photos: any(named: 'photos'),
           blogId: any(named: 'blogId'),
+          blogUrl: any(named: 'blogUrl'),
           onProgress: any(named: 'onProgress'),
         ),
       ).thenAnswer((_) async {
@@ -177,7 +187,11 @@ void main() {
       });
 
       // Act
-      await viewModel.startDownload(photos: testPhotos, blogId: testBlogId);
+      await viewModel.startDownload(
+        photos: testPhotos,
+        blogId: testBlogId,
+        blogUrl: testBlogUrl,
+      );
 
       // Assert
       expect(isDownloadingBeforeCall, isTrue);
@@ -196,12 +210,17 @@ void main() {
         () => mockPhotoRepository.downloadAllToCache(
           photos: any(named: 'photos'),
           blogId: any(named: 'blogId'),
+          blogUrl: any(named: 'blogUrl'),
           onProgress: any(named: 'onProgress'),
         ),
       ).thenAnswer((_) async => expectedResult);
 
       // Act
-      await viewModel.startDownload(photos: testPhotos, blogId: testBlogId);
+      await viewModel.startDownload(
+        photos: testPhotos,
+        blogId: testBlogId,
+        blogUrl: testBlogUrl,
+      );
 
       // Assert
       expect(viewModel.result, equals(expectedResult));
@@ -217,6 +236,7 @@ void main() {
         () => mockPhotoRepository.downloadAllToCache(
           photos: any(named: 'photos'),
           blogId: any(named: 'blogId'),
+          blogUrl: any(named: 'blogUrl'),
           onProgress: any(named: 'onProgress'),
         ),
       ).thenAnswer((_) => completer.future);
@@ -225,10 +245,15 @@ void main() {
       final firstCall = viewModel.startDownload(
         photos: testPhotos,
         blogId: testBlogId,
+        blogUrl: testBlogUrl,
       );
 
       // 下載中嘗試第二次呼叫
-      await viewModel.startDownload(photos: testPhotos, blogId: testBlogId);
+      await viewModel.startDownload(
+        photos: testPhotos,
+        blogId: testBlogId,
+        blogUrl: testBlogUrl,
+      );
 
       // 完成第一次下載
       completer.complete(successResult);
@@ -239,6 +264,7 @@ void main() {
         () => mockPhotoRepository.downloadAllToCache(
           photos: any(named: 'photos'),
           blogId: any(named: 'blogId'),
+          blogUrl: any(named: 'blogUrl'),
           onProgress: any(named: 'onProgress'),
         ),
       ).called(1);
@@ -250,6 +276,7 @@ void main() {
         () => mockPhotoRepository.downloadAllToCache(
           photos: any(named: 'photos'),
           blogId: any(named: 'blogId'),
+          blogUrl: any(named: 'blogUrl'),
           onProgress: any(named: 'onProgress'),
         ),
       ).thenAnswer((_) async => successResult);
@@ -262,7 +289,11 @@ void main() {
       });
 
       // Act
-      await viewModel.startDownload(photos: testPhotos, blogId: testBlogId);
+      await viewModel.startDownload(
+        photos: testPhotos,
+        blogId: testBlogId,
+        blogUrl: testBlogUrl,
+      );
 
       // Assert
       expect(capturedTotal, 3);
@@ -276,6 +307,7 @@ void main() {
         () => mockPhotoRepository.downloadAllToCache(
           photos: any(named: 'photos'),
           blogId: any(named: 'blogId'),
+          blogUrl: any(named: 'blogUrl'),
           onProgress: any(named: 'onProgress'),
         ),
       ).thenAnswer((invocation) async {
@@ -292,7 +324,11 @@ void main() {
       });
 
       // Act
-      await viewModel.startDownload(photos: testPhotos, blogId: testBlogId);
+      await viewModel.startDownload(
+        photos: testPhotos,
+        blogId: testBlogId,
+        blogUrl: testBlogUrl,
+      );
 
       // Assert
       // 1 (start) + 3 (progress) + 1 (done) = 5

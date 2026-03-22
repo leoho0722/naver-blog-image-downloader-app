@@ -25,13 +25,17 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
     super.didChangeDependencies();
     if (!_loaded) {
       _loaded = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final extra = GoRouterState.of(context).extra;
-        if (extra is ({PhotoEntity photo, String blogId})) {
-          context.read<PhotoDetailViewModel>().load(extra.photo, extra.blogId);
-        }
-      });
+      final extra = GoRouterState.of(context).extra;
+      if (extra is ({PhotoEntity photo, String blogId})) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.read<PhotoDetailViewModel>().load(
+              extra.photo,
+              extra.blogId,
+            );
+          }
+        });
+      }
     }
   }
 
