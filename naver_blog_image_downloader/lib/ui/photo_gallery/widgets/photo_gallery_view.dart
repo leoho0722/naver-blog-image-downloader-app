@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -21,24 +23,65 @@ class PhotoGalleryView extends StatefulWidget {
 }
 
 class _PhotoGalleryViewState extends State<PhotoGalleryView> {
+  late final PhotoGalleryViewModel _viewModel;
   bool _loaded = false;
+  bool _isSavingDialogOpen = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_loaded) {
       _loaded = true;
+      _viewModel = context.read<PhotoGalleryViewModel>();
+      _viewModel.addListener(_onViewModelChanged);
       final fetchResult = GoRouterState.of(context).extra as FetchResult?;
       if (fetchResult != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            context.read<PhotoGalleryViewModel>().load(
-              fetchResult.photos,
-              fetchResult.blogId,
-            );
+            _viewModel.load(fetchResult.photos, fetchResult.blogId);
           }
         });
       }
+    }
+  }
+
+  @override
+  void dispose() {
+    _viewModel.removeListener(_onViewModelChanged);
+    super.dispose();
+  }
+
+  void _onViewModelChanged() {
+    if (!mounted) return;
+    if (_viewModel.isSaving && !_isSavingDialogOpen) {
+      _isSavingDialogOpen = true;
+      unawaited(
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => Center(
+            child: Material(
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(28),
+              child: const SizedBox(
+                width: 140,
+                height: 140,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('儲存中...'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    } else if (!_viewModel.isSaving && _isSavingDialogOpen) {
+      _isSavingDialogOpen = false;
+      Navigator.of(context).pop();
     }
   }
 
@@ -77,9 +120,7 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
             ),
         ],
       ),
-      body: viewModel.isSaving
-          ? const Center(child: CircularProgressIndicator())
-          : photos.isEmpty
+      body: photos.isEmpty
           ? const Center(child: Text('沒有照片'))
           : GridView.builder(
               padding: const EdgeInsets.all(4),
