@@ -26,6 +26,7 @@ enum JobStatus {
 /// `completed` 和 `failed` 兩種狀態都會攜帶 [result]（相同的 [PhotoDownloadResponse] 結構），
 /// 失敗時的錯誤訊息在 `result.errors` 中。
 class JobStatusResponse {
+  /// 建立 [JobStatusResponse] 實例。
   const JobStatusResponse({
     required this.jobId,
     required this.status,

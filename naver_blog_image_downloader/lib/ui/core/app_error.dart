@@ -23,6 +23,9 @@ enum AppErrorType {
 ///
 /// 實作 [Exception] 介面，可與 [Result.error] 搭配使用。
 class AppError implements Exception {
+  /// 建立 [AppError]。
+  ///
+  /// [type] 指定錯誤類型，[message] 為使用者可讀的錯誤描述。
   const AppError({required this.type, required this.message});
 
   /// 錯誤類型，用於判斷錯誤來源。

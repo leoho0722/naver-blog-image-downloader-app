@@ -12,9 +12,10 @@ import 'photo_card.dart';
 ///
 /// 透過 GoRouter `extra` 接收 [FetchResult]，初次進入時自動載入照片清單。
 class PhotoGalleryView extends StatefulWidget {
+  /// 建立 [PhotoGalleryView]，需指定要瀏覽的 [blogId]。
   const PhotoGalleryView({super.key, required this.blogId});
 
-  /// 目前瀏覽的 Blog 識別碼。
+  /// 目前瀏覽的 Blog 識別碼，由路由參數傳入。
   final String blogId;
 
   @override

@@ -5,13 +5,19 @@ import '../../../data/repositories/cache_repository.dart';
 
 /// 設定頁面的 ViewModel，負責快取資訊查詢與清除操作。
 class SettingsViewModel extends ChangeNotifier {
+  /// 建立 [SettingsViewModel]，需注入 [CacheRepository] 以查詢與管理快取。
   SettingsViewModel({required CacheRepository cacheRepository})
     : _cacheRepository = cacheRepository;
 
   final CacheRepository _cacheRepository;
 
+  /// 目前快取佔用的磁碟空間大小（bytes）。
   int _cacheSizeBytes = 0;
+
+  /// 所有已快取 Blog 的 metadata 清單。
   List<BlogCacheMetadata> _cachedBlogs = [];
+
+  /// 是否正在執行清除快取操作。
   bool _isClearing = false;
 
   /// 快取總大小（bytes）。

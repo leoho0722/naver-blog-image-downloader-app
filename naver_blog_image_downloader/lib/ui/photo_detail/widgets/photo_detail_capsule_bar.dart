@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../view_model/photo_detail_view_model.dart';
 
-/// A capsule-shaped bottom bar for the photo detail view,
-/// containing info and save action buttons.
+/// 照片詳細頁面底部的膠囊型操作列，提供「檔案資訊」與「儲存至相簿」兩個按鈕。
+///
+/// 儲存按鈕會依據 [saveState] 自動切換圖示：
+/// - [SaveState.idle]：顯示下載圖示，可點擊
+/// - [SaveState.saving]：顯示載入中動畫，不可點擊
+/// - [SaveState.saved]：顯示打勾圖示，不可點擊
 class PhotoDetailCapsuleBar extends StatelessWidget {
+  /// 建立 [PhotoDetailCapsuleBar]。
   const PhotoDetailCapsuleBar({
     super.key,
     required this.onInfoTap,
@@ -12,8 +17,13 @@ class PhotoDetailCapsuleBar extends StatelessWidget {
     required this.saveState,
   });
 
+  /// 使用者點擊「檔案資訊」按鈕時觸發的回呼。
   final VoidCallback onInfoTap;
+
+  /// 使用者點擊「儲存至相簿」按鈕時觸發的回呼；儲存中或已儲存時為 `null`。
   final VoidCallback? onSaveTap;
+
+  /// 目前的儲存操作狀態，用於決定儲存按鈕的圖示與是否可點擊。
   final SaveState saveState;
 
   @override
@@ -45,6 +55,7 @@ class PhotoDetailCapsuleBar extends StatelessWidget {
     );
   }
 
+  /// 依據 [saveState] 建立對應的儲存按鈕圖示。
   Widget _buildSaveIcon() {
     switch (saveState) {
       case SaveState.saving:

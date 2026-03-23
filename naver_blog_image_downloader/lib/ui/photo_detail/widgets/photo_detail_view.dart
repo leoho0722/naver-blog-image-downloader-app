@@ -9,8 +9,10 @@ import 'photo_detail_capsule_bar.dart';
 
 /// 照片詳細頁面，以全螢幕顯示照片並支援手勢縮放、水平滑動切換與沈浸模式。
 class PhotoDetailView extends StatefulWidget {
+  /// 建立 [PhotoDetailView]，需指定要顯示的 [photoId]。
   const PhotoDetailView({super.key, required this.photoId});
 
+  /// 要顯示的照片識別碼，由路由參數傳入。
   final String photoId;
 
   @override
@@ -208,10 +210,15 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
   }
 }
 
+/// 資訊列元件，以「標籤：值」的水平排列顯示單項照片資訊。
 class _InfoRow extends StatelessWidget {
+  /// 建立 [_InfoRow]。
   const _InfoRow({required this.label, required this.value});
 
+  /// 左側標籤文字（例如「檔案大小」）。
   final String label;
+
+  /// 右側數值文字（例如「1.5 MB」）。
   final String value;
 
   @override

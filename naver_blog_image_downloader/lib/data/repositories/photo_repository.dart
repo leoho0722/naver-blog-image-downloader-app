@@ -31,18 +31,25 @@ class PhotoRepository {
        _fileDownloadService = fileDownloadService,
        _galleryService = galleryService;
 
+  /// API 通訊服務，負責提交爬蟲任務與查詢狀態。
   final ApiService _apiService;
+
+  /// 快取 Repository，負責本機檔案快取與 metadata 管理。
   final CacheRepository _cacheRepository;
+
+  /// 檔案下載服務，負責從遠端 URL 下載圖片至本機。
   final FileDownloadService _fileDownloadService;
+
+  /// 系統相簿存取服務，負責將照片儲存至使用者相簿。
   final GalleryService _galleryService;
 
-  /// 輪詢間隔。
+  /// 每次輪詢任務狀態的等待間隔（3 秒）。
   static const _pollInterval = Duration(seconds: 3);
 
-  /// 輪詢最大次數（3 秒 × 200 次 = 10 分鐘上限）。
+  /// 輪詢最大次數（3 秒 × 200 次 = 最多等待 10 分鐘）。
   static const _maxPollAttempts = 200;
 
-  /// 並行下載最大併發數。
+  /// 單批並行下載的最大併發數量。
   static const _maxConcurrency = 4;
 
   /// 取得指定 Blog URL 的照片列表（非同步任務模式）。
