@@ -45,8 +45,9 @@ private extension AppDelegate {
 
     /// 分派 Gallery MethodChannel 的方法呼叫。
     ///
-    /// - Parameter call: Flutter 端傳入的方法呼叫，包含方法名稱與參數。
-    /// - Parameter result: 回傳結果給 Flutter 端的 callback。
+    /// - Parameters:
+    ///   - call: Flutter 端傳入的方法呼叫，包含方法名稱與參數。
+    ///   - result: 回傳結果給 Flutter 端的 callback。
     func handleGalleryMethodCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         Task {
             switch call.method {
@@ -62,8 +63,9 @@ private extension AppDelegate {
 
     /// 處理 `saveToGallery` 方法呼叫。
     ///
-    /// - Parameter call: 需包含 `Map` 類型的參數，含 `filePath`（String）與 `totalCount`（Int）。
-    /// - Parameter result: 成功回傳 `true`，失敗回傳 `FlutterError`。
+    /// - Parameters:
+    ///   - call: 需包含 `Map` 類型的參數，含 `filePath`（String）與 `totalCount`（Int）。
+    ///   - result: 成功回傳 `true`，失敗回傳 `FlutterError`。
     func handleSaveToGallery(_ call: FlutterMethodCall, result: @escaping FlutterResult) async {
         guard let args = call.arguments as? [String: Any],
               let filePath = args["filePath"] as? String else {
