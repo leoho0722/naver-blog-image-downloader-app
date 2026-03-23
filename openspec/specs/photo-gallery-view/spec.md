@@ -206,74 +206,31 @@ tests:
 ---
 ### Requirement: PhotoCard tap behavior
 
-The `PhotoCard` SHALL use a `GestureDetector` to handle tap events. When `isSelectMode` is true, tapping SHALL invoke the `onSelect` callback. When `isSelectMode` is false, tapping SHALL invoke the `onTap` callback.
+The `PhotoCard` widget SHALL use a `GestureDetector` to handle tap events. In select mode, tapping SHALL call the `onSelect` callback. In normal mode, tapping SHALL call the `onTap` callback. The `onTap` callback in `PhotoGalleryView` SHALL navigate to `PhotoDetailView` by calling `context.push('/detail/${photo.id}', extra: (photos: viewModel.photos, blogId: viewModel.blogId, initialIndex: index))`, passing the full photo list, blog ID, and the tapped photo's index.
 
-#### Scenario: Tap in select mode
+#### Scenario: Tap in normal mode navigates with full photo list
 
-- **WHEN** `isSelectMode` is true and the user taps the PhotoCard
+- **GIVEN** the gallery is in normal mode (not select mode)
+- **WHEN** the user taps a `PhotoCard` at index N
+- **THEN** the app SHALL navigate to `/detail/${photo.id}` with `extra` containing the full photos list, blogId, and `initialIndex: N`
+
+#### Scenario: Tap in select mode toggles selection
+
+- **GIVEN** the gallery is in select mode
+- **WHEN** the user taps a `PhotoCard`
 - **THEN** the `onSelect` callback SHALL be invoked
 
-#### Scenario: Tap in normal mode
-
-- **WHEN** `isSelectMode` is false and the user taps the PhotoCard
-- **THEN** the `onTap` callback SHALL be invoked
 
 <!-- @trace
-source: s026-photo-gallery-view
-updated: 2026-03-21
+source: photo-detail-viewer-redesign
+updated: 2026-03-23
 code:
-  - naver_blog_image_downloader/lib/utils/extensions.dart
-  - naver_blog_image_downloader/lib/main.dart
-  - naver_blog_image_downloader/lib/data/models/dtos/job_status_response.dart
-  - naver_blog_image_downloader/ios/Podfile.lock
-  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
-  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
-  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
-  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
-  - naver_blog_image_downloader/lib/ui/core/result.dart
-  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
-  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
-  - naver_blog_image_downloader/lib/ui/core/app_error.dart
-  - naver_blog_image_downloader/ios/Flutter/Release.xcconfig
-  - naver_blog_image_downloader/ios/Flutter/Debug.xcconfig
-  - naver_blog_image_downloader/pubspec.lock
-  - naver_blog_image_downloader/ios/Runner.xcworkspace/contents.xcworkspacedata
-  - Naver Blog 照片下載器-Flutter-系統架構設計書-完整版.md
-  - naver_blog_image_downloader/lib/app.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
-  - naver_blog_image_downloader/lib/data/services/file_download_service.dart
-  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
-  - naver_blog_image_downloader/lib/data/models/download_batch_result.dart
-  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_request.dart
-  - naver_blog_image_downloader/lib/data/models/photo_entity.dart
-  - naver_blog_image_downloader/lib/amplifyconfiguration.dart
-  - naver_blog_image_downloader/devtools_options.yaml
-  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
-  - naver_blog_image_downloader/ios/Podfile
-  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
-  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_card.dart
-  - naver_blog_image_downloader/lib/routing/app_router.dart
-  - naver_blog_image_downloader/lib/config/theme.dart
-  - naver_blog_image_downloader/pubspec.yaml
-  - naver_blog_image_downloader/lib/data/models/blog_cache_metadata.dart
-  - naver_blog_image_downloader/ios/Runner.xcodeproj/project.pbxproj
-  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
-  - naver_blog_image_downloader/ios/Runner/Info.plist
-  - naver_blog_image_downloader/lib/config/app_config.dart
-  - naver_blog_image_downloader/lib/utils/constants.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
   - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
-  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
-  - naver_blog_image_downloader/lib/data/services/api_service.dart
-  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
-  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
-  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
 tests:
-  - naver_blog_image_downloader/test/widget_test.dart
-  - naver_blog_image_downloader/test/data/services/api_service_test.dart
-  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
-  - naver_blog_image_downloader/test/data/repositories/cache_repository_test.dart
-  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
-  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
 -->
 
 ---

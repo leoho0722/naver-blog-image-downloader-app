@@ -62,6 +62,7 @@ Native（Swift / Kotlin via MethodChannel）— GalleryService 橋接原生 API
 - ViewModel 不得直接存取 Service，必須透過 Repository
 - Repository 回傳 `Result<T>`（sealed class），ViewModel 以 switch 處理 Ok / Error
 - GalleryService 透過 MethodChannel 呼叫原生 API（iOS: PhotoKit / Android: MediaStore）
+- ViewModel 中多個互斥 boolean 狀態須以 enum 表達（如 `SaveState { idle, saving, saved }`），避免非法狀態組合
 
 ## API 通訊（非同步任務模式）
 

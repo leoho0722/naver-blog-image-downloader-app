@@ -7,7 +7,19 @@ import '../../../data/models/photo_entity.dart';
 import '../../../data/repositories/cache_repository.dart';
 import '../../../data/services/gallery_service.dart';
 
-/// 照片詳細頁面的 ViewModel，負責載入單張照片資訊、檔案元資料查詢與儲存至相簿。
+/// 儲存操作狀態。
+enum SaveState {
+  /// 閒置，尚未執行儲存。
+  idle,
+
+  /// 儲存中，正在將照片寫入相簿。
+  saving,
+
+  /// 已儲存，照片已成功寫入相簿。
+  saved,
+}
+
+/// 照片詳細頁面的 ViewModel，管理照片列表、當前索引、檔案元資料快取與儲存至相簿。
 class PhotoDetailViewModel extends ChangeNotifier {
   PhotoDetailViewModel({
     required CacheRepository cacheRepository,
@@ -18,102 +30,158 @@ class PhotoDetailViewModel extends ChangeNotifier {
   final CacheRepository _cacheRepository;
   final GalleryService _galleryService;
 
-  PhotoEntity? _photo;
+  List<PhotoEntity> _photos = [];
   String _blogId = '';
-  File? _cachedFile;
-  int? _fileSizeBytes;
-  int? _imageWidth;
-  int? _imageHeight;
-  bool _isSaving = false;
-  bool _isSaved = false;
+  int _currentIndex = 0;
+  SaveState _saveState = SaveState.idle;
+  final Map<int, _PhotoMetadata> _metadataCache = {};
 
-  /// 目前載入的照片實體。
-  PhotoEntity? get photo => _photo;
+  /// 已載入的照片清單。
+  List<PhotoEntity> get photos => _photos;
 
   /// 目前操作的 Blog 識別碼。
   String get blogId => _blogId;
 
-  /// 快取的本地檔案。
-  File? get cachedFile => _cachedFile;
+  /// 目前顯示照片的索引。
+  int get currentIndex => _currentIndex;
 
-  /// 檔案大小（bytes）。
-  int? get fileSizeBytes => _fileSizeBytes;
+  /// 照片總數。
+  int get totalCount => _photos.length;
 
-  /// 照片寬度（px）。
-  int? get imageWidth => _imageWidth;
+  /// 目前載入的照片實體。
+  PhotoEntity? get photo => _photos.isNotEmpty ? _photos[_currentIndex] : null;
 
-  /// 照片高度（px）。
-  int? get imageHeight => _imageHeight;
+  /// 當前照片的快取檔案。
+  File? get cachedFile => _metadataCache[_currentIndex]?.cachedFile;
 
-  /// 是否正在儲存至相簿。
-  bool get isSaving => _isSaving;
+  /// 當前照片的檔案大小（bytes）。
+  int? get fileSizeBytes => _metadataCache[_currentIndex]?.fileSizeBytes;
 
-  /// 是否已儲存至相簿。
-  bool get isSaved => _isSaved;
+  /// 當前照片的寬度（px）。
+  int? get imageWidth => _metadataCache[_currentIndex]?.imageWidth;
+
+  /// 當前照片的高度（px）。
+  int? get imageHeight => _metadataCache[_currentIndex]?.imageHeight;
+
+  /// 儲存操作狀態。
+  SaveState get saveState => _saveState;
 
   /// 格式化的檔案大小字串。
   String get formattedFileSize {
-    if (_fileSizeBytes == null) return '-';
-    final kb = _fileSizeBytes! / 1024;
+    final bytes = fileSizeBytes;
+    if (bytes == null) return '-';
+    final kb = bytes / 1024;
     if (kb < 1024) return '${kb.toStringAsFixed(1)} KB';
     return '${(kb / 1024).toStringAsFixed(1)} MB';
   }
 
   /// 格式化的照片尺寸字串。
   String get formattedDimensions {
-    if (_imageWidth == null || _imageHeight == null) return '-';
-    return '$_imageWidth × $_imageHeight';
+    final w = imageWidth;
+    final h = imageHeight;
+    if (w == null || h == null) return '-';
+    return '$w × $h';
   }
 
-  /// 載入指定照片並讀取檔案元資料（大小、尺寸）。
-  Future<void> load(PhotoEntity photo, String blogId) async {
-    _photo = photo;
+  /// 載入照片列表並讀取初始照片的檔案元資料。
+  Future<void> loadAll(
+    List<PhotoEntity> photos,
+    String blogId,
+    int initialIndex,
+  ) async {
+    _photos = photos;
     _blogId = blogId;
-    _isSaved = false;
+    _currentIndex = initialIndex;
+    _saveState = SaveState.idle;
+    _metadataCache.clear();
     notifyListeners();
 
-    // 讀取快取檔案
-    _cachedFile = await _cacheRepository.cachedFile(photo.filename, blogId);
-    if (_cachedFile != null) {
-      // 讀取檔案大小
-      _fileSizeBytes = await _cachedFile!.length();
+    await _loadMetadataForIndex(initialIndex);
+    notifyListeners();
+  }
 
-      // 讀取圖片尺寸
-      final bytes = await _cachedFile!.readAsBytes();
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      _imageWidth = frame.image.width;
-      _imageHeight = frame.image.height;
-      frame.image.dispose();
+  /// 切換當前顯示的照片索引。
+  Future<void> setCurrentIndex(int index) async {
+    if (index < 0 || index >= _photos.length) return;
+    _currentIndex = index;
+    _saveState = SaveState.idle;
+    notifyListeners();
+
+    if (!_metadataCache.containsKey(index)) {
+      await _loadMetadataForIndex(index);
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   /// 將目前照片儲存至裝置相簿。
-  ///
-  /// 儲存前會先請求相簿存取權限，未授權時不執行儲存。
   Future<void> saveToGallery() async {
-    if (_cachedFile == null || _isSaving) return;
+    if (cachedFile == null || _saveState == SaveState.saving) return;
 
-    _isSaving = true;
+    _saveState = SaveState.saving;
     notifyListeners();
 
     try {
       final hasPermission = await _galleryService.requestPermission();
       if (!hasPermission) {
         debugPrint('[PhotoDetailVM] 相簿權限未授權');
-        _isSaving = false;
+        _saveState = SaveState.idle;
         notifyListeners();
         return;
       }
 
-      await _galleryService.saveToGallery(_cachedFile!.path);
-      _isSaved = true;
+      await _galleryService.saveToGallery(cachedFile!.path);
+      _saveState = SaveState.saved;
     } on Exception catch (e) {
       debugPrint('[PhotoDetailVM] 儲存失敗: $e');
+      _saveState = SaveState.idle;
     }
 
-    _isSaving = false;
     notifyListeners();
   }
+
+  /// 載入指定索引照片的元資料（快取檔案、檔案大小、圖片尺寸）。
+  Future<void> _loadMetadataForIndex(int index) async {
+    if (index < 0 || index >= _photos.length) return;
+    if (_metadataCache.containsKey(index)) return;
+
+    final photo = _photos[index];
+    final file = await _cacheRepository.cachedFile(photo.filename, _blogId);
+
+    int? fileSize;
+    int? width;
+    int? height;
+
+    if (file != null) {
+      fileSize = await file.length();
+
+      final bytes = await file.readAsBytes();
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      width = frame.image.width;
+      height = frame.image.height;
+      frame.image.dispose();
+    }
+
+    _metadataCache[index] = _PhotoMetadata(
+      cachedFile: file,
+      fileSizeBytes: fileSize,
+      imageWidth: width,
+      imageHeight: height,
+    );
+  }
+}
+
+/// 單張照片的元資料快取。
+class _PhotoMetadata {
+  const _PhotoMetadata({
+    this.cachedFile,
+    this.fileSizeBytes,
+    this.imageWidth,
+    this.imageHeight,
+  });
+
+  final File? cachedFile;
+  final int? fileSizeBytes;
+  final int? imageWidth;
+  final int? imageHeight;
 }

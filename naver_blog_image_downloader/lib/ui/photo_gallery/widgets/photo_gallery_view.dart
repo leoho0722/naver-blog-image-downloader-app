@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/models/fetch_result.dart';
-import '../../../data/models/photo_entity.dart';
 import '../view_model/photo_gallery_view_model.dart';
 import 'photo_card.dart';
 
@@ -137,7 +136,7 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
                   cachedFile: viewModel.cachedFiles[photo.id],
                   isSelected: viewModel.selectedIds.contains(photo.id),
                   isSelectMode: viewModel.isSelectMode,
-                  onTap: () => _onPhotoTap(context, photo),
+                  onTap: () => _onPhotoTap(context, index),
                   onSelect: () => viewModel.toggleSelection(photo.id),
                 );
               },
@@ -145,8 +144,16 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
     );
   }
 
-  void _onPhotoTap(BuildContext context, PhotoEntity photo) {
-    final blogId = context.read<PhotoGalleryViewModel>().blogId;
-    context.push('/detail/${photo.id}', extra: (photo: photo, blogId: blogId));
+  void _onPhotoTap(BuildContext context, int index) {
+    final viewModel = context.read<PhotoGalleryViewModel>();
+    final photo = viewModel.photos[index];
+    context.push(
+      '/detail/${photo.id}',
+      extra: (
+        photos: viewModel.photos,
+        blogId: viewModel.blogId,
+        initialIndex: index,
+      ),
+    );
   }
 }
