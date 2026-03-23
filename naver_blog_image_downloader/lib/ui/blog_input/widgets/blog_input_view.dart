@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
+import '../../../config/bottom_sheet_animation.dart';
 import '../../../data/models/fetch_result.dart';
 import '../../core/naver_url_validator.dart';
 import '../../download/widgets/download_view.dart';
@@ -19,9 +22,10 @@ class BlogInputView extends StatefulWidget {
 }
 
 class _BlogInputViewState extends State<BlogInputView>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   late final BlogInputViewModel _viewModel;
   final _controller = TextEditingController();
+  late final AnimationController _sheetAnimationController;
 
   @override
   void initState() {
@@ -29,12 +33,17 @@ class _BlogInputViewState extends State<BlogInputView>
     _viewModel = context.read<BlogInputViewModel>();
     _viewModel.addListener(_onViewModelChanged);
     WidgetsBinding.instance.addObserver(this);
+    _sheetAnimationController = BottomSheetAnimation.createController(
+      vsync: this,
+      platform: defaultTargetPlatform,
+    );
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _viewModel.removeListener(_onViewModelChanged);
+    _sheetAnimationController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -210,6 +219,20 @@ class _BlogInputViewState extends State<BlogInputView>
     context.push('/gallery/${fetchResult.blogId}', extra: fetchResult);
   }
 
+  void _showSettingsSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      transitionAnimationController: _sheetAnimationController,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      builder: (_) => const SettingsView(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<BlogInputViewModel>();
@@ -222,16 +245,7 @@ class _BlogInputViewState extends State<BlogInputView>
           actions: [
             IconButton(
               icon: const Icon(Icons.settings),
-              onPressed: () => showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                useSafeArea: true,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                clipBehavior: Clip.antiAlias,
-                builder: (_) => const SettingsView(),
-              ),
+              onPressed: _showSettingsSheet,
             ),
           ],
         ),
