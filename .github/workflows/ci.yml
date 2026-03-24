@@ -1,48 +1,42 @@
-name: CI — Validate GitHub Pages
+name: CI — Flutter Validation
 
 on:
   push:
     branches: [main]
     paths:
-      - 'docs/**'
+      - 'lib/**'
+      - 'test/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'analysis_options.yaml'
   pull_request:
     branches: [main]
     paths:
-      - 'docs/**'
+      - 'lib/**'
+      - 'test/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'analysis_options.yaml'
   workflow_dispatch:
 
 jobs:
   validate:
-    name: Validate image references
+    name: Analyze & Format
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check image references in HTML
-        run: |
-          cd docs
-          MISSING=0
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
 
-          # 擷取所有 <img src="..."> 引用，排除外部 URL（http/https 開頭）
-          REFS=$(grep -oP '(?<=<img[^>]*src=")[^"]+' index.html 2>/dev/null || true)
+      - name: Install dependencies
+        run: flutter pub get
 
-          for ref in $REFS; do
-            # 跳過外部 URL
-            if echo "$ref" | grep -qP '^https?://'; then
-              continue
-            fi
+      - name: Analyze
+        run: flutter analyze
 
-            # 檢查檔案是否存在
-            if [ ! -f "$ref" ]; then
-              echo "::error::Missing image: docs/$ref"
-              MISSING=$((MISSING + 1))
-            fi
-          done
-
-          if [ "$MISSING" -gt 0 ]; then
-            echo "::error::Found $MISSING missing image reference(s)"
-            exit 1
-          fi
-
-          echo "All image references are valid."
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
