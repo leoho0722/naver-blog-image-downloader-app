@@ -9,6 +9,7 @@ class SettingsViewModel extends ChangeNotifier {
   SettingsViewModel({required CacheRepository cacheRepository})
     : _cacheRepository = cacheRepository;
 
+  /// 注入的快取 Repository，用於查詢快取大小與執行清除操作。
   final CacheRepository _cacheRepository;
 
   /// 目前快取佔用的磁碟空間大小（bytes）。

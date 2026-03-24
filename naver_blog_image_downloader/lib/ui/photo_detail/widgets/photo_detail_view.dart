@@ -19,6 +19,7 @@ class PhotoDetailView extends StatefulWidget {
   State<PhotoDetailView> createState() => _PhotoDetailViewState();
 }
 
+/// [PhotoDetailView] 的狀態管理類，處理照片分頁、手勢縮放與沈浸模式切換。
 class _PhotoDetailViewState extends State<PhotoDetailView> {
   /// 是否已完成初始載入（防止 [didChangeDependencies] 重複觸發）。
   bool _loaded = false;
@@ -200,6 +201,9 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
   }
 
   /// 以 bottom sheet 顯示當前照片的檔案資訊（大小、尺寸）。
+  ///
+  /// [context] 為當前的 BuildContext，用於開啟 bottom sheet。
+  /// [viewModel] 為照片詳細頁面的 ViewModel，提供檔案大小與尺寸資訊。
   void _showInfoSheet(BuildContext context, PhotoDetailViewModel viewModel) {
     showModalBottomSheet<void>(
       context: context,

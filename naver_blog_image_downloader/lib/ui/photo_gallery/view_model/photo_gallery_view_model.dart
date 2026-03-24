@@ -15,7 +15,10 @@ class PhotoGalleryViewModel extends ChangeNotifier {
   }) : _photoRepository = photoRepository,
        _cacheRepository = cacheRepository;
 
+  /// 注入的照片 Repository，用於執行儲存至相簿等操作。
   final PhotoRepository _photoRepository;
+
+  /// 注入的快取 Repository，用於查詢本機快取檔案。
   final CacheRepository _cacheRepository;
 
   /// 目前載入的照片實體清單。

@@ -12,6 +12,7 @@ class DownloadViewModel extends ChangeNotifier {
   DownloadViewModel({required PhotoRepository photoRepository})
     : _photoRepository = photoRepository;
 
+  /// 注入的照片 Repository，用於執行實際的下載與儲存操作。
   final PhotoRepository _photoRepository;
 
   /// 已完成下載的照片數量（含成功、失敗與跳過）。

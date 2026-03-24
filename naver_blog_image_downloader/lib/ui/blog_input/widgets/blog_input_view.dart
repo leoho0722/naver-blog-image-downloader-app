@@ -163,6 +163,8 @@ class _BlogInputViewState extends State<BlogInputView>
   }
 
   /// 以 AlertDialog 顯示錯誤訊息。
+  ///
+  /// [message] 為要顯示的錯誤訊息內容。
   void _showErrorDialog(String message) {
     if (!mounted) return;
     unawaited(
@@ -183,6 +185,8 @@ class _BlogInputViewState extends State<BlogInputView>
   }
 
   /// 處理照片擷取結果：若有失敗先警告，若已快取直接導航，否則顯示下載對話框。
+  ///
+  /// [fetchResult] 為 API 回傳的照片擷取結果，包含照片清單與失敗資訊。
   Future<void> _handleFetchResult(FetchResult fetchResult) async {
     // 有擷取失敗時，先顯示警告對話框
     if (fetchResult.failureDownloads > 0) {
@@ -204,6 +208,9 @@ class _BlogInputViewState extends State<BlogInputView>
   }
 
   /// 顯示部分照片擷取失敗的警告對話框，回傳使用者是否選擇繼續下載。
+  ///
+  /// [fetchResult] 為照片擷取結果，用於顯示成功與失敗數量。
+  /// 回傳 `true` 表示使用者選擇繼續下載，`false` 或 `null` 表示取消。
   Future<bool?> _showFetchFailureDialog(FetchResult fetchResult) {
     return showDialog<bool>(
       context: context,
@@ -230,6 +237,8 @@ class _BlogInputViewState extends State<BlogInputView>
   }
 
   /// 導航至照片瀏覽頁面，傳入擷取結果作為頁面參數。
+  ///
+  /// [fetchResult] 為要傳遞給照片瀏覽頁面的擷取結果。
   void _navigateToGallery(FetchResult fetchResult) {
     context.push('/gallery/${fetchResult.blogId}', extra: fetchResult);
   }

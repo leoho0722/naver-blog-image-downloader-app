@@ -22,6 +22,7 @@ class PhotoGalleryView extends StatefulWidget {
   State<PhotoGalleryView> createState() => _PhotoGalleryViewState();
 }
 
+/// [PhotoGalleryView] 的狀態管理類，處理照片載入、選取模式與儲存中對話框。
 class _PhotoGalleryViewState extends State<PhotoGalleryView> {
   /// 頁面對應的 ViewModel，透過 Provider 取得。
   late final PhotoGalleryViewModel _viewModel;
@@ -152,6 +153,9 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
   }
 
   /// 使用者點擊照片時，導航至照片詳細頁面。
+  ///
+  /// [context] 為當前的 BuildContext，用於執行路由導航。
+  /// [index] 為被點擊照片在清單中的索引位置。
   void _onPhotoTap(BuildContext context, int index) {
     final viewModel = context.read<PhotoGalleryViewModel>();
     final photo = viewModel.photos[index];
