@@ -5,6 +5,7 @@ import 'routing/app_router.dart';
 
 /// Naver Blog 照片下載器的根 Widget，負責設定主題與路由。
 class NaverPhotoApp extends StatelessWidget {
+  /// 建立 [NaverPhotoApp]。
   const NaverPhotoApp({super.key});
 
   @override

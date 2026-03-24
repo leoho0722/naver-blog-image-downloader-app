@@ -20,11 +20,19 @@ class PhotoDetailView extends StatefulWidget {
 }
 
 class _PhotoDetailViewState extends State<PhotoDetailView> {
+  /// 是否已完成初始載入（防止 [didChangeDependencies] 重複觸發）。
   bool _loaded = false;
+
+  /// 是否處於沈浸模式（隱藏系統 UI 與操作列）。
   bool _isImmersive = false;
+
+  /// 照片是否正在被放大（縮放比例 > 1.01），放大時停用水平滑動。
   bool _isZoomed = false;
 
+  /// 照片分頁控制器，控制水平滑動切換照片。
   late PageController _pageController;
+
+  /// 照片縮放手勢的轉換矩陣控制器。
   final _transformationController = TransformationController();
 
   @override
@@ -66,6 +74,7 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
     super.dispose();
   }
 
+  /// 當縮放手勢改變時，更新 [_isZoomed] 狀態以決定是否停用水平滑動。
   void _onTransformChanged() {
     final scale = _transformationController.value.getMaxScaleOnAxis();
     final zoomed = scale > 1.01;
@@ -74,6 +83,7 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
     }
   }
 
+  /// 切換沈浸模式：隱藏／顯示系統狀態列、導航列與操作列。
   void _toggleImmersiveMode() {
     setState(() => _isImmersive = !_isImmersive);
     SystemChrome.setEnabledSystemUIMode(
@@ -189,6 +199,7 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
     );
   }
 
+  /// 以 bottom sheet 顯示當前照片的檔案資訊（大小、尺寸）。
   void _showInfoSheet(BuildContext context, PhotoDetailViewModel viewModel) {
     showModalBottomSheet<void>(
       context: context,

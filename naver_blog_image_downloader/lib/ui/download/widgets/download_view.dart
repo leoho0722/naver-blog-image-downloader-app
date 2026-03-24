@@ -18,6 +18,7 @@ class DownloadDialog extends StatefulWidget {
 }
 
 class _DownloadDialogState extends State<DownloadDialog> {
+  /// 是否已啟動下載流程，用於防止 [didChangeDependencies] 重複觸發。
   bool _downloadStarted = false;
 
   @override
@@ -29,6 +30,7 @@ class _DownloadDialogState extends State<DownloadDialog> {
     }
   }
 
+  /// 啟動批次下載，完成後自動關閉對話框並回傳 `true`。
   Future<void> _startDownload() async {
     if (!mounted) return;
 

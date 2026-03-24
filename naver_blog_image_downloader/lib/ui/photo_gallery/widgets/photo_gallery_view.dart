@@ -23,8 +23,13 @@ class PhotoGalleryView extends StatefulWidget {
 }
 
 class _PhotoGalleryViewState extends State<PhotoGalleryView> {
+  /// 頁面對應的 ViewModel，透過 Provider 取得。
   late final PhotoGalleryViewModel _viewModel;
+
+  /// 是否已完成初始載入（防止 [didChangeDependencies] 重複觸發）。
   bool _loaded = false;
+
+  /// 「儲存中」對話框是否正在顯示，用於避免重複開啟或多餘關閉。
   bool _isSavingDialogOpen = false;
 
   @override
@@ -51,6 +56,7 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
     super.dispose();
   }
 
+  /// ViewModel 狀態變更的監聽回呼，根據 [isSaving] 開啟或關閉儲存中對話框。
   void _onViewModelChanged() {
     if (!mounted) return;
     if (_viewModel.isSaving && !_isSavingDialogOpen) {
@@ -145,6 +151,7 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
     );
   }
 
+  /// 使用者點擊照片時，導航至照片詳細頁面。
   void _onPhotoTap(BuildContext context, int index) {
     final viewModel = context.read<PhotoGalleryViewModel>();
     final photo = viewModel.photos[index];

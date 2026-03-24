@@ -18,6 +18,7 @@ enum ApiStage {
   /// 正式環境階段。
   prod('prod');
 
+  /// 建立 [ApiStage]，[value] 為 API Gateway URL 中使用的階段名稱。
   const ApiStage(this.value);
 
   /// 對應 API Gateway URL 路徑中的階段名稱。

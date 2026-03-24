@@ -15,6 +15,7 @@ import '../view_model/blog_input_view_model.dart';
 
 /// Blog 網址輸入頁面，提供文字輸入欄位讓使用者貼上 Naver Blog 網址並取得照片列表。
 class BlogInputView extends StatefulWidget {
+  /// 建立 [BlogInputView]。
   const BlogInputView({super.key});
 
   @override
@@ -23,8 +24,13 @@ class BlogInputView extends StatefulWidget {
 
 class _BlogInputViewState extends State<BlogInputView>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+  /// 頁面對應的 ViewModel，透過 Provider 取得。
   late final BlogInputViewModel _viewModel;
+
+  /// 網址輸入欄位的文字控制器。
   final _controller = TextEditingController();
+
+  /// 設定頁面 bottom sheet 的動畫控制器。
   late final AnimationController _sheetAnimationController;
 
   @override
@@ -55,6 +61,8 @@ class _BlogInputViewState extends State<BlogInputView>
     }
   }
 
+  /// 當 App 從背景恢復時，檢查剪貼板是否包含 Naver Blog 網址，
+  /// 若有則彈出對話框詢問使用者是否貼上。
   Future<void> _checkClipboardOnResume() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     final text = data?.text?.trim();
@@ -85,6 +93,7 @@ class _BlogInputViewState extends State<BlogInputView>
     }
   }
 
+  /// 使用者點擊「貼上」按鈕時觸發，從剪貼板讀取內容並驗證是否為合法網址。
   Future<void> _onPasteButtonPressed() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     final text = data?.text?.trim();
@@ -131,11 +140,13 @@ class _BlogInputViewState extends State<BlogInputView>
     _pasteUrl(text);
   }
 
+  /// 將指定的 [url] 填入輸入欄位並通知 ViewModel。
   void _pasteUrl(String url) {
     _controller.text = url;
     _viewModel.onUrlChanged(url);
   }
 
+  /// ViewModel 狀態變更的監聽回呼，根據錯誤或擷取結果執行對應的 UI 操作。
   void _onViewModelChanged() {
     final errorMessage = _viewModel.errorMessage;
     if (errorMessage != null) {
@@ -151,6 +162,7 @@ class _BlogInputViewState extends State<BlogInputView>
     }
   }
 
+  /// 以 AlertDialog 顯示錯誤訊息。
   void _showErrorDialog(String message) {
     if (!mounted) return;
     unawaited(
@@ -170,6 +182,7 @@ class _BlogInputViewState extends State<BlogInputView>
     );
   }
 
+  /// 處理照片擷取結果：若有失敗先警告，若已快取直接導航，否則顯示下載對話框。
   Future<void> _handleFetchResult(FetchResult fetchResult) async {
     // 有擷取失敗時，先顯示警告對話框
     if (fetchResult.failureDownloads > 0) {
@@ -190,6 +203,7 @@ class _BlogInputViewState extends State<BlogInputView>
     }
   }
 
+  /// 顯示部分照片擷取失敗的警告對話框，回傳使用者是否選擇繼續下載。
   Future<bool?> _showFetchFailureDialog(FetchResult fetchResult) {
     return showDialog<bool>(
       context: context,
@@ -215,10 +229,12 @@ class _BlogInputViewState extends State<BlogInputView>
     );
   }
 
+  /// 導航至照片瀏覽頁面，傳入擷取結果作為頁面參數。
   void _navigateToGallery(FetchResult fetchResult) {
     context.push('/gallery/${fetchResult.blogId}', extra: fetchResult);
   }
 
+  /// 以 modal bottom sheet 開啟設定頁面。
   void _showSettingsSheet() {
     showModalBottomSheet(
       context: context,

@@ -14,6 +14,7 @@ sealed class Result<T> {
 
 /// 表示操作成功的結果，包含回傳值 [value]。
 final class Ok<T> extends Result<T> {
+  /// 建立成功結果。
   const Ok(this.value);
 
   /// 操作成功時的回傳值。
@@ -22,6 +23,7 @@ final class Ok<T> extends Result<T> {
 
 /// 表示操作失敗的結果，包含例外 [error]。
 final class Error<T> extends Result<T> {
+  /// 建立失敗結果。
   const Error(this.error);
 
   /// 操作失敗時的例外資訊。
