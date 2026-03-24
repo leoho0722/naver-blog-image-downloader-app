@@ -133,6 +133,9 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   /// 顯示「清除全部快取」確認對話框，使用者確認後執行清除操作。
+  ///
+  /// [context] 為當前的 BuildContext，用於開啟確認對話框。
+  /// [viewModel] 為設定頁面的 ViewModel，用於執行清除快取與重新載入資訊。
   Future<void> _showClearAllDialog(
     BuildContext context,
     SettingsViewModel viewModel,
