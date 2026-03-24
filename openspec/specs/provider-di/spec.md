@@ -165,52 +165,40 @@ tests:
 ---
 ### Requirement: ViewModel providers registered
 
-The `lib/main.dart` file SHALL register the following ViewModels using `ChangeNotifierProvider` within the `MultiProvider`:
+The `MultiProvider` in `main.dart` SHALL register `PhotoDetailViewModel` with the following dependencies:
+- `cacheRepository`: obtained via `context.read<CacheRepository>()`
+- `photoRepository`: obtained via `context.read<PhotoRepository>()`
 
-- `BlogInputViewModel` SHALL be created via `ChangeNotifierProvider` with `PhotoRepository` injected via `context.read`.
-- `DownloadViewModel` SHALL be created via `ChangeNotifierProvider` with `PhotoRepository` injected via `context.read`.
-- `PhotoGalleryViewModel` SHALL be created via `ChangeNotifierProvider` with `PhotoRepository` and `CacheRepository` injected via `context.read`.
-- `PhotoDetailViewModel` SHALL be created via `ChangeNotifierProvider` with `CacheRepository` and `GalleryService` injected via `context.read`.
-- `SettingsViewModel` SHALL be created via `ChangeNotifierProvider` with `CacheRepository` injected via `context.read`.
+The `PhotoDetailViewModel` provider SHALL NOT inject `GalleryService` directly. Gallery operations SHALL be delegated through `PhotoRepository`.
 
-`ChangeNotifierProxyProvider` SHALL NOT be used for ViewModel registration when the `update` callback does not modify the ViewModel instance.
+#### Scenario: PhotoDetailViewModel DI wiring
 
-#### Scenario: ViewModels use ChangeNotifierProvider
-
-- **WHEN** the MultiProvider initializes the ViewModel providers
-- **THEN** all five ViewModels SHALL use `ChangeNotifierProvider`, NOT `ChangeNotifierProxyProvider`
-
-#### Scenario: ViewModels receive dependencies via context.read
-
-- **WHEN** a ViewModel is created in the `create` callback
-- **THEN** dependencies SHALL be obtained via `context.read<T>()` in the constructor
+- **GIVEN** the application starts
+- **WHEN** `PhotoDetailViewModel` is created via `ChangeNotifierProvider`
+- **THEN** the constructor SHALL receive `PhotoRepository` and `CacheRepository`
+- **AND** SHALL NOT receive `GalleryService`
 
 
 <!-- @trace
-source: flutter-best-practices-compliance
-updated: 2026-03-22
+source: architecture-enum-state-refactor
+updated: 2026-03-24
 code:
-  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
-  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
-  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
-  - naver_blog_image_downloader/lib/ui/core/app_error.dart
-  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
-  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
-  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
-  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
-  - naver_blog_image_downloader/analysis_options.yaml
-  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
-  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
-  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
   - naver_blog_image_downloader/lib/main.dart
-  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
 tests:
-  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
   - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
   - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
   - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
-  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
 -->
 
 ---

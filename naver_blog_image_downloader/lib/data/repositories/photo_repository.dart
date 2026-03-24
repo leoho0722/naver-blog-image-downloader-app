@@ -153,6 +153,26 @@ class PhotoRepository {
     }
   }
 
+  /// 將單張照片儲存至系統相簿。
+  ///
+  /// 先透過 [GalleryService.requestPermission] 確認權限，
+  /// 再呼叫 [GalleryService.saveToGallery] 寫入相簿。
+  /// 成功回傳 [Result.ok]，權限不足或例外回傳 [Result.error]。
+  Future<Result<void>> saveOneToGallery(String filePath) async {
+    try {
+      final hasPermission = await _galleryService.requestPermission();
+      if (!hasPermission) {
+        return Result.error(
+          const AppError(type: AppErrorType.gallery, message: '相簿權限未授權'),
+        );
+      }
+      await _galleryService.saveToGallery(filePath);
+      return Result.ok(null);
+    } on Exception catch (e) {
+      return Result.error(e);
+    }
+  }
+
   /// 從快取讀取照片檔案並逐一儲存至系統相簿，完成後標記 metadata。
   ///
   /// 若快取中找不到某張照片的檔案，則跳過該張照片繼續處理。

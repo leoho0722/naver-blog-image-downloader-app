@@ -70,7 +70,7 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (context) => PhotoDetailViewModel(
             cacheRepository: context.read<CacheRepository>(),
-            galleryService: context.read<GalleryService>(),
+            photoRepository: context.read<PhotoRepository>(),
           ),
         ),
         ChangeNotifierProvider(

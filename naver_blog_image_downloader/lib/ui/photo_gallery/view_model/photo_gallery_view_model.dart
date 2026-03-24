@@ -5,6 +5,19 @@ import 'package:flutter/foundation.dart';
 import '../../../data/models/photo_entity.dart';
 import '../../../data/repositories/cache_repository.dart';
 import '../../../data/repositories/photo_repository.dart';
+import '../../core/result.dart';
+
+/// 照片瀏覽頁面的互動模式。
+enum GalleryMode {
+  /// 一般瀏覽模式。
+  browsing,
+
+  /// 多選模式，使用者可勾選照片。
+  selecting,
+
+  /// 儲存中，正在將照片寫入相簿。
+  saving,
+}
 
 /// 照片瀏覽頁面的 ViewModel，管理照片清單呈現、選取模式與相簿儲存操作。
 class PhotoGalleryViewModel extends ChangeNotifier {
@@ -33,11 +46,11 @@ class PhotoGalleryViewModel extends ChangeNotifier {
   /// 目前已選取的照片 ID 集合（選取模式下使用）。
   Set<String> _selectedIds = {};
 
-  /// 是否處於多選模式。
-  bool _isSelectMode = false;
+  /// 目前的互動模式，以 enum 管理互斥狀態。
+  GalleryMode _mode = GalleryMode.browsing;
 
-  /// 是否正在將照片儲存至相簿。
-  bool _isSaving = false;
+  /// 最近一次儲存失敗的錯誤訊息，無錯誤時為 `null`。
+  String? _errorMessage;
 
   /// 已載入的照片清單。
   List<PhotoEntity> get photos => _photos;
@@ -51,11 +64,18 @@ class PhotoGalleryViewModel extends ChangeNotifier {
   /// 已選取的照片 ID 集合。
   Set<String> get selectedIds => _selectedIds;
 
-  /// 是否處於選取模式。
-  bool get isSelectMode => _isSelectMode;
+  /// 目前的互動模式。
+  GalleryMode get mode => _mode;
+
+  /// 是否處於選取模式（selecting 或 saving 皆算）。
+  bool get isSelectMode =>
+      _mode == GalleryMode.selecting || _mode == GalleryMode.saving;
 
   /// 是否正在執行儲存至相簿操作。
-  bool get isSaving => _isSaving;
+  bool get isSaving => _mode == GalleryMode.saving;
+
+  /// 最近一次儲存失敗的錯誤訊息。
+  String? get errorMessage => _errorMessage;
 
   /// 載入照片清單與 Blog 識別碼，並預先解析所有快取檔案。
   Future<void> load(List<PhotoEntity> photos, String blogId) async {
@@ -75,9 +95,11 @@ class PhotoGalleryViewModel extends ChangeNotifier {
 
   /// 切換選取模式。離開選取模式時清空已選取的照片。
   void toggleSelectMode() {
-    _isSelectMode = !_isSelectMode;
-    if (!_isSelectMode) {
+    if (_mode == GalleryMode.selecting) {
+      _mode = GalleryMode.browsing;
       _selectedIds.clear();
+    } else {
+      _mode = GalleryMode.selecting;
     }
     notifyListeners();
   }
@@ -100,32 +122,48 @@ class PhotoGalleryViewModel extends ChangeNotifier {
 
   /// 將已選取的照片儲存至裝置相簿。
   Future<void> saveSelectedToGallery() async {
-    _isSaving = true;
+    _mode = GalleryMode.saving;
+    _errorMessage = null;
     notifyListeners();
 
     final selected = _photos.where((p) => _selectedIds.contains(p.id)).toList();
-    await _photoRepository.saveToGalleryFromCache(
+    final result = await _photoRepository.saveToGalleryFromCache(
       photos: selected,
       blogId: _blogId,
     );
 
-    _isSaving = false;
-    _selectedIds.clear();
-    _isSelectMode = false;
+    switch (result) {
+      case Ok<void>():
+        _selectedIds.clear();
+      case Error<void>(:final error):
+        _errorMessage = '儲存至相簿失敗';
+        debugPrint('[PhotoGalleryVM] $error');
+    }
+
+    _mode = GalleryMode.browsing;
     notifyListeners();
   }
 
   /// 將所有照片儲存至裝置相簿。
   Future<void> saveAllToGallery() async {
-    _isSaving = true;
+    _mode = GalleryMode.saving;
+    _errorMessage = null;
     notifyListeners();
 
-    await _photoRepository.saveToGalleryFromCache(
+    final result = await _photoRepository.saveToGalleryFromCache(
       photos: _photos,
       blogId: _blogId,
     );
 
-    _isSaving = false;
+    switch (result) {
+      case Ok<void>():
+        break;
+      case Error<void>(:final error):
+        _errorMessage = '儲存至相簿失敗';
+        debugPrint('[PhotoGalleryVM] $error');
+    }
+
+    _mode = GalleryMode.browsing;
     notifyListeners();
   }
 }

@@ -73,7 +73,7 @@ then it SHALL delegate to `CacheRepository.cachedFile(photo.filename, blogId)`.
 
 ### Requirement: Detail state properties
 
-The `PhotoDetailViewModel` class SHALL extend `ChangeNotifier` and provide a constructor that accepts both a `CacheRepository` instance via the `required` named parameter `cacheRepository` and a `GalleryService` instance via the `required` named parameter `galleryService`.
+The `PhotoDetailViewModel` class SHALL extend `ChangeNotifier` and provide a constructor that accepts a `CacheRepository` instance via the `required` named parameter `cacheRepository` and a `PhotoRepository` instance via the `required` named parameter `photoRepository`.
 
 The ViewModel SHALL expose the following read-only properties:
 - `photo` (PhotoEntity?) — the currently loaded photo entity, computed from `_photos[_currentIndex]`
@@ -102,15 +102,25 @@ The ViewModel SHALL expose the following read-only properties:
 
 
 <!-- @trace
-source: photo-detail-viewer-redesign
-updated: 2026-03-23
+source: architecture-enum-state-refactor
+updated: 2026-03-24
 code:
-  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
-  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
   - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
 tests:
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
   - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
 -->
 
 ---
@@ -144,15 +154,23 @@ tests:
 ---
 ### Requirement: Save to gallery
 
-The `saveToGallery()` method SHALL save the current photo (at `_currentIndex`) to the device gallery via `GalleryService`.
+The `saveToGallery()` method SHALL save the current photo (at `_currentIndex`) to the device gallery via `PhotoRepository.saveOneToGallery`.
 
 #### Scenario: Save photo to gallery
 
 - **GIVEN** `cachedFile` holds a valid File
 - **WHEN** `saveToGallery()` is called
 - **THEN** `saveState` SHALL transition from `idle` to `saving` before the save operation
-- **AND** `GalleryService` SHALL be called to save the file
-- **AND** `saveState` SHALL transition to `saved` after successful save
+- **AND** `PhotoRepository.saveOneToGallery` SHALL be called with the file path
+- **AND** on `Result.ok`, `saveState` SHALL transition to `saved`
+- **AND** `notifyListeners` SHALL be called
+
+#### Scenario: Save fails with error
+
+- **GIVEN** `cachedFile` holds a valid File
+- **AND** `PhotoRepository.saveOneToGallery` returns `Result.error`
+- **WHEN** `saveToGallery()` is called
+- **THEN** `saveState` SHALL return to `idle`
 - **AND** `notifyListeners` SHALL be called
 
 #### Scenario: Save prevented when already saving
@@ -163,22 +181,32 @@ The `saveToGallery()` method SHALL save the current photo (at `_currentIndex`) t
 
 #### Scenario: Permission denied
 
-- **GIVEN** `GalleryService.requestPermission()` returns `false`
+- **GIVEN** `PhotoRepository.saveOneToGallery` returns `Result.error` with permission denial
 - **WHEN** `saveToGallery()` is called
 - **THEN** `saveState` SHALL return to `idle`
 - **AND** `notifyListeners` SHALL be called
 
 
 <!-- @trace
-source: photo-detail-viewer-redesign
-updated: 2026-03-23
+source: architecture-enum-state-refactor
+updated: 2026-03-24
 code:
-  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
-  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
   - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
 tests:
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
   - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
 -->
 
 ---

@@ -6,12 +6,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:naver_blog_image_downloader/data/models/photo_entity.dart';
 import 'package:naver_blog_image_downloader/data/repositories/cache_repository.dart';
-import 'package:naver_blog_image_downloader/data/services/gallery_service.dart';
+import 'package:naver_blog_image_downloader/data/repositories/photo_repository.dart';
+import 'package:naver_blog_image_downloader/ui/core/app_error.dart';
+import 'package:naver_blog_image_downloader/ui/core/result.dart';
 import 'package:naver_blog_image_downloader/ui/photo_detail/view_model/photo_detail_view_model.dart';
 
 class MockCacheRepository extends Mock implements CacheRepository {}
 
-class MockGalleryService extends Mock implements GalleryService {}
+class MockPhotoRepository extends Mock implements PhotoRepository {}
 
 /// 建立包含有效 PNG 資料的暫存檔案。
 Future<File> _createTempImageFile() async {
@@ -34,7 +36,7 @@ Future<File> _createTempImageFile() async {
 
 void main() {
   late MockCacheRepository mockCacheRepository;
-  late MockGalleryService mockGalleryService;
+  late MockPhotoRepository mockPhotoRepository;
   late PhotoDetailViewModel viewModel;
 
   const testBlogId = 'blog123';
@@ -58,10 +60,10 @@ void main() {
 
   setUp(() {
     mockCacheRepository = MockCacheRepository();
-    mockGalleryService = MockGalleryService();
+    mockPhotoRepository = MockPhotoRepository();
     viewModel = PhotoDetailViewModel(
       cacheRepository: mockCacheRepository,
-      galleryService: mockGalleryService,
+      photoRepository: mockPhotoRepository,
     );
   });
 
@@ -191,15 +193,6 @@ void main() {
     test('切換後 saveState 重設為 SaveState.idle', () async {
       await viewModel.loadAll(testPhotos, testBlogId, 0);
 
-      // 模擬儲存完成
-      when(
-        () => mockGalleryService.requestPermission(),
-      ).thenAnswer((_) async => true);
-      when(
-        () => mockGalleryService.saveToGallery(any()),
-      ).thenAnswer((_) async {});
-
-      // saveState 不會是 saved 因為 cachedFile 是 null，跳過此步
       // 直接測試 setCurrentIndex 是否重設 saveState
       await viewModel.setCurrentIndex(1);
 
@@ -260,7 +253,7 @@ void main() {
       await viewModel.saveToGallery();
 
       expect(viewModel.saveState, SaveState.idle);
-      verifyNever(() => mockGalleryService.requestPermission());
+      verifyNever(() => mockPhotoRepository.saveOneToGallery(any()));
     });
 
     test('儲存時 saveState 流轉：idle → saving → saved', () async {
@@ -271,11 +264,8 @@ void main() {
         () => mockCacheRepository.cachedFile('photo1.jpg', testBlogId),
       ).thenAnswer((_) async => tempFile);
       when(
-        () => mockGalleryService.requestPermission(),
-      ).thenAnswer((_) async => true);
-      when(
-        () => mockGalleryService.saveToGallery(any()),
-      ).thenAnswer((_) async {});
+        () => mockPhotoRepository.saveOneToGallery(any()),
+      ).thenAnswer((_) async => Result.ok(null));
 
       await viewModel.loadAll(testPhotos, testBlogId, 0);
 
@@ -297,37 +287,38 @@ void main() {
       when(
         () => mockCacheRepository.cachedFile('photo1.jpg', testBlogId),
       ).thenAnswer((_) async => tempFile);
-      when(
-        () => mockGalleryService.requestPermission(),
-      ).thenAnswer((_) async => true);
-      when(() => mockGalleryService.saveToGallery(any())).thenAnswer((_) async {
+      when(() => mockPhotoRepository.saveOneToGallery(any())).thenAnswer((
+        _,
+      ) async {
         // 在儲存過程中嘗試再次呼叫
         await viewModel.saveToGallery();
+        return Result.ok(null);
       });
 
       await viewModel.loadAll(testPhotos, testBlogId, 0);
       await viewModel.saveToGallery();
 
-      // saveToGallery 只被 GalleryService 呼叫一次
-      verify(() => mockGalleryService.saveToGallery(any())).called(1);
+      // saveOneToGallery 只被呼叫一次
+      verify(() => mockPhotoRepository.saveOneToGallery(any())).called(1);
     });
 
-    test('權限未授權時 saveState 回到 idle', () async {
+    test('Repository 回傳 Error 時 saveState 回到 idle', () async {
       final tempFile = await _createTempImageFile();
       addTearDown(() => tempFile.parent.deleteSync(recursive: true));
 
       when(
         () => mockCacheRepository.cachedFile('photo1.jpg', testBlogId),
       ).thenAnswer((_) async => tempFile);
-      when(
-        () => mockGalleryService.requestPermission(),
-      ).thenAnswer((_) async => false);
+      when(() => mockPhotoRepository.saveOneToGallery(any())).thenAnswer(
+        (_) async => Result.error(
+          const AppError(type: AppErrorType.gallery, message: '權限未授權'),
+        ),
+      );
 
       await viewModel.loadAll(testPhotos, testBlogId, 0);
       await viewModel.saveToGallery();
 
       expect(viewModel.saveState, SaveState.idle);
-      verifyNever(() => mockGalleryService.saveToGallery(any()));
     });
   });
 

@@ -6,6 +6,18 @@ import '../../../data/repositories/photo_repository.dart';
 
 export '../../../data/models/download_batch_result.dart';
 
+/// 下載流程的狀態列舉，用以取代多個互斥的 boolean flags。
+enum DownloadState {
+  /// 閒置，尚未開始或已重置。
+  idle,
+
+  /// 正在執行批次下載。
+  downloading,
+
+  /// 批次下載已完成（不論成功或部分失敗）。
+  completed,
+}
+
 /// 下載頁面的 ViewModel，負責管理批次照片下載進度與結果。
 class DownloadViewModel extends ChangeNotifier {
   /// 建立 [DownloadViewModel]，需注入 [PhotoRepository] 以執行下載操作。
@@ -21,8 +33,8 @@ class DownloadViewModel extends ChangeNotifier {
   /// 本次批次需下載的照片總數。
   int _total = 0;
 
-  /// 是否正在執行批次下載。
-  bool _isDownloading = false;
+  /// 目前的下載狀態。
+  DownloadState _downloadState = DownloadState.idle;
 
   /// 批次下載的結果摘要，下載完成後才有值。
   DownloadBatchResult? _result;
@@ -33,8 +45,11 @@ class DownloadViewModel extends ChangeNotifier {
   /// 需下載的照片總數。
   int get total => _total;
 
-  /// 是否正在下載中。
-  bool get isDownloading => _isDownloading;
+  /// 目前的下載狀態。
+  DownloadState get downloadState => _downloadState;
+
+  /// 是否正在下載中（便利 getter，等同 `downloadState == DownloadState.downloading`）。
+  bool get isDownloading => _downloadState == DownloadState.downloading;
 
   /// 批次下載結果，下載完成後可檢查失敗項目。
   DownloadBatchResult? get result => _result;
@@ -51,9 +66,9 @@ class DownloadViewModel extends ChangeNotifier {
     required String blogId,
     required String blogUrl,
   }) async {
-    if (_isDownloading) return;
+    if (_downloadState == DownloadState.downloading) return;
 
-    _isDownloading = true;
+    _downloadState = DownloadState.downloading;
     _completed = 0;
     _total = photos.length;
     _result = null;
@@ -81,7 +96,7 @@ class DownloadViewModel extends ChangeNotifier {
       '失敗: ${_result!.failureCount}, 跳過: ${_result!.skippedCount}',
     );
 
-    _isDownloading = false;
+    _downloadState = DownloadState.completed;
     notifyListeners();
   }
 }

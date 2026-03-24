@@ -146,19 +146,18 @@ class _BlogInputViewState extends State<BlogInputView>
     _viewModel.onUrlChanged(url);
   }
 
-  /// ViewModel 狀態變更的監聽回呼，根據錯誤或擷取結果執行對應的 UI 操作。
+  /// ViewModel 狀態變更的監聽回呼，以 switch 窮舉 [FetchState] 執行對應 UI 操作。
   void _onViewModelChanged() {
-    final errorMessage = _viewModel.errorMessage;
-    if (errorMessage != null) {
-      _viewModel.onUrlChanged(_viewModel.blogUrl);
-      _showErrorDialog(errorMessage);
-      return;
-    }
-
-    final fetchResult = _viewModel.fetchResult;
-    if (fetchResult != null) {
-      _viewModel.reset();
-      _handleFetchResult(fetchResult);
+    switch (_viewModel.fetchState) {
+      case FetchIdle():
+      case FetchLoading():
+        break;
+      case FetchError(:final message):
+        _viewModel.onUrlChanged(_viewModel.blogUrl);
+        _showErrorDialog(message);
+      case FetchSuccess(:final result):
+        _viewModel.reset();
+        _handleFetchResult(result);
     }
   }
 
@@ -261,6 +260,8 @@ class _BlogInputViewState extends State<BlogInputView>
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<BlogInputViewModel>();
+    final fetchState = viewModel.fetchState;
+    final isLoading = fetchState is FetchLoading;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -292,7 +293,7 @@ class _BlogInputViewState extends State<BlogInputView>
                 ),
               ),
               const SizedBox(height: 16),
-              if (viewModel.statusMessage != null) ...[
+              if (fetchState case FetchLoading(:final statusMessage)) ...[
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -304,7 +305,7 @@ class _BlogInputViewState extends State<BlogInputView>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      viewModel.statusMessage!,
+                      statusMessage,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -314,13 +315,13 @@ class _BlogInputViewState extends State<BlogInputView>
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: viewModel.isLoading
+                  onPressed: isLoading
                       ? null
                       : () {
                           FocusScope.of(context).unfocus();
                           viewModel.fetchPhotos();
                         },
-                  child: viewModel.isLoading
+                  child: isLoading
                       ? const SizedBox(
                           height: 20,
                           width: 20,

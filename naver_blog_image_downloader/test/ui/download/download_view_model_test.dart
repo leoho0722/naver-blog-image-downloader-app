@@ -53,6 +53,10 @@ void main() {
       expect(viewModel.isDownloading, isFalse);
     });
 
+    test('downloadState 初始值為 DownloadState.idle', () {
+      expect(viewModel.downloadState, DownloadState.idle);
+    });
+
     test('result 初始值為 null', () {
       expect(viewModel.result, isNull);
     });
@@ -333,6 +337,103 @@ void main() {
       // Assert
       // 1 (start) + 3 (progress) + 1 (done) = 5
       expect(notifyCount, 5);
+    });
+  });
+
+  group('DownloadState transitions - 狀態轉換', () {
+    test('downloadState 依序從 idle → downloading → completed 轉換', () async {
+      // Arrange
+      final stateTransitions = <DownloadState>[];
+
+      when(
+        () => mockPhotoRepository.downloadAllToCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+          blogUrl: any(named: 'blogUrl'),
+          onProgress: any(named: 'onProgress'),
+        ),
+      ).thenAnswer((invocation) async {
+        final onProgress =
+            invocation.namedArguments[#onProgress] as void Function(int, int)?;
+        onProgress?.call(1, 3);
+        onProgress?.call(2, 3);
+        onProgress?.call(3, 3);
+        return successResult;
+      });
+
+      // 記錄初始狀態
+      stateTransitions.add(viewModel.downloadState);
+
+      viewModel.addListener(() {
+        stateTransitions.add(viewModel.downloadState);
+      });
+
+      // Act
+      await viewModel.startDownload(
+        photos: testPhotos,
+        blogId: testBlogId,
+        blogUrl: testBlogUrl,
+      );
+
+      // Assert
+      // 初始: idle → 開始下載: downloading → 進度更新 x3: downloading → 完成: completed
+      expect(stateTransitions.first, DownloadState.idle);
+      expect(
+        stateTransitions.where((s) => s == DownloadState.downloading).length,
+        4, // 1 (start) + 3 (progress)
+      );
+      expect(stateTransitions.last, DownloadState.completed);
+    });
+
+    test('下載中 downloadState 為 DownloadState.downloading', () async {
+      // Arrange
+      DownloadState? stateDuringDownload;
+
+      when(
+        () => mockPhotoRepository.downloadAllToCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+          blogUrl: any(named: 'blogUrl'),
+          onProgress: any(named: 'onProgress'),
+        ),
+      ).thenAnswer((_) async {
+        stateDuringDownload = viewModel.downloadState;
+        return successResult;
+      });
+
+      // Act
+      await viewModel.startDownload(
+        photos: testPhotos,
+        blogId: testBlogId,
+        blogUrl: testBlogUrl,
+      );
+
+      // Assert
+      expect(stateDuringDownload, DownloadState.downloading);
+      expect(viewModel.downloadState, DownloadState.completed);
+    });
+
+    test('下載完成後 downloadState 為 DownloadState.completed', () async {
+      // Arrange
+      when(
+        () => mockPhotoRepository.downloadAllToCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+          blogUrl: any(named: 'blogUrl'),
+          onProgress: any(named: 'onProgress'),
+        ),
+      ).thenAnswer((_) async => successResult);
+
+      // Act
+      await viewModel.startDownload(
+        photos: testPhotos,
+        blogId: testBlogId,
+        blogUrl: testBlogUrl,
+      );
+
+      // Assert
+      expect(viewModel.downloadState, DownloadState.completed);
+      expect(viewModel.isDownloading, isFalse);
     });
   });
 }

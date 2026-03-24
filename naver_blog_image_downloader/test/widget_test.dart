@@ -49,7 +49,7 @@ void main() {
           ChangeNotifierProvider(
             create: (_) => PhotoDetailViewModel(
               cacheRepository: cacheRepository,
-              galleryService: galleryService,
+              photoRepository: photoRepository,
             ),
           ),
           ChangeNotifierProvider(

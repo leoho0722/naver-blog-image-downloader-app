@@ -5,6 +5,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:naver_blog_image_downloader/data/models/photo_entity.dart';
 import 'package:naver_blog_image_downloader/data/repositories/cache_repository.dart';
 import 'package:naver_blog_image_downloader/data/repositories/photo_repository.dart';
+import 'package:naver_blog_image_downloader/ui/core/result.dart';
 import 'package:naver_blog_image_downloader/ui/photo_gallery/view_model/photo_gallery_view_model.dart';
 
 class MockPhotoRepository extends Mock implements PhotoRepository {}
@@ -29,6 +30,10 @@ void main() {
       filename: 'photo2.jpg',
     ),
   ];
+
+  setUpAll(() {
+    registerFallbackValue(const <PhotoEntity>[]);
+  });
 
   setUp(() {
     mockPhotoRepository = MockPhotoRepository();
@@ -174,6 +179,119 @@ void main() {
       expect(viewModel.cachedFiles.containsKey('1'), isTrue);
       expect(viewModel.cachedFiles.containsKey('2'), isTrue);
       expect(viewModel.cachedFiles.containsKey('photo1.jpg'), isFalse);
+    });
+  });
+
+  group('GalleryMode 狀態管理', () {
+    test('初始 mode 為 GalleryMode.browsing', () {
+      expect(viewModel.mode, GalleryMode.browsing);
+    });
+
+    test('toggleSelectMode 在 browsing 與 selecting 間切換', () {
+      viewModel.toggleSelectMode();
+      expect(viewModel.mode, GalleryMode.selecting);
+
+      viewModel.toggleSelectMode();
+      expect(viewModel.mode, GalleryMode.browsing);
+    });
+
+    test('toggleSelectMode 切回 browsing 時清空 selectedIds', () async {
+      when(
+        () => mockCacheRepository.cachedFile(any(), any()),
+      ).thenAnswer((_) async => null);
+
+      await viewModel.load(testPhotos, testBlogId);
+
+      // 進入選取模式並選取照片
+      viewModel.toggleSelectMode();
+      viewModel.toggleSelection('1');
+      expect(viewModel.selectedIds, {'1'});
+
+      // 切回 browsing 後 selectedIds 被清空
+      viewModel.toggleSelectMode();
+      expect(viewModel.mode, GalleryMode.browsing);
+      expect(viewModel.selectedIds, isEmpty);
+    });
+  });
+
+  group('saveSelectedToGallery Result 處理', () {
+    setUp(() async {
+      when(
+        () => mockCacheRepository.cachedFile(any(), any()),
+      ).thenAnswer((_) async => null);
+
+      await viewModel.load(testPhotos, testBlogId);
+
+      // 進入選取模式並選取一張照片
+      viewModel.toggleSelectMode();
+      viewModel.toggleSelection('1');
+    });
+
+    test('Result.ok 時 mode 回到 browsing 且 selectedIds 被清空', () async {
+      when(
+        () => mockPhotoRepository.saveToGalleryFromCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+        ),
+      ).thenAnswer((_) async => Result.ok(null));
+
+      await viewModel.saveSelectedToGallery();
+
+      expect(viewModel.mode, GalleryMode.browsing);
+      expect(viewModel.selectedIds, isEmpty);
+      expect(viewModel.errorMessage, isNull);
+    });
+
+    test('Result.error 時 mode 回到 browsing 且 errorMessage 被設定', () async {
+      when(
+        () => mockPhotoRepository.saveToGalleryFromCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+        ),
+      ).thenAnswer((_) async => Result.error(Exception('fail')));
+
+      await viewModel.saveSelectedToGallery();
+
+      expect(viewModel.mode, GalleryMode.browsing);
+      expect(viewModel.errorMessage, isNotNull);
+    });
+  });
+
+  group('saveAllToGallery Result 處理', () {
+    setUp(() async {
+      when(
+        () => mockCacheRepository.cachedFile(any(), any()),
+      ).thenAnswer((_) async => null);
+
+      await viewModel.load(testPhotos, testBlogId);
+    });
+
+    test('Result.ok 時 mode 回到 browsing', () async {
+      when(
+        () => mockPhotoRepository.saveToGalleryFromCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+        ),
+      ).thenAnswer((_) async => Result.ok(null));
+
+      await viewModel.saveAllToGallery();
+
+      expect(viewModel.mode, GalleryMode.browsing);
+      expect(viewModel.errorMessage, isNull);
+    });
+
+    test('Result.error 時 mode 回到 browsing 且 errorMessage 被設定', () async {
+      when(
+        () => mockPhotoRepository.saveToGalleryFromCache(
+          photos: any(named: 'photos'),
+          blogId: any(named: 'blogId'),
+        ),
+      ).thenAnswer((_) async => Result.error(Exception('fail')));
+
+      await viewModel.saveAllToGallery();
+
+      expect(viewModel.mode, GalleryMode.browsing);
+      expect(viewModel.errorMessage, isNotNull);
     });
   });
 }

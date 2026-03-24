@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart';
 
 import '../../../data/models/photo_entity.dart';
 import '../../../data/repositories/cache_repository.dart';
-import '../../../data/services/gallery_service.dart';
+import '../../../data/repositories/photo_repository.dart';
+import '../../core/result.dart';
 
 /// 儲存操作狀態。
 enum SaveState {
@@ -21,15 +22,15 @@ enum SaveState {
 
 /// 照片詳細頁面的 ViewModel，管理照片列表、當前索引、檔案元資料快取與儲存至相簿。
 class PhotoDetailViewModel extends ChangeNotifier {
-  /// 建立 [PhotoDetailViewModel]，需注入 [CacheRepository] 與 [GalleryService]。
+  /// 建立 [PhotoDetailViewModel]，需注入 [CacheRepository] 與 [PhotoRepository]。
   PhotoDetailViewModel({
     required CacheRepository cacheRepository,
-    required GalleryService galleryService,
+    required PhotoRepository photoRepository,
   }) : _cacheRepository = cacheRepository,
-       _galleryService = galleryService;
+       _photoRepository = photoRepository;
 
   final CacheRepository _cacheRepository;
-  final GalleryService _galleryService;
+  final PhotoRepository _photoRepository;
 
   /// 目前載入的照片實體清單。
   List<PhotoEntity> _photos = [];
@@ -123,27 +124,21 @@ class PhotoDetailViewModel extends ChangeNotifier {
     }
   }
 
-  /// 將目前照片儲存至裝置相簿。
+  /// 將目前照片儲存至裝置相簿，透過 [PhotoRepository.saveOneToGallery] 委派。
   Future<void> saveToGallery() async {
     if (cachedFile == null || _saveState == SaveState.saving) return;
 
     _saveState = SaveState.saving;
     notifyListeners();
 
-    try {
-      final hasPermission = await _galleryService.requestPermission();
-      if (!hasPermission) {
-        debugPrint('[PhotoDetailVM] 相簿權限未授權');
-        _saveState = SaveState.idle;
-        notifyListeners();
-        return;
-      }
+    final result = await _photoRepository.saveOneToGallery(cachedFile!.path);
 
-      await _galleryService.saveToGallery(cachedFile!.path);
-      _saveState = SaveState.saved;
-    } on Exception catch (e) {
-      debugPrint('[PhotoDetailVM] 儲存失敗: $e');
-      _saveState = SaveState.idle;
+    switch (result) {
+      case Ok<void>():
+        _saveState = SaveState.saved;
+      case Error<void>(:final error):
+        debugPrint('[PhotoDetailVM] 儲存失敗: $error');
+        _saveState = SaveState.idle;
     }
 
     notifyListeners();

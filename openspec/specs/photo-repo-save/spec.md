@@ -296,3 +296,58 @@ tests:
   - naver_blog_image_downloader/test/data/services/api_service_test.dart
   - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
 -->
+
+---
+### Requirement: Save single photo to gallery
+
+The `PhotoRepository` SHALL provide a `saveOneToGallery(String filePath)` method that returns `Future<Result<void>>`.
+
+The method SHALL:
+1. Call `GalleryService.requestPermission()` to verify gallery access
+2. If permission is denied, return `Result.error` with `AppError(type: AppErrorType.gallery)`
+3. Call `GalleryService.saveToGallery(filePath)` to save the photo
+4. On success, return `Result.ok(null)`
+5. On exception, return `Result.error` wrapping the exception
+
+#### Scenario: Save single photo with permission granted
+
+- **GIVEN** `GalleryService.requestPermission()` returns `true`
+- **WHEN** `saveOneToGallery` is called with a valid file path
+- **THEN** `GalleryService.saveToGallery` SHALL be called with the file path
+- **AND** the method SHALL return `Result.ok`
+
+#### Scenario: Save single photo with permission denied
+
+- **GIVEN** `GalleryService.requestPermission()` returns `false`
+- **WHEN** `saveOneToGallery` is called
+- **THEN** `GalleryService.saveToGallery` SHALL NOT be called
+- **AND** the method SHALL return `Result.error` with `AppErrorType.gallery`
+
+#### Scenario: Save single photo with gallery error
+
+- **GIVEN** `GalleryService.requestPermission()` returns `true`
+- **AND** `GalleryService.saveToGallery` throws an exception
+- **WHEN** `saveOneToGallery` is called
+- **THEN** the method SHALL return `Result.error` wrapping the exception
+
+<!-- @trace
+source: architecture-enum-state-refactor
+updated: 2026-03-24
+code:
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+tests:
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+-->
