@@ -239,10 +239,10 @@ void main() {
 
       expect(viewModel.mode, GalleryMode.browsing);
       expect(viewModel.selectedIds, isEmpty);
-      expect(viewModel.errorMessage, isNull);
+      expect(viewModel.errorType, isNull);
     });
 
-    test('Result.error 時 mode 回到 browsing 且 errorMessage 被設定', () async {
+    test('Result.error 時 mode 回到 browsing 且 errorType 被設定', () async {
       when(
         () => mockPhotoRepository.saveToGalleryFromCache(
           photos: any(named: 'photos'),
@@ -253,7 +253,7 @@ void main() {
       await viewModel.saveSelectedToGallery();
 
       expect(viewModel.mode, GalleryMode.browsing);
-      expect(viewModel.errorMessage, isNotNull);
+      expect(viewModel.errorType, GallerySaveErrorType.saveToGalleryFailed);
     });
   });
 
@@ -277,10 +277,10 @@ void main() {
       await viewModel.saveAllToGallery();
 
       expect(viewModel.mode, GalleryMode.browsing);
-      expect(viewModel.errorMessage, isNull);
+      expect(viewModel.errorType, isNull);
     });
 
-    test('Result.error 時 mode 回到 browsing 且 errorMessage 被設定', () async {
+    test('Result.error 時 mode 回到 browsing 且 errorType 被設定', () async {
       when(
         () => mockPhotoRepository.saveToGalleryFromCache(
           photos: any(named: 'photos'),
@@ -291,7 +291,7 @@ void main() {
       await viewModel.saveAllToGallery();
 
       expect(viewModel.mode, GalleryMode.browsing);
-      expect(viewModel.errorMessage, isNotNull);
+      expect(viewModel.errorType, GallerySaveErrorType.saveToGalleryFailed);
     });
   });
 }

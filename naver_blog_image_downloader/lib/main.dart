@@ -3,15 +3,19 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'amplifyconfiguration.dart';
 import 'app.dart';
 import 'data/repositories/cache_repository.dart';
 import 'data/repositories/photo_repository.dart';
+import 'data/repositories/settings_repository.dart';
 import 'data/services/api_service.dart';
 import 'data/services/file_download_service.dart';
 import 'data/services/gallery_service.dart';
+import 'data/services/local_storage_service.dart';
 import 'ui/blog_input/view_model/blog_input_view_model.dart';
+import 'ui/core/view_model/app_settings_view_model.dart';
 import 'ui/download/view_model/download_view_model.dart';
 import 'ui/photo_detail/view_model/photo_detail_view_model.dart';
 import 'ui/photo_gallery/view_model/photo_gallery_view_model.dart';
@@ -26,6 +30,7 @@ import 'ui/settings/view_model/settings_view_model.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _configureAmplify();
+  final prefs = await SharedPreferences.getInstance();
 
   runApp(
     MultiProvider(
@@ -34,8 +39,14 @@ Future<void> main() async {
         Provider(create: (_) => ApiService()),
         Provider(create: (_) => FileDownloadService(Dio())),
         Provider(create: (_) => GalleryService()),
+        Provider(create: (_) => LocalStorageService(prefs: prefs)),
         // Repository 層
         Provider(create: (_) => CacheRepository()),
+        Provider(
+          create: (context) => SettingsRepository(
+            localStorageService: context.read<LocalStorageService>(),
+          ),
+        ),
         ProxyProvider4<
           ApiService,
           FileDownloadService,
@@ -51,6 +62,15 @@ Future<void> main() async {
           ),
         ),
         // ViewModel 層
+        ChangeNotifierProvider(
+          create: (context) {
+            final vm = AppSettingsViewModel(
+              settingsRepository: context.read<SettingsRepository>(),
+            );
+            vm.loadSettings();
+            return vm;
+          },
+        ),
         ChangeNotifierProvider(
           create: (context) => BlogInputViewModel(
             photoRepository: context.read<PhotoRepository>(),

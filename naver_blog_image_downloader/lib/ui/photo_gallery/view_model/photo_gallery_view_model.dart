@@ -7,6 +7,12 @@ import '../../../data/repositories/cache_repository.dart';
 import '../../../data/repositories/photo_repository.dart';
 import '../../core/result.dart';
 
+/// 相簿儲存操作的錯誤類型。
+enum GallerySaveErrorType {
+  /// 儲存至相簿失敗。
+  saveToGalleryFailed,
+}
+
 /// 照片瀏覽頁面的互動模式。
 enum GalleryMode {
   /// 一般瀏覽模式。
@@ -49,8 +55,8 @@ class PhotoGalleryViewModel extends ChangeNotifier {
   /// 目前的互動模式，以 enum 管理互斥狀態。
   GalleryMode _mode = GalleryMode.browsing;
 
-  /// 最近一次儲存失敗的錯誤訊息，無錯誤時為 `null`。
-  String? _errorMessage;
+  /// 最近一次儲存失敗的錯誤類型，無錯誤時為 `null`。
+  GallerySaveErrorType? _errorType;
 
   /// 已載入的照片清單。
   List<PhotoEntity> get photos => _photos;
@@ -74,10 +80,13 @@ class PhotoGalleryViewModel extends ChangeNotifier {
   /// 是否正在執行儲存至相簿操作。
   bool get isSaving => _mode == GalleryMode.saving;
 
-  /// 最近一次儲存失敗的錯誤訊息。
-  String? get errorMessage => _errorMessage;
+  /// 最近一次儲存失敗的錯誤類型。
+  GallerySaveErrorType? get errorType => _errorType;
 
   /// 載入照片清單與 Blog 識別碼，並預先解析所有快取檔案。
+  ///
+  /// [photos] 為要載入的照片實體清單。
+  /// [blogId] 為目前操作的 Blog 識別碼，用於查詢對應的快取檔案。
   Future<void> load(List<PhotoEntity> photos, String blogId) async {
     _photos = photos;
     _blogId = blogId;
@@ -105,6 +114,8 @@ class PhotoGalleryViewModel extends ChangeNotifier {
   }
 
   /// 切換指定照片的選取狀態。
+  ///
+  /// [photoId] 為要切換選取狀態的照片識別碼。
   void toggleSelection(String photoId) {
     _selectedIds.contains(photoId)
         ? _selectedIds.remove(photoId)
@@ -123,7 +134,7 @@ class PhotoGalleryViewModel extends ChangeNotifier {
   /// 將已選取的照片儲存至裝置相簿。
   Future<void> saveSelectedToGallery() async {
     _mode = GalleryMode.saving;
-    _errorMessage = null;
+    _errorType = null;
     notifyListeners();
 
     final selected = _photos.where((p) => _selectedIds.contains(p.id)).toList();
@@ -136,7 +147,7 @@ class PhotoGalleryViewModel extends ChangeNotifier {
       case Ok<void>():
         _selectedIds.clear();
       case Error<void>(:final error):
-        _errorMessage = '儲存至相簿失敗';
+        _errorType = GallerySaveErrorType.saveToGalleryFailed;
         debugPrint('[PhotoGalleryVM] $error');
     }
 
@@ -147,7 +158,7 @@ class PhotoGalleryViewModel extends ChangeNotifier {
   /// 將所有照片儲存至裝置相簿。
   Future<void> saveAllToGallery() async {
     _mode = GalleryMode.saving;
-    _errorMessage = null;
+    _errorType = null;
     notifyListeners();
 
     final result = await _photoRepository.saveToGalleryFromCache(
@@ -159,7 +170,7 @@ class PhotoGalleryViewModel extends ChangeNotifier {
       case Ok<void>():
         break;
       case Error<void>(:final error):
-        _errorMessage = '儲存至相簿失敗';
+        _errorType = GallerySaveErrorType.saveToGalleryFailed;
         debugPrint('[PhotoGalleryVM] $error');
     }
 

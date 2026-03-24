@@ -447,3 +447,153 @@ code:
 tests:
   - naver_blog_image_downloader/test/ui/core/naver_url_validator_test.dart
 -->
+
+---
+### Requirement: Localized UI text
+
+All user-facing text in `BlogInputView` SHALL be sourced from `AppLocalizations.of(context)` instead of hardcoded string literals. This includes:
+
+- AppBar title
+- TextField labelText and hintText
+- Button labels (fetch, cancel, paste)
+- Dialog titles and content (error, clipboard detection, fetch failure warning)
+- Tooltip text
+
+#### Scenario: UI text displayed in English
+
+- **WHEN** the app locale is set to English
+- **THEN** all user-facing text in `BlogInputView` SHALL display English translations from `AppLocalizations`
+
+#### Scenario: UI text displayed in Traditional Chinese
+
+- **WHEN** the app locale is set to zh_TW
+- **THEN** all user-facing text in `BlogInputView` SHALL display Traditional Chinese text from `AppLocalizations`
+
+
+<!-- @trace
+source: settings-theme-locale-l10n
+updated: 2026-03-25
+code:
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/l10n/app_ja.arb
+  - naver_blog_image_downloader/lib/l10n/app_zh_TW.arb
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/l10n/app_en.arb
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_ko.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/l10n/app_ko.arb
+  - naver_blog_image_downloader/l10n.yaml
+  - naver_blog_image_downloader/lib/l10n/app_localizations_en.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_zh.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/config/app_settings_keys.dart
+  - naver_blog_image_downloader/lib/l10n/app_zh.arb
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+-->
+
+---
+### Requirement: Error message mapping from ViewModel enum
+
+The `BlogInputView` SHALL map `FetchErrorType` enum values from `BlogInputViewModel` to localized error messages using `AppLocalizations.of(context)`.
+
+#### Scenario: FetchErrorType.emptyUrl mapped to localized message
+
+- **WHEN** the ViewModel's `FetchState` is `FetchError` with `errorType` `FetchErrorType.emptyUrl`
+- **THEN** the view SHALL display the localized empty URL error message from `AppLocalizations`
+
+#### Scenario: FetchErrorType.timeout mapped to localized message
+
+- **WHEN** the ViewModel's `FetchState` is `FetchError` with `errorType` `FetchErrorType.timeout`
+- **THEN** the view SHALL display the localized timeout error message from `AppLocalizations`
+
+
+<!-- @trace
+source: settings-theme-locale-l10n
+updated: 2026-03-25
+code:
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/l10n/app_ja.arb
+  - naver_blog_image_downloader/lib/l10n/app_zh_TW.arb
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/l10n/app_en.arb
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_ko.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/l10n/app_ko.arb
+  - naver_blog_image_downloader/l10n.yaml
+  - naver_blog_image_downloader/lib/l10n/app_localizations_en.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_zh.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/config/app_settings_keys.dart
+  - naver_blog_image_downloader/lib/l10n/app_zh.arb
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+-->
+
+---
+### Requirement: Loading phase mapping from ViewModel enum
+
+The `BlogInputView` SHALL map `FetchLoadingPhase` enum values from `BlogInputViewModel` to localized status messages using `AppLocalizations.of(context)`.
+
+#### Scenario: FetchLoadingPhase.submitting mapped to localized message
+
+- **WHEN** the ViewModel's `FetchState` is `FetchLoading` with `phase` `FetchLoadingPhase.submitting`
+- **THEN** the view SHALL display the localized "submitting" status message from `AppLocalizations`
+
+<!-- @trace
+source: settings-theme-locale-l10n
+updated: 2026-03-25
+code:
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/l10n/app_ja.arb
+  - naver_blog_image_downloader/lib/l10n/app_zh_TW.arb
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/l10n/app_en.arb
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_ko.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/l10n/app_ko.arb
+  - naver_blog_image_downloader/l10n.yaml
+  - naver_blog_image_downloader/lib/l10n/app_localizations_en.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_zh.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/config/app_settings_keys.dart
+  - naver_blog_image_downloader/lib/l10n/app_zh.arb
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+-->

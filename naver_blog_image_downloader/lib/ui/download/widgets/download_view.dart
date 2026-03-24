@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:naver_blog_image_downloader/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../../../data/models/fetch_result.dart';
 import '../view_model/download_view_model.dart';
@@ -21,6 +22,9 @@ class _DownloadDialogState extends State<DownloadDialog> {
   /// 是否已啟動下載流程，用於防止 [didChangeDependencies] 重複觸發。
   bool _downloadStarted = false;
 
+  /// 依賴變更時啟動批次下載流程。
+  ///
+  /// 首次呼叫時透過 [_downloadStarted] 旗標確保只觸發一次下載。
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -47,31 +51,37 @@ class _DownloadDialogState extends State<DownloadDialog> {
     }
   }
 
+  /// 建構下載進度對話框的 Widget 樹。
+  ///
+  /// 回傳包含進度環、已完成數量與下載狀態文字的 [AlertDialog]。
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final viewModel = context.watch<DownloadViewModel>();
 
     return AlertDialog(
-      title: const Text('下載照片'),
+      title: Text(l10n.downloadDialogTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           CircularProgressIndicator(value: viewModel.progress),
           const SizedBox(height: 24),
           Text(
-            '${viewModel.completed} / ${viewModel.total}',
+            l10n.downloadProgress(viewModel.completed, viewModel.total),
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
           Text(
-            viewModel.isDownloading ? '下載中...' : '下載完成',
+            viewModel.isDownloading
+                ? l10n.downloadStatusDownloading
+                : l10n.downloadStatusCompleted,
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           if (viewModel.result != null &&
               !viewModel.result!.isAllSuccessful) ...[
             const SizedBox(height: 12),
             Text(
-              '${viewModel.result!.failedPhotos.length} 張下載失敗',
+              l10n.downloadFailedCount(viewModel.result!.failedPhotos.length),
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ],
@@ -84,6 +94,9 @@ class _DownloadDialogState extends State<DownloadDialog> {
 /// 顯示下載進度對話框。
 ///
 /// 下載完成後回傳 `true`，使用者手動關閉回傳 `null`。
+///
+/// [context] 為當前的 BuildContext，用於開啟對話框。
+/// [fetchResult] 為照片擷取結果，包含要下載的照片清單與 Blog 資訊。
 Future<bool?> showDownloadDialog(
   BuildContext context,
   FetchResult fetchResult,

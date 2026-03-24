@@ -397,3 +397,45 @@ tests:
 -->
 
 ---
+### Requirement: Settings page watches AppSettingsViewModel
+
+The `SettingsView` SHALL use `context.watch<AppSettingsViewModel>()` in addition to `context.watch<SettingsViewModel>()` to access both cache-related state and app-wide preference state.
+
+#### Scenario: Settings page accesses both ViewModels
+
+- **WHEN** the `SettingsView` builds
+- **THEN** it SHALL watch both `SettingsViewModel` (for cache operations) and `AppSettingsViewModel` (for theme mode and locale)
+
+<!-- @trace
+source: settings-theme-locale-l10n
+updated: 2026-03-25
+code:
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/l10n/app_ja.arb
+  - naver_blog_image_downloader/lib/l10n/app_zh_TW.arb
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/l10n/app_en.arb
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_ko.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/l10n/app_ko.arb
+  - naver_blog_image_downloader/l10n.yaml
+  - naver_blog_image_downloader/lib/l10n/app_localizations_en.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_zh.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/config/app_settings_keys.dart
+  - naver_blog_image_downloader/lib/l10n/app_zh.arb
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+-->

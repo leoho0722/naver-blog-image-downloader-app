@@ -9,6 +9,42 @@ import '../../../data/services/api_service.dart' show ApiServiceException;
 import '../../core/app_error.dart';
 import '../../core/result.dart';
 
+/// 擷取載入階段的列舉。
+enum FetchLoadingPhase {
+  /// 正在提交任務。
+  submitting,
+
+  /// 伺服器處理中。
+  processing,
+
+  /// 處理完成。
+  completed,
+}
+
+/// 擷取錯誤類型的列舉。
+enum FetchErrorType {
+  /// 使用者未輸入網址。
+  emptyUrl,
+
+  /// 請求逾時。
+  timeout,
+
+  /// 伺服器暫時無法使用（可重試）。
+  serverUnavailable,
+
+  /// API 呼叫失敗（不可重試）。
+  apiFailed,
+
+  /// 伺服器處理失敗。
+  serverError,
+
+  /// 網路連線異常。
+  networkError,
+
+  /// 未知錯誤。
+  unknown,
+}
+
 /// 照片擷取操作的狀態，以 sealed class 表達互斥狀態。
 sealed class FetchState {
   /// 建立 [FetchState]。
@@ -21,22 +57,25 @@ final class FetchIdle extends FetchState {
   const FetchIdle();
 }
 
-/// 擷取中狀態，攜帶目前的處理狀態訊息。
+/// 擷取中狀態，攜帶目前的處理階段。
 final class FetchLoading extends FetchState {
   /// 建立 [FetchLoading]。
-  const FetchLoading({required this.statusMessage});
+  const FetchLoading({required this.phase});
 
-  /// 目前的處理狀態訊息（如「伺服器處理中...」）。
-  final String statusMessage;
+  /// 目前的處理階段。
+  final FetchLoadingPhase phase;
 }
 
-/// 擷取失敗狀態，攜帶使用者可讀的錯誤訊息。
+/// 擷取失敗狀態，攜帶錯誤類型。
 final class FetchError extends FetchState {
   /// 建立 [FetchError]。
-  const FetchError({required this.message});
+  const FetchError({required this.errorType, this.statusCode});
 
-  /// 使用者可讀的錯誤訊息。
-  final String message;
+  /// 錯誤類型。
+  final FetchErrorType errorType;
+
+  /// HTTP 狀態碼（僅 [FetchErrorType.serverUnavailable] 時有值）。
+  final int? statusCode;
 }
 
 /// 擷取成功狀態，攜帶照片擷取結果。
@@ -71,20 +110,13 @@ class BlogInputViewModel extends ChangeNotifier {
   /// 是否正在擷取照片（含提交任務 + 輪詢中）。
   bool get isLoading => _fetchState is FetchLoading;
 
-  /// 錯誤訊息，無錯誤時為 null。
-  String? get errorMessage =>
-      _fetchState is FetchError ? (_fetchState as FetchError).message : null;
-
-  /// 目前的處理狀態訊息（如「伺服器處理中...」），無狀態時為 null。
-  String? get statusMessage => _fetchState is FetchLoading
-      ? (_fetchState as FetchLoading).statusMessage
-      : null;
-
   /// 照片擷取結果，尚未擷取時為 null。
   FetchResult? get fetchResult =>
       _fetchState is FetchSuccess ? (_fetchState as FetchSuccess).result : null;
 
   /// 當使用者修改網址時呼叫，同時將狀態重設為 [FetchIdle]。
+  ///
+  /// [url] 為使用者目前輸入的 Blog 網址。
   void onUrlChanged(String url) {
     _blogUrl = url;
     _fetchState = const FetchIdle();
@@ -93,28 +125,28 @@ class BlogInputViewModel extends ChangeNotifier {
 
   /// 根據目前的 [blogUrl] 發起照片擷取請求（非同步任務模式）。
   ///
-  /// 若網址為空會設定錯誤訊息；若已在載入中則不重複發送。
-  /// 任務提交後會自動輪詢狀態，並透過 [statusMessage] 通知 UI。
+  /// 若網址為空會設定錯誤類型；若已在載入中則不重複發送。
+  /// 任務提交後會自動輪詢狀態，並透過 [FetchLoadingPhase] 通知 UI。
   Future<void> fetchPhotos() async {
     if (_blogUrl.isEmpty) {
-      _fetchState = const FetchError(message: '請輸入 Blog 網址');
+      _fetchState = const FetchError(errorType: FetchErrorType.emptyUrl);
       notifyListeners();
       return;
     }
 
     if (_fetchState is FetchLoading) return;
 
-    _fetchState = const FetchLoading(statusMessage: '正在提交任務...');
+    _fetchState = const FetchLoading(phase: FetchLoadingPhase.submitting);
     notifyListeners();
 
     final result = await _photoRepository.fetchPhotos(
       _blogUrl,
       onStatusChanged: (status) {
         _fetchState = FetchLoading(
-          statusMessage: switch (status) {
-            JobStatus.processing => '伺服器處理中...',
-            JobStatus.completed => '處理完成',
-            JobStatus.failed => '',
+          phase: switch (status) {
+            JobStatus.processing => FetchLoadingPhase.processing,
+            JobStatus.completed => FetchLoadingPhase.completed,
+            JobStatus.failed => FetchLoadingPhase.completed,
           },
         );
         notifyListeners();
@@ -125,31 +157,39 @@ class BlogInputViewModel extends ChangeNotifier {
       case Ok<FetchResult>(:final value):
         _fetchState = FetchSuccess(result: value);
       case Error<FetchResult>(:final error):
-        _fetchState = FetchError(message: _humanReadableError(error));
+        _fetchState = _mapError(error);
     }
     notifyListeners();
   }
 
-  /// 將例外轉為使用者可讀的錯誤訊息。
-  String _humanReadableError(Exception error) {
+  /// 將例外映射為對應的 [FetchError] 狀態。
+  ///
+  /// [error] 為 Repository 回傳的例外物件，會依照類型對應至 [FetchErrorType]。
+  /// 回傳包含錯誤類型（與可選狀態碼）的 [FetchError]。
+  FetchError _mapError(Exception error) {
     if (error is TimeoutException) {
-      return '請求逾時，請稍後再試';
+      return const FetchError(errorType: FetchErrorType.timeout);
     }
     if (error is ApiServiceException) {
       if (error.isRetryable) {
-        return '伺服器暫時無法使用（${error.statusCode}），請稍後再試';
+        return FetchError(
+          errorType: FetchErrorType.serverUnavailable,
+          statusCode: error.statusCode,
+        );
       }
-      return 'API 呼叫失敗，請稍後再試';
+      return const FetchError(errorType: FetchErrorType.apiFailed);
     }
     if (error is AppError) {
-      return switch (error.type) {
-        AppErrorType.serverError => '伺服器處理失敗，請稍後再試',
-        AppErrorType.network => '網路連線異常，請檢查網路設定',
-        AppErrorType.timeout => '請求逾時，請稍後再試',
-        _ => '發生錯誤，請稍後再試',
-      };
+      return FetchError(
+        errorType: switch (error.type) {
+          AppErrorType.serverError => FetchErrorType.serverError,
+          AppErrorType.network => FetchErrorType.networkError,
+          AppErrorType.timeout => FetchErrorType.timeout,
+          _ => FetchErrorType.unknown,
+        },
+      );
     }
-    return '發生錯誤，請稍後再試';
+    return const FetchError(errorType: FetchErrorType.unknown);
   }
 
   /// 重設擷取結果與錯誤訊息，回到初始狀態。

@@ -285,57 +285,80 @@ tests:
 ---
 ### Requirement: Fetch photos with loading state and status message
 
-The `fetchPhotos()` method SHALL manage state transitions through the `FetchState` sealed class.
+The `fetchPhotos` method SHALL manage state transitions using `FetchLoadingPhase` enum instead of hardcoded status message strings:
 
-- On invocation, state SHALL transition from `FetchIdle` to `FetchLoading`
-- The `onStatusChanged` callback SHALL update the `statusMessage` within `FetchLoading`
-- On success, state SHALL transition to `FetchSuccess`
-- On failure, state SHALL transition to `FetchError`
+- On submission: `FetchLoading(phase: FetchLoadingPhase.submitting)`
+- On `JobStatus.processing`: `FetchLoading(phase: FetchLoadingPhase.processing)`
+- On `JobStatus.completed`: `FetchLoading(phase: FetchLoadingPhase.completed)`
 
-#### Scenario: Successful fetch
+The `FetchLoading` class SHALL carry a `phase` property of type `FetchLoadingPhase` instead of a `statusMessage` property of type `String`.
 
-- **GIVEN** `blogUrl` is a non-empty string
-- **AND** `PhotoRepository.fetchPhotos` returns `Result.ok(fetchResult)`
-- **WHEN** `fetchPhotos()` is called
-- **THEN** state SHALL transition: `FetchIdle` → `FetchLoading` → `FetchSuccess`
-- **AND** `fetchResult` SHALL hold the returned `FetchResult`
-- **AND** `errorMessage` SHALL be `null`
+On error, the method SHALL map exceptions to `FetchErrorType` enum values instead of calling `_humanReadableError()`:
 
-#### Scenario: Failed fetch
+- `TimeoutException` → `FetchErrorType.timeout`
+- `ApiServiceException` with `isRetryable` true → `FetchErrorType.serverUnavailable`
+- `ApiServiceException` without `isRetryable` → `FetchErrorType.apiFailed`
+- `AppError` with `AppErrorType.serverError` → `FetchErrorType.serverError`
+- `AppError` with `AppErrorType.network` → `FetchErrorType.networkError`
+- `AppError` with `AppErrorType.timeout` → `FetchErrorType.timeout`
+- All other exceptions → `FetchErrorType.unknown`
 
-- **GIVEN** `blogUrl` is a non-empty string
-- **AND** `PhotoRepository.fetchPhotos` returns `Result.error(exception)`
-- **WHEN** `fetchPhotos()` is called
-- **THEN** state SHALL transition: `FetchIdle` → `FetchLoading` → `FetchError`
-- **AND** `errorMessage` SHALL contain the error description
-- **AND** `fetchResult` SHALL be `null`
+The `FetchError` class SHALL carry an `errorType` property of type `FetchErrorType` (and optionally a nullable `statusCode` of type `int?`) instead of a `message` property of type `String`.
 
-#### Scenario: Duplicate fetch prevention
+#### Scenario: FetchLoading carries phase enum
 
-- **GIVEN** state is `FetchLoading`
-- **WHEN** `fetchPhotos()` is called again
-- **THEN** the method SHALL return immediately without making another repository call
+- **WHEN** a `FetchLoading` state is created
+- **THEN** it SHALL have a `phase` property of type `FetchLoadingPhase`
+- **AND** it SHALL NOT have a `statusMessage` property
+
+#### Scenario: FetchError carries errorType enum
+
+- **WHEN** a `FetchError` state is created
+- **THEN** it SHALL have an `errorType` property of type `FetchErrorType`
+- **AND** it SHALL NOT have a `message` property of type `String`
+
+#### Scenario: TimeoutException maps to FetchErrorType.timeout
+
+- **WHEN** `fetchPhotos()` catches a `TimeoutException`
+- **THEN** the state SHALL transition to `FetchError(errorType: FetchErrorType.timeout)`
+
+#### Scenario: ApiServiceException with retryable maps to serverUnavailable
+
+- **WHEN** `fetchPhotos()` catches an `ApiServiceException` with `isRetryable` true
+- **THEN** the state SHALL transition to `FetchError(errorType: FetchErrorType.serverUnavailable)`
 
 
 <!-- @trace
-source: architecture-enum-state-refactor
-updated: 2026-03-24
+source: settings-theme-locale-l10n
+updated: 2026-03-25
 code:
-  - naver_blog_image_downloader/lib/main.dart
-  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
   - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
-  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
-  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
   - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
-  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/l10n/app_ja.arb
+  - naver_blog_image_downloader/lib/l10n/app_zh_TW.arb
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/l10n/app_en.arb
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_ko.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/l10n/app_ko.arb
+  - naver_blog_image_downloader/l10n.yaml
+  - naver_blog_image_downloader/lib/l10n/app_localizations_en.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_zh.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/config/app_settings_keys.dart
+  - naver_blog_image_downloader/lib/l10n/app_zh.arb
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
 tests:
-  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
-  - naver_blog_image_downloader/test/widget_test.dart
-  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
   - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
-  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
   - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
 -->
 
@@ -381,32 +404,145 @@ tests:
 ---
 ### Requirement: Human-readable error messages
 
-The `BlogInputViewModel` SHALL convert all error types to human-readable Chinese messages before setting `errorMessage`. For `AppError` with `AppErrorType.serverError`, the message SHALL be "伺服器處理失敗，請稍後再試". For `AppError` with `AppErrorType.network`, the message SHALL be "網路連線異常，請檢查網路設定". For any other `AppError` type, the message SHALL be "發生錯誤，請稍後再試". The `errorMessage` property SHALL NOT contain raw JSON, technical details, or unicode escape sequences.
+The `_humanReadableError()` method SHALL be removed. Error message generation SHALL be delegated to the View layer, which maps `FetchErrorType` enum values to localized strings via `AppLocalizations`.
 
-#### Scenario: Server error produces human-readable message
+#### Scenario: No humanReadableError method
 
-- **GIVEN** `PhotoRepository.fetchPhotos()` returns `Result.error` with `AppError(type: AppErrorType.serverError)`
-- **WHEN** the error is processed
-- **THEN** `errorMessage` SHALL be "伺服器處理失敗，請稍後再試"
+- **WHEN** the `BlogInputViewModel` class is inspected
+- **THEN** it SHALL NOT contain a `_humanReadableError` method
 
-#### Scenario: Network error produces human-readable message
-
-- **GIVEN** `PhotoRepository.fetchPhotos()` returns `Result.error` with `AppError(type: AppErrorType.network)`
-- **WHEN** the error is processed
-- **THEN** `errorMessage` SHALL be "網路連線異常，請檢查網路設定"
-
-#### Scenario: Unknown error produces generic message
-
-- **GIVEN** an unexpected error type is encountered
-- **WHEN** the error is processed
-- **THEN** `errorMessage` SHALL be "發生錯誤，請稍後再試"
 
 <!-- @trace
-source: lambda-error-dialog
-updated: 2026-03-22
+source: settings-theme-locale-l10n
+updated: 2026-03-25
 code:
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
   - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/l10n/app_ja.arb
+  - naver_blog_image_downloader/lib/l10n/app_zh_TW.arb
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
   - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/l10n/app_en.arb
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_ko.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/l10n/app_ko.arb
+  - naver_blog_image_downloader/l10n.yaml
+  - naver_blog_image_downloader/lib/l10n/app_localizations_en.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_zh.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/config/app_settings_keys.dart
+  - naver_blog_image_downloader/lib/l10n/app_zh.arb
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
 tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+-->
+
+---
+### Requirement: FetchErrorType enum
+
+A `FetchErrorType` enum SHALL be defined with the following values:
+
+- `emptyUrl` — user submitted an empty URL
+- `timeout` — request timed out
+- `serverUnavailable` — server returned a retryable error
+- `apiFailed` — API call failed (non-retryable)
+- `serverError` — server-side processing error
+- `networkError` — network connectivity issue
+- `unknown` — unclassified error
+
+#### Scenario: All error types defined
+
+- **WHEN** `FetchErrorType.values` is inspected
+- **THEN** it SHALL contain exactly 7 values: `emptyUrl`, `timeout`, `serverUnavailable`, `apiFailed`, `serverError`, `networkError`, `unknown`
+
+
+<!-- @trace
+source: settings-theme-locale-l10n
+updated: 2026-03-25
+code:
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/l10n/app_ja.arb
+  - naver_blog_image_downloader/lib/l10n/app_zh_TW.arb
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/l10n/app_en.arb
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_ko.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/l10n/app_ko.arb
+  - naver_blog_image_downloader/l10n.yaml
+  - naver_blog_image_downloader/lib/l10n/app_localizations_en.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_zh.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/config/app_settings_keys.dart
+  - naver_blog_image_downloader/lib/l10n/app_zh.arb
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+-->
+
+---
+### Requirement: FetchLoadingPhase enum
+
+A `FetchLoadingPhase` enum SHALL be defined with the following values:
+
+- `submitting` — task submission in progress
+- `processing` — server processing the request
+- `completed` — processing completed
+
+#### Scenario: All loading phases defined
+
+- **WHEN** `FetchLoadingPhase.values` is inspected
+- **THEN** it SHALL contain exactly 3 values: `submitting`, `processing`, `completed`
+
+<!-- @trace
+source: settings-theme-locale-l10n
+updated: 2026-03-25
+code:
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/l10n/app_ja.arb
+  - naver_blog_image_downloader/lib/l10n/app_zh_TW.arb
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/l10n/app_en.arb
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_ko.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/l10n/app_ko.arb
+  - naver_blog_image_downloader/l10n.yaml
+  - naver_blog_image_downloader/lib/l10n/app_localizations_en.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_zh.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/config/app_settings_keys.dart
+  - naver_blog_image_downloader/lib/l10n/app_zh.arb
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
   - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
 -->

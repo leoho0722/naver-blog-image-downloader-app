@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:naver_blog_image_downloader/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -33,6 +34,10 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
   /// 「儲存中」對話框是否正在顯示，用於避免重複開啟或多餘關閉。
   bool _isSavingDialogOpen = false;
 
+  /// 依賴變更時初始化 ViewModel 並載入照片資料。
+  ///
+  /// 首次呼叫時從路由 `extra` 取得 [FetchResult]，觸發 ViewModel 載入照片清單。
+  /// 透過 [_loaded] 旗標防止重複觸發。
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -51,6 +56,7 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
     }
   }
 
+  /// 釋放資源，移除 ViewModel 的狀態監聽器。
   @override
   void dispose() {
     _viewModel.removeListener(_onViewModelChanged);
@@ -60,6 +66,7 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
   /// ViewModel 狀態變更的監聽回呼，根據 [isSaving] 開啟或關閉儲存中對話框。
   void _onViewModelChanged() {
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     if (_viewModel.isSaving && !_isSavingDialogOpen) {
       _isSavingDialogOpen = true;
       unawaited(
@@ -70,15 +77,15 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
             child: Material(
               color: Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(28),
-              child: const SizedBox(
+              child: SizedBox(
                 width: 140,
                 height: 140,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('儲存中...'),
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(l10n.gallerySaving),
                   ],
                 ),
               ),
@@ -92,29 +99,34 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
     }
   }
 
+  /// 建構照片瀏覽頁面的 Widget 樹。
+  ///
+  /// 回傳包含 AppBar 操作列與 GridView 照片網格的 [Scaffold]。
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final viewModel = context.watch<PhotoGalleryViewModel>();
     final photos = viewModel.photos;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text('照片瀏覽（${photos.length}）'),
+        title: Text(l10n.galleryTitle(photos.length)),
         actions: [
           IconButton(
             icon: Icon(viewModel.isSelectMode ? Icons.close : Icons.select_all),
-            tooltip: viewModel.isSelectMode ? '取消選取' : '選取模式',
+            tooltip: viewModel.isSelectMode
+                ? l10n.galleryDeselectMode
+                : l10n.gallerySelectMode,
             onPressed: viewModel.toggleSelectMode,
           ),
           if (viewModel.isSelectMode) ...[
             IconButton(
               icon: const Icon(Icons.check_box_outlined),
-              tooltip: '全選',
+              tooltip: l10n.gallerySelectAll,
               onPressed: viewModel.selectAll,
             ),
             IconButton(
               icon: const Icon(Icons.save_alt),
-              tooltip: '儲存已選取',
+              tooltip: l10n.gallerySaveSelected,
               onPressed: viewModel.selectedIds.isEmpty
                   ? null
                   : viewModel.saveSelectedToGallery,
@@ -122,13 +134,13 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
           ] else
             IconButton(
               icon: const Icon(Icons.save),
-              tooltip: '儲存全部',
+              tooltip: l10n.gallerySaveAll,
               onPressed: photos.isEmpty ? null : viewModel.saveAllToGallery,
             ),
         ],
       ),
       body: photos.isEmpty
-          ? const Center(child: Text('沒有照片'))
+          ? Center(child: Text(l10n.galleryEmpty))
           : GridView.builder(
               padding: const EdgeInsets.all(4),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

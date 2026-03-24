@@ -44,7 +44,7 @@ void main() {
     test('初始狀態正確', () {
       expect(viewModel.blogUrl, '');
       expect(viewModel.isLoading, isFalse);
-      expect(viewModel.errorMessage, isNull);
+      expect(viewModel.fetchState, isA<FetchIdle>());
       expect(viewModel.fetchResult, isNull);
     });
 
@@ -58,26 +58,29 @@ void main() {
       expect(notifyCount, 1);
     });
 
-    test('onUrlChanged 清除 errorMessage', () {
+    test('onUrlChanged 清除 fetchState 中的錯誤', () {
       // 先產生一個 error
-      viewModel.fetchPhotos(); // blogUrl 為空會設定 errorMessage
-      expect(viewModel.errorMessage, isNotNull);
+      viewModel.fetchPhotos(); // blogUrl 為空會設定 FetchError
+      expect(viewModel.fetchState, isA<FetchError>());
 
       viewModel.onUrlChanged(testBlogUrl);
 
-      expect(viewModel.errorMessage, isNull);
+      expect(viewModel.fetchState, isA<FetchIdle>());
     });
   });
 
   group('Empty URL validation', () {
-    test('blogUrl 為空時設定 errorMessage 且不呼叫 repository', () async {
+    test('blogUrl 為空時設定 FetchError(emptyUrl) 且不呼叫 repository', () async {
       int notifyCount = 0;
       viewModel.addListener(() => notifyCount++);
 
       await viewModel.fetchPhotos();
 
-      expect(viewModel.errorMessage, isNotNull);
-      expect(viewModel.errorMessage, '請輸入 Blog 網址');
+      expect(viewModel.fetchState, isA<FetchError>());
+      expect(
+        (viewModel.fetchState as FetchError).errorType,
+        FetchErrorType.emptyUrl,
+      );
       expect(viewModel.isLoading, isFalse);
       expect(notifyCount, 1);
       verifyNever(() => mockPhotoRepository.fetchPhotos(any()));
@@ -99,7 +102,7 @@ void main() {
 
       expect(viewModel.isLoading, isFalse);
       expect(viewModel.fetchResult, testFetchResult);
-      expect(viewModel.errorMessage, isNull);
+      expect(viewModel.fetchState, isA<FetchSuccess>());
     });
 
     test('fetchPhotos 開始時 isLoading 設為 true', () async {
@@ -122,7 +125,7 @@ void main() {
       expect(viewModel.isLoading, isFalse);
     });
 
-    test('取得照片失敗時設定 errorMessage', () async {
+    test('取得照片失敗時 fetchState 設為 FetchError', () async {
       viewModel.onUrlChanged(testBlogUrl);
 
       final exception = Exception('Network error');
@@ -136,7 +139,11 @@ void main() {
       await viewModel.fetchPhotos();
 
       expect(viewModel.isLoading, isFalse);
-      expect(viewModel.errorMessage, '發生錯誤，請稍後再試');
+      expect(viewModel.fetchState, isA<FetchError>());
+      expect(
+        (viewModel.fetchState as FetchError).errorType,
+        FetchErrorType.unknown,
+      );
       expect(viewModel.fetchResult, isNull);
     });
 
@@ -199,7 +206,7 @@ void main() {
   });
 
   group('Reset state', () {
-    test('reset 清除 fetchResult 和 errorMessage 並通知 listeners', () async {
+    test('reset 清除 fetchResult 並將 fetchState 重設為 FetchIdle', () async {
       // 先取得一個成功結果
       viewModel.onUrlChanged(testBlogUrl);
       when(
@@ -217,7 +224,7 @@ void main() {
       viewModel.reset();
 
       expect(viewModel.fetchResult, isNull);
-      expect(viewModel.errorMessage, isNull);
+      expect(viewModel.fetchState, isA<FetchIdle>());
       expect(notifyCount, 1);
     });
 
@@ -244,7 +251,7 @@ void main() {
       ).called(2);
     });
 
-    test('reset 清除 errorMessage', () async {
+    test('reset 清除 fetchState 中的錯誤', () async {
       viewModel.onUrlChanged(testBlogUrl);
       final exception = Exception('Some error');
       when(
@@ -255,10 +262,10 @@ void main() {
       ).thenAnswer((_) async => Result.error(exception));
 
       await viewModel.fetchPhotos();
-      expect(viewModel.errorMessage, isNotNull);
+      expect(viewModel.fetchState, isA<FetchError>());
 
       viewModel.reset();
-      expect(viewModel.errorMessage, isNull);
+      expect(viewModel.fetchState, isA<FetchIdle>());
     });
   });
 
@@ -285,7 +292,7 @@ void main() {
 
       expect(stateDuringFetch, isA<FetchLoading>());
       final loading = stateDuringFetch! as FetchLoading;
-      expect(loading.statusMessage, '正在提交任務...');
+      expect(loading.phase, FetchLoadingPhase.submitting);
     });
 
     test('fetchPhotos 成功後 fetchState 轉為 FetchSuccess', () async {
@@ -320,7 +327,7 @@ void main() {
 
       expect(viewModel.fetchState, isA<FetchError>());
       final error = viewModel.fetchState as FetchError;
-      expect(error.message, '發生錯誤，請稍後再試');
+      expect(error.errorType, FetchErrorType.unknown);
     });
 
     test('blogUrl 為空時 fetchPhotos 將 fetchState 設為 FetchError', () async {
@@ -329,7 +336,7 @@ void main() {
 
       expect(viewModel.fetchState, isA<FetchError>());
       final error = viewModel.fetchState as FetchError;
-      expect(error.message, '請輸入 Blog 網址');
+      expect(error.errorType, FetchErrorType.emptyUrl);
     });
 
     test('onUrlChanged 將 fetchState 重設為 FetchIdle', () async {
