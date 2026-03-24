@@ -12,11 +12,19 @@ class DownloadViewModel extends ChangeNotifier {
   DownloadViewModel({required PhotoRepository photoRepository})
     : _photoRepository = photoRepository;
 
+  /// 注入的照片 Repository，用於執行實際的下載與儲存操作。
   final PhotoRepository _photoRepository;
 
+  /// 已完成下載的照片數量（含成功、失敗與跳過）。
   int _completed = 0;
+
+  /// 本次批次需下載的照片總數。
   int _total = 0;
+
+  /// 是否正在執行批次下載。
   bool _isDownloading = false;
+
+  /// 批次下載的結果摘要，下載完成後才有值。
   DownloadBatchResult? _result;
 
   /// 已完成下載的照片數量。

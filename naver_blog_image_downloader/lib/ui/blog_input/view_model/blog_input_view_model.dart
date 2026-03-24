@@ -17,10 +17,19 @@ class BlogInputViewModel extends ChangeNotifier {
 
   final PhotoRepository _photoRepository;
 
+  /// 使用者輸入的 Blog 網址原始值。
   String _blogUrl = '';
+
+  /// 是否正在執行擷取流程（含提交任務 + 輪詢狀態）。
   bool _isLoading = false;
+
+  /// 最近一次的錯誤訊息，無錯誤時為 `null`。
   String? _errorMessage;
+
+  /// 目前的處理狀態文字（例如「伺服器處理中...」），無狀態時為 `null`。
   String? _statusMessage;
+
+  /// 最近一次的照片擷取結果，尚未擷取時為 `null`。
   FetchResult? _fetchResult;
 
   /// 使用者輸入的 Blog 網址。

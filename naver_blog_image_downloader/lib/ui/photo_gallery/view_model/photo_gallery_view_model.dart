@@ -8,20 +8,35 @@ import '../../../data/repositories/photo_repository.dart';
 
 /// 照片瀏覽頁面的 ViewModel，管理照片清單呈現、選取模式與相簿儲存操作。
 class PhotoGalleryViewModel extends ChangeNotifier {
+  /// 建立 [PhotoGalleryViewModel]，需注入 [PhotoRepository] 與 [CacheRepository]。
   PhotoGalleryViewModel({
     required PhotoRepository photoRepository,
     required CacheRepository cacheRepository,
   }) : _photoRepository = photoRepository,
        _cacheRepository = cacheRepository;
 
+  /// 注入的照片 Repository，用於執行儲存至相簿等操作。
   final PhotoRepository _photoRepository;
+
+  /// 注入的快取 Repository，用於查詢本機快取檔案。
   final CacheRepository _cacheRepository;
 
+  /// 目前載入的照片實體清單。
   List<PhotoEntity> _photos = [];
+
+  /// 目前操作的 Blog 識別碼。
   String _blogId = '';
+
+  /// 照片 ID 對應的本機快取檔案（預先解析，避免重複查詢）。
   final Map<String, File?> _cachedFiles = {};
+
+  /// 目前已選取的照片 ID 集合（選取模式下使用）。
   Set<String> _selectedIds = {};
+
+  /// 是否處於多選模式。
   bool _isSelectMode = false;
+
+  /// 是否正在將照片儲存至相簿。
   bool _isSaving = false;
 
   /// 已載入的照片清單。

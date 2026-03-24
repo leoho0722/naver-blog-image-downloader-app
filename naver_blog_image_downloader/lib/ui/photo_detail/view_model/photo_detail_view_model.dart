@@ -21,6 +21,7 @@ enum SaveState {
 
 /// 照片詳細頁面的 ViewModel，管理照片列表、當前索引、檔案元資料快取與儲存至相簿。
 class PhotoDetailViewModel extends ChangeNotifier {
+  /// 建立 [PhotoDetailViewModel]，需注入 [CacheRepository] 與 [GalleryService]。
   PhotoDetailViewModel({
     required CacheRepository cacheRepository,
     required GalleryService galleryService,
@@ -30,10 +31,19 @@ class PhotoDetailViewModel extends ChangeNotifier {
   final CacheRepository _cacheRepository;
   final GalleryService _galleryService;
 
+  /// 目前載入的照片實體清單。
   List<PhotoEntity> _photos = [];
+
+  /// 目前操作的 Blog 識別碼。
   String _blogId = '';
+
+  /// 目前顯示照片在 [_photos] 中的索引位置。
   int _currentIndex = 0;
+
+  /// 目前的儲存操作狀態（閒置 / 儲存中 / 已儲存）。
   SaveState _saveState = SaveState.idle;
+
+  /// 照片索引對應的元資料快取，避免重複讀取檔案與解析圖片尺寸。
   final Map<int, _PhotoMetadata> _metadataCache = {};
 
   /// 已載入的照片清單。
@@ -171,8 +181,9 @@ class PhotoDetailViewModel extends ChangeNotifier {
   }
 }
 
-/// 單張照片的元資料快取。
+/// 單張照片的元資料快取，包含快取檔案、檔案大小與圖片尺寸。
 class _PhotoMetadata {
+  /// 建立 [_PhotoMetadata]。
   const _PhotoMetadata({
     this.cachedFile,
     this.fileSizeBytes,
@@ -180,8 +191,15 @@ class _PhotoMetadata {
     this.imageHeight,
   });
 
+  /// 本機快取的照片檔案，若尚未快取則為 `null`。
   final File? cachedFile;
+
+  /// 照片檔案大小（bytes），若尚未讀取則為 `null`。
   final int? fileSizeBytes;
+
+  /// 照片寬度（像素），若尚未解析則為 `null`。
   final int? imageWidth;
+
+  /// 照片高度（像素），若尚未解析則為 `null`。
   final int? imageHeight;
 }

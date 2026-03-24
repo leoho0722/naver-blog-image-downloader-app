@@ -8,6 +8,7 @@ import '../../ui/core/app_error.dart';
 /// Android 使用 MediaStore + FileInputStream 直接複製，
 /// 兩者皆不轉碼，保留原始編碼與檔案大小。
 class GalleryService {
+  /// 與原生平台（iOS / Android）溝通的 MethodChannel 通道名稱。
   static const _channel = MethodChannel(
     'com.example.naver_blog_image_downloader/gallery',
   );

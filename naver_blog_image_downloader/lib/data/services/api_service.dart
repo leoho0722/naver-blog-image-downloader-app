@@ -118,6 +118,9 @@ class ApiService {
 
 /// API 服務呼叫失敗時拋出的例外，攜帶 HTTP 狀態碼與錯誤訊息。
 class ApiServiceException implements Exception {
+  /// 建立 [ApiServiceException]。
+  ///
+  /// [message] 為錯誤描述，[statusCode] 為 HTTP 狀態碼（選填）。
   const ApiServiceException(this.message, {this.statusCode});
 
   /// 錯誤訊息。

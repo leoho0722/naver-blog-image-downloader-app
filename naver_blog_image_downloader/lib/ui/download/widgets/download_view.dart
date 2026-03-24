@@ -7,9 +7,10 @@ import '../view_model/download_view_model.dart';
 ///
 /// 使用 [showDownloadDialog] 顯示，下載完成後自動關閉並回傳 `true`。
 class DownloadDialog extends StatefulWidget {
+  /// 建立 [DownloadDialog]，需傳入 [fetchResult] 以決定要下載的照片。
   const DownloadDialog({super.key, required this.fetchResult});
 
-  /// 要下載的照片資訊。
+  /// 要下載的照片擷取結果，包含照片清單、Blog ID 與來源網址。
   final FetchResult fetchResult;
 
   @override
@@ -17,6 +18,7 @@ class DownloadDialog extends StatefulWidget {
 }
 
 class _DownloadDialogState extends State<DownloadDialog> {
+  /// 是否已啟動下載流程，用於防止 [didChangeDependencies] 重複觸發。
   bool _downloadStarted = false;
 
   @override
@@ -28,6 +30,7 @@ class _DownloadDialogState extends State<DownloadDialog> {
     }
   }
 
+  /// 啟動批次下載，完成後自動關閉對話框並回傳 `true`。
   Future<void> _startDownload() async {
     if (!mounted) return;
 

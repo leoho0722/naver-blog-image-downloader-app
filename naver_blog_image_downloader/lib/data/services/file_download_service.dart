@@ -5,6 +5,7 @@ class FileDownloadService {
   /// 建立 [FileDownloadService]，需傳入 [Dio] 實例。
   FileDownloadService(Dio dio) : _dio = dio;
 
+  /// HTTP 客戶端，負責執行實際的檔案下載請求。
   final Dio _dio;
 
   /// 最大重試次數（不含首次嘗試）。

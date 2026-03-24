@@ -9,20 +9,31 @@ import 'photo_detail_capsule_bar.dart';
 
 /// 照片詳細頁面，以全螢幕顯示照片並支援手勢縮放、水平滑動切換與沈浸模式。
 class PhotoDetailView extends StatefulWidget {
+  /// 建立 [PhotoDetailView]，需指定要顯示的 [photoId]。
   const PhotoDetailView({super.key, required this.photoId});
 
+  /// 要顯示的照片識別碼，由路由參數傳入。
   final String photoId;
 
   @override
   State<PhotoDetailView> createState() => _PhotoDetailViewState();
 }
 
+/// [PhotoDetailView] 的狀態管理類，處理照片分頁、手勢縮放與沈浸模式切換。
 class _PhotoDetailViewState extends State<PhotoDetailView> {
+  /// 是否已完成初始載入（防止 [didChangeDependencies] 重複觸發）。
   bool _loaded = false;
+
+  /// 是否處於沈浸模式（隱藏系統 UI 與操作列）。
   bool _isImmersive = false;
+
+  /// 照片是否正在被放大（縮放比例 > 1.01），放大時停用水平滑動。
   bool _isZoomed = false;
 
+  /// 照片分頁控制器，控制水平滑動切換照片。
   late PageController _pageController;
+
+  /// 照片縮放手勢的轉換矩陣控制器。
   final _transformationController = TransformationController();
 
   @override
@@ -64,6 +75,7 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
     super.dispose();
   }
 
+  /// 當縮放手勢改變時，更新 [_isZoomed] 狀態以決定是否停用水平滑動。
   void _onTransformChanged() {
     final scale = _transformationController.value.getMaxScaleOnAxis();
     final zoomed = scale > 1.01;
@@ -72,6 +84,7 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
     }
   }
 
+  /// 切換沈浸模式：隱藏／顯示系統狀態列、導航列與操作列。
   void _toggleImmersiveMode() {
     setState(() => _isImmersive = !_isImmersive);
     SystemChrome.setEnabledSystemUIMode(
@@ -187,6 +200,10 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
     );
   }
 
+  /// 以 bottom sheet 顯示當前照片的檔案資訊（大小、尺寸）。
+  ///
+  /// [context] 為當前的 BuildContext，用於開啟 bottom sheet。
+  /// [viewModel] 為照片詳細頁面的 ViewModel，提供檔案大小與尺寸資訊。
   void _showInfoSheet(BuildContext context, PhotoDetailViewModel viewModel) {
     showModalBottomSheet<void>(
       context: context,
@@ -208,10 +225,15 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
   }
 }
 
+/// 資訊列元件，以「標籤：值」的水平排列顯示單項照片資訊。
 class _InfoRow extends StatelessWidget {
+  /// 建立 [_InfoRow]。
   const _InfoRow({required this.label, required this.value});
 
+  /// 左側標籤文字（例如「檔案大小」）。
   final String label;
+
+  /// 右側數值文字（例如「1.5 MB」）。
   final String value;
 
   @override

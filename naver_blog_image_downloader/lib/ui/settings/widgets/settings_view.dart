@@ -8,6 +8,7 @@ import '../view_model/settings_view_model.dart';
 
 /// 設定頁面，提供快取管理介面與版本資訊。
 class SettingsView extends StatefulWidget {
+  /// 建立 [SettingsView]。
   const SettingsView({super.key});
 
   @override
@@ -15,7 +16,10 @@ class SettingsView extends StatefulWidget {
 }
 
 class _SettingsViewState extends State<SettingsView> {
+  /// 是否已完成初始載入（防止 [didChangeDependencies] 重複觸發）。
   bool _loaded = false;
+
+  /// 應用程式版本字串（例如「1.0.0 (1)」），從 PackageInfo 取得。
   String _version = '';
 
   @override
@@ -128,6 +132,10 @@ class _SettingsViewState extends State<SettingsView> {
     );
   }
 
+  /// 顯示「清除全部快取」確認對話框，使用者確認後執行清除操作。
+  ///
+  /// [context] 為當前的 BuildContext，用於開啟確認對話框。
+  /// [viewModel] 為設定頁面的 ViewModel，用於執行清除快取與重新載入資訊。
   Future<void> _showClearAllDialog(
     BuildContext context,
     SettingsViewModel viewModel,

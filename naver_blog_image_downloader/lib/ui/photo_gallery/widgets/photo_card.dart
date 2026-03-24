@@ -6,6 +6,7 @@ import '../../../data/models/photo_entity.dart';
 
 /// 照片卡片元件，負責單張照片的縮圖顯示與選取互動。
 class PhotoCard extends StatelessWidget {
+  /// 建立 [PhotoCard]。
   const PhotoCard({
     super.key,
     required this.photo,

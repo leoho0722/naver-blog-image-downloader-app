@@ -5,6 +5,7 @@ class LocalStorageService {
   /// 建立 [LocalStorageService]，需傳入已初始化的 [SharedPreferences] 實例。
   LocalStorageService({required SharedPreferences prefs}) : _prefs = prefs;
 
+  /// 底層的 [SharedPreferences] 實例，實際負責鍵值對的讀寫。
   final SharedPreferences _prefs;
 
   /// 讀取字串值，不存在時回傳 `null`。

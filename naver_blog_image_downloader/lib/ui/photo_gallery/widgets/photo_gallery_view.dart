@@ -12,18 +12,25 @@ import 'photo_card.dart';
 ///
 /// 透過 GoRouter `extra` 接收 [FetchResult]，初次進入時自動載入照片清單。
 class PhotoGalleryView extends StatefulWidget {
+  /// 建立 [PhotoGalleryView]，需指定要瀏覽的 [blogId]。
   const PhotoGalleryView({super.key, required this.blogId});
 
-  /// 目前瀏覽的 Blog 識別碼。
+  /// 目前瀏覽的 Blog 識別碼，由路由參數傳入。
   final String blogId;
 
   @override
   State<PhotoGalleryView> createState() => _PhotoGalleryViewState();
 }
 
+/// [PhotoGalleryView] 的狀態管理類，處理照片載入、選取模式與儲存中對話框。
 class _PhotoGalleryViewState extends State<PhotoGalleryView> {
+  /// 頁面對應的 ViewModel，透過 Provider 取得。
   late final PhotoGalleryViewModel _viewModel;
+
+  /// 是否已完成初始載入（防止 [didChangeDependencies] 重複觸發）。
   bool _loaded = false;
+
+  /// 「儲存中」對話框是否正在顯示，用於避免重複開啟或多餘關閉。
   bool _isSavingDialogOpen = false;
 
   @override
@@ -50,6 +57,7 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
     super.dispose();
   }
 
+  /// ViewModel 狀態變更的監聽回呼，根據 [isSaving] 開啟或關閉儲存中對話框。
   void _onViewModelChanged() {
     if (!mounted) return;
     if (_viewModel.isSaving && !_isSavingDialogOpen) {
@@ -144,6 +152,10 @@ class _PhotoGalleryViewState extends State<PhotoGalleryView> {
     );
   }
 
+  /// 使用者點擊照片時，導航至照片詳細頁面。
+  ///
+  /// [context] 為當前的 BuildContext，用於執行路由導航。
+  /// [index] 為被點擊照片在清單中的索引位置。
   void _onPhotoTap(BuildContext context, int index) {
     final viewModel = context.read<PhotoGalleryViewModel>();
     final photo = viewModel.photos[index];

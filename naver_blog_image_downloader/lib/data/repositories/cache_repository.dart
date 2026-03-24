@@ -10,15 +10,28 @@ import '../models/blog_cache_metadata.dart';
 
 /// 快取子系統的唯一存取介面，負責管理本地磁碟上的照片檔案快取
 /// 與對應的 [BlogCacheMetadata]。
+///
+/// 主要功能：
+/// - 以 Blog 為單位儲存與查詢快取檔案
+/// - 透過 [SharedPreferences] 持久化快取的 metadata
+/// - 當快取超過 300 MB 軟性閥值時，自動淘汰已儲存至相簿的最舊資料
 class CacheRepository {
+  /// [SharedPreferences] 中儲存 metadata 的 key 名稱。
   static const _metadataKey = 'cache_metadata';
+
+  /// 快取空間的軟性上限（300 MB），超過時觸發自動淘汰。
   static const _softLimit = 300 * 1024 * 1024; // 300 MB
 
   /// 單張照片的預估平均檔案大小（bytes），用於淘汰策略的空間估算。
   static const _estimatedPhotoSizeBytes = 500000;
 
+  /// 是否已完成延遲初始化（載入快取目錄與 metadata）。
   bool _initialized = false;
+
+  /// 應用程式快取的根目錄，由 [path_provider] 提供。
   late Directory _cacheDir;
+
+  /// 記憶體中的 metadata 對應表（blogId → [BlogCacheMetadata]）。
   final Map<String, BlogCacheMetadata> _metadataStore = {};
 
   /// 以 SHA-256 對 Blog URL 進行 hash，回傳前 16 碼十六進制字串作為 blogId。
