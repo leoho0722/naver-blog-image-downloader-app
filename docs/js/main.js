@@ -101,4 +101,24 @@
       navLinks.classList.remove('open');
     }
   });
+
+  // === Platform Tab Switcher ===
+  const platformTabs = document.getElementById('platformTabs');
+
+  platformTabs.addEventListener('click', (e) => {
+    const tab = e.target.closest('.platform-tab');
+    if (!tab) return;
+
+    const platform = tab.getAttribute('data-platform');
+
+    // Update active tab
+    platformTabs.querySelectorAll('.platform-tab').forEach((t) => {
+      t.classList.toggle('active', t === tab);
+    });
+
+    // Toggle screenshot images
+    document.querySelectorAll('.screenshot-card__preview img[data-platform]').forEach((img) => {
+      img.hidden = img.getAttribute('data-platform') !== platform;
+    });
+  });
 })();

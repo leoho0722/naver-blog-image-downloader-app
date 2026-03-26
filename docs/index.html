@@ -80,8 +80,7 @@
       </div>
       <div class="hero__mockup">
         <div class="phone-mockup">
-          <span class="material-symbols-outlined">smartphone</span>
-          <span class="phone-mockup__label" data-i18n="hero.mockupLabel">App 畫面預覽</span>
+          <img src="images/blog_input_view_ios_snapshot.png" alt="App 畫面預覽" loading="lazy">
         </div>
       </div>
     </div>
@@ -178,12 +177,16 @@
         <h2 data-i18n="screenshots.title">畫面預覽</h2>
         <p data-i18n="screenshots.subtitle">簡潔直覺的 Material Design 介面</p>
       </div>
+      <div class="platform-tabs" id="platformTabs">
+        <button class="platform-tab active" data-platform="ios" data-i18n="screenshots.tab.ios">iOS</button>
+        <button class="platform-tab" data-platform="android" data-i18n="screenshots.tab.android">Android</button>
+      </div>
       <div class="screenshots__grid">
         <!-- Blog Input -->
         <div class="screenshot-card">
           <div class="screenshot-card__preview">
-            <span class="material-symbols-outlined">edit_note</span>
-            <span data-i18n="screenshots.placeholder">畫面預覽</span>
+            <img src="images/blog_input_view_ios_snapshot.png" alt="iOS - 網址輸入" data-platform="ios" loading="lazy">
+            <img src="images/blog_input_view_android_snapshot.png" alt="Android - 網址輸入" data-platform="android" hidden loading="lazy">
           </div>
           <div class="screenshot-card__label">
             <h3 data-i18n="screenshots.input.title">網址輸入</h3>
@@ -193,8 +196,8 @@
         <!-- Photo Gallery -->
         <div class="screenshot-card">
           <div class="screenshot-card__preview">
-            <span class="material-symbols-outlined">grid_view</span>
-            <span data-i18n="screenshots.placeholder">畫面預覽</span>
+            <img src="images/photo_gallery_view_ios_snapshot.png" alt="iOS - 照片列表" data-platform="ios" loading="lazy">
+            <img src="images/photo_gallery_view_android_snapshot.png" alt="Android - 照片列表" data-platform="android" hidden loading="lazy">
           </div>
           <div class="screenshot-card__label">
             <h3 data-i18n="screenshots.gallery.title">照片列表</h3>
@@ -204,8 +207,8 @@
         <!-- Photo Detail -->
         <div class="screenshot-card">
           <div class="screenshot-card__preview">
-            <span class="material-symbols-outlined">image</span>
-            <span data-i18n="screenshots.placeholder">畫面預覽</span>
+            <img src="images/photo_detail_view_ios_snapshot.png" alt="iOS - 照片詳情" data-platform="ios" loading="lazy">
+            <img src="images/photo_detail_view_android_snapshot.png" alt="Android - 照片詳情" data-platform="android" hidden loading="lazy">
           </div>
           <div class="screenshot-card__label">
             <h3 data-i18n="screenshots.detail.title">照片詳情</h3>
@@ -215,8 +218,8 @@
         <!-- Settings -->
         <div class="screenshot-card">
           <div class="screenshot-card__preview">
-            <span class="material-symbols-outlined">settings</span>
-            <span data-i18n="screenshots.placeholder">畫面預覽</span>
+            <img src="images/setting_view_ios_snapshot.png" alt="iOS - 設定" data-platform="ios" loading="lazy">
+            <img src="images/setting_view_android_snapshot.png" alt="Android - 設定" data-platform="android" hidden loading="lazy">
           </div>
           <div class="screenshot-card__label">
             <h3 data-i18n="screenshots.settings.title">設定</h3>
@@ -288,7 +291,7 @@
     </div>
   </footer>
 
-  <script src="js/i18n.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/i18n.js?v=2"></script>
+  <script src="js/main.js?v=2"></script>
 </body>
 </html>

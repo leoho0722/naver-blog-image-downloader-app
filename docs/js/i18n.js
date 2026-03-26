@@ -16,7 +16,6 @@ const translations = {
     'hero.tagline': '輸入網址，一鍵下載所有照片',
     'hero.cta': '立即下載',
     'hero.learnMore': '了解更多',
-    'hero.mockupLabel': 'App 畫面預覽',
 
     // Features
     'features.title': '功能特色',
@@ -45,6 +44,8 @@ const translations = {
     // Screenshots
     'screenshots.title': '畫面預覽',
     'screenshots.subtitle': '簡潔直覺的 Material Design 介面',
+    'screenshots.tab.ios': 'iOS',
+    'screenshots.tab.android': 'Android',
     'screenshots.input.title': '網址輸入',
     'screenshots.input.desc': '貼上 Blog 網址',
     'screenshots.gallery.title': '照片列表',
@@ -53,7 +54,6 @@ const translations = {
     'screenshots.detail.desc': '檢視與儲存',
     'screenshots.settings.title': '設定',
     'screenshots.settings.desc': '自訂偏好設定',
-    'screenshots.placeholder': '畫面預覽',
 
     // Download
     'download.title': '立即下載',
@@ -82,7 +82,6 @@ const translations = {
     'hero.tagline': 'Enter a URL, download all photos in one click',
     'hero.cta': 'Download Now',
     'hero.learnMore': 'Learn More',
-    'hero.mockupLabel': 'App Preview',
 
     // Features
     'features.title': 'Features',
@@ -111,6 +110,8 @@ const translations = {
     // Screenshots
     'screenshots.title': 'Screenshots',
     'screenshots.subtitle': 'Clean and intuitive Material Design interface',
+    'screenshots.tab.ios': 'iOS',
+    'screenshots.tab.android': 'Android',
     'screenshots.input.title': 'URL Input',
     'screenshots.input.desc': 'Paste blog URL',
     'screenshots.gallery.title': 'Photo Gallery',
@@ -119,7 +120,6 @@ const translations = {
     'screenshots.detail.desc': 'View & save',
     'screenshots.settings.title': 'Settings',
     'screenshots.settings.desc': 'Customize preferences',
-    'screenshots.placeholder': 'Preview',
 
     // Download
     'download.title': 'Download Now',
@@ -148,7 +148,6 @@ const translations = {
     'hero.tagline': 'URL을 입력하고, 모든 사진을 한 번에 다운로드',
     'hero.cta': '지금 다운로드',
     'hero.learnMore': '자세히 보기',
-    'hero.mockupLabel': '앱 미리보기',
 
     // Features
     'features.title': '기능',
@@ -177,6 +176,8 @@ const translations = {
     // Screenshots
     'screenshots.title': '스크린샷',
     'screenshots.subtitle': '깔끔하고 직관적인 Material Design 인터페이스',
+    'screenshots.tab.ios': 'iOS',
+    'screenshots.tab.android': 'Android',
     'screenshots.input.title': 'URL 입력',
     'screenshots.input.desc': '블로그 URL 붙여넣기',
     'screenshots.gallery.title': '사진 갤러리',
@@ -185,7 +186,6 @@ const translations = {
     'screenshots.detail.desc': '보기 및 저장',
     'screenshots.settings.title': '설정',
     'screenshots.settings.desc': '환경설정 사용자 지정',
-    'screenshots.placeholder': '미리보기',
 
     // Download
     'download.title': '지금 다운로드',
