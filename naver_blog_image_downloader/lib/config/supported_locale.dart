@@ -8,6 +8,9 @@ enum SupportedLocale {
   /// 英文。
   en(Locale('en'), 'English'),
 
+  /// 日文。
+  ja(Locale('ja'), '日本語'),
+
   /// 韓文。
   ko(Locale('ko'), '한국어');
 

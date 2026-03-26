@@ -9,93 +9,93 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
-  String get appTitle => 'Naverブログ写真ダウンローダー';
+  String get appTitle => '네이버 블로그 사진 다운로더';
 
   @override
-  String get commonCancel => 'キャンセル';
+  String get commonCancel => '취소';
 
   @override
-  String get commonConfirm => '確認';
+  String get commonConfirm => '확인';
 
   @override
-  String get commonOk => 'OK';
+  String get commonOk => '확인';
 
   @override
-  String get settingsTitle => '設定';
+  String get settingsTitle => '설정';
 
   @override
-  String get settingsSectionAppearance => '外観';
+  String get settingsSectionAppearance => '외관';
 
   @override
-  String get settingsSectionLanguage => '言語';
+  String get settingsSectionLanguage => '언어';
 
   @override
-  String get settingsSectionCache => 'キャッシュ';
+  String get settingsSectionCache => '캐시';
 
   @override
-  String get settingsSectionAbout => '情報';
+  String get settingsSectionAbout => '정보';
 
   @override
-  String get settingsThemeSystem => 'システム';
+  String get settingsThemeSystem => '시스템';
 
   @override
-  String get settingsThemeLight => 'ライト';
+  String get settingsThemeLight => '라이트';
 
   @override
-  String get settingsThemeDark => 'ダーク';
+  String get settingsThemeDark => '다크';
 
   @override
-  String get settingsCacheSizeLabel => 'キャッシュサイズ';
+  String get settingsCacheSizeLabel => '캐시 크기';
 
   @override
-  String get settingsClearAllTooltip => 'すべてのキャッシュを削除';
+  String get settingsClearAllTooltip => '모든 캐시 삭제';
 
   @override
-  String get settingsClearAllDialogTitle => 'すべてのキャッシュを削除';
+  String get settingsClearAllDialogTitle => '모든 캐시 삭제';
 
   @override
   String get settingsClearAllDialogContent =>
-      'キャッシュされたすべての写真を削除しますか？この操作は元に戻せません。';
+      '캐시된 모든 사진을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.';
 
   @override
-  String get settingsVersionLabel => 'バージョン';
+  String get settingsVersionLabel => '버전';
 
   @override
-  String get blogInputAppBarTitle => '写真ダウンローダー';
+  String get blogInputAppBarTitle => '사진 다운로더';
 
   @override
-  String get blogInputUrlLabel => 'NaverブログURL';
+  String get blogInputUrlLabel => '네이버 블로그 URL';
 
   @override
   String get blogInputUrlHint => 'https://blog.naver.com/...';
 
   @override
-  String get blogInputPasteTooltip => 'クリップボードから貼り付け';
+  String get blogInputPasteTooltip => '클립보드에서 붙여넣기';
 
   @override
-  String get blogInputFetchButton => '写真一覧を取得';
+  String get blogInputFetchButton => '사진 목록 가져오기';
 
   @override
-  String get blogInputClipboardDetectedTitle => 'ブログURLを検出しました';
+  String get blogInputClipboardDetectedTitle => '블로그 URL 감지됨';
 
   @override
-  String get blogInputPasteButton => '貼り付け';
+  String get blogInputPasteButton => '붙여넣기';
 
   @override
-  String get blogInputClipboardEmptyTitle => 'クリップボードが空です';
+  String get blogInputClipboardEmptyTitle => '클립보드가 비어있습니다';
 
   @override
-  String get blogInputClipboardEmptyContent => 'クリップボードに貼り付けるテキストがありません。';
+  String get blogInputClipboardEmptyContent => '클립보드에 붙여넣을 텍스트가 없습니다.';
 
   @override
-  String get blogInputClipboardInvalidTitle => '貼り付け不可';
+  String get blogInputClipboardInvalidTitle => '붙여넣기 불가';
 
   @override
   String get blogInputClipboardInvalidContent =>
-      'クリップボードの内容はNaverブログのURLではないようです。確認してからもう一度お試しください。';
+      '클립보드의 내용이 네이버 블로그 URL이 아닌 것 같습니다. 확인 후 다시 시도해 주세요.';
 
   @override
-  String get blogInputFetchFailureTitle => '一部の写真の取得に失敗しました';
+  String get blogInputFetchFailureTitle => '일부 사진 가져오기 실패';
 
   @override
   String blogInputFetchFailureContent(
@@ -103,52 +103,52 @@ class AppLocalizationsJa extends AppLocalizations {
     int successCount,
     int failureCount,
   ) {
-    return '全$totalImages枚の写真のうち$successCount枚を取得しましたが、$failureCount枚の取得に失敗しました。\n\n取得した写真のダウンロードを続けますか？';
+    return '총 $totalImages장의 사진 중 $successCount장을 성공적으로 가져왔고, $failureCount장을 가져오지 못했습니다.\n\n가져온 사진을 계속 다운로드하시겠습니까?';
   }
 
   @override
-  String get blogInputCancelDownload => 'ダウンロードをキャンセル';
+  String get blogInputCancelDownload => '다운로드 취소';
 
   @override
-  String get blogInputContinueDownload => 'ダウンロードを続行';
+  String get blogInputContinueDownload => '다운로드 계속';
 
   @override
-  String get blogInputErrorDialogTitle => 'エラーが発生しました';
+  String get blogInputErrorDialogTitle => '오류 발생';
 
   @override
-  String get errorEmptyUrl => 'ブログURLを入力してください';
+  String get errorEmptyUrl => '블로그 URL을 입력해 주세요';
 
   @override
-  String get errorTimeout => 'リクエストがタイムアウトしました。後でもう一度お試しください。';
+  String get errorTimeout => '요청 시간이 초과되었습니다. 나중에 다시 시도해 주세요.';
 
   @override
   String errorServerUnavailable(int statusCode) {
-    return 'サーバーが一時的に利用できません（$statusCode）。後でもう一度お試しください。';
+    return '서버를 일시적으로 사용할 수 없습니다($statusCode). 나중에 다시 시도해 주세요.';
   }
 
   @override
-  String get errorApiFailed => 'API呼び出しに失敗しました。後でもう一度お試しください。';
+  String get errorApiFailed => 'API 호출에 실패했습니다. 나중에 다시 시도해 주세요.';
 
   @override
-  String get errorServerError => 'サーバー処理に失敗しました。後でもう一度お試しください。';
+  String get errorServerError => '서버 처리에 실패했습니다. 나중에 다시 시도해 주세요.';
 
   @override
-  String get errorNetworkError => 'ネットワークエラーです。接続状態を確認してください。';
+  String get errorNetworkError => '네트워크 오류입니다. 연결 상태를 확인해 주세요.';
 
   @override
-  String get errorGeneric => 'エラーが発生しました。後でもう一度お試しください。';
+  String get errorGeneric => '오류가 발생했습니다. 나중에 다시 시도해 주세요.';
 
   @override
-  String get statusSubmitting => 'タスクを送信中...';
+  String get statusSubmitting => '작업 제출 중...';
 
   @override
-  String get statusProcessing => 'サーバー処理中...';
+  String get statusProcessing => '서버 처리 중...';
 
   @override
-  String get statusCompleted => '処理完了';
+  String get statusCompleted => '처리 완료';
 
   @override
-  String get downloadDialogTitle => '写真ダウンロード';
+  String get downloadDialogTitle => '사진 다운로드';
 
   @override
   String downloadProgress(int completed, int total) {
@@ -156,44 +156,44 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get downloadStatusDownloading => 'ダウンロード中...';
+  String get downloadStatusDownloading => '다운로드 중...';
 
   @override
-  String get downloadStatusCompleted => 'ダウンロード完了';
+  String get downloadStatusCompleted => '다운로드 완료';
 
   @override
   String downloadFailedCount(int count) {
-    return '$count枚のダウンロードに失敗';
+    return '$count장 다운로드 실패';
   }
 
   @override
   String galleryTitle(int count) {
-    return '写真を見る ($count)';
+    return '사진 보기 ($count)';
   }
 
   @override
-  String get galleryDeselectMode => '選択解除';
+  String get galleryDeselectMode => '선택 해제';
 
   @override
-  String get gallerySelectMode => '選択モード';
+  String get gallerySelectMode => '선택 모드';
 
   @override
-  String get gallerySelectAll => 'すべて選択';
+  String get gallerySelectAll => '전체 선택';
 
   @override
-  String get gallerySaveSelected => '選択した項目を保存';
+  String get gallerySaveSelected => '선택 항목 저장';
 
   @override
-  String get gallerySaveAll => 'すべて保存';
+  String get gallerySaveAll => '전체 저장';
 
   @override
-  String get galleryEmpty => '写真なし';
+  String get galleryEmpty => '사진 없음';
 
   @override
-  String get gallerySaving => '保存中...';
+  String get gallerySaving => '저장 중...';
 
   @override
-  String get gallerySaveToGalleryFailed => 'ギャラリーへの保存に失敗しました';
+  String get gallerySaveToGalleryFailed => '갤러리에 저장 실패';
 
   @override
   String detailPhotoCounter(int current, int total) {
@@ -201,11 +201,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get detailFileInfo => 'ファイル情報';
+  String get detailFileInfo => '파일 정보';
 
   @override
-  String get detailFileSize => 'ファイルサイズ';
+  String get detailFileSize => '파일 크기';
 
   @override
-  String get detailDimensions => '写真サイズ';
+  String get detailDimensions => '사진 크기';
 }
