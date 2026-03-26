@@ -16,9 +16,6 @@ rules:
     - 使用 Given/When/Then 格式
   tasks:
     - 請使用正體中文進行撰寫
-locale: tw
-parallel_tasks: true
-audit: true
 
 # Project context (optional)
 # This is shown to AI when creating artifacts.
