@@ -48,9 +48,8 @@ void main() {
           Provider.value(value: settingsRepository),
           Provider.value(value: photoRepository),
           ChangeNotifierProvider(
-            create: (_) => AppSettingsViewModel(
-              settingsRepository: settingsRepository,
-            ),
+            create: (_) =>
+                AppSettingsViewModel(settingsRepository: settingsRepository),
           ),
           ChangeNotifierProvider(
             create: (_) => BlogInputViewModel(photoRepository: photoRepository),

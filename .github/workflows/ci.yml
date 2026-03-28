@@ -29,6 +29,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -46,5 +49,11 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-      - name: Check formatting
-        run: dart format --set-exit-if-changed .
+      - name: Format
+        run: dart format .
+
+      - name: Commit formatting changes
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "style: 自動格式化 (dart format)"
+          file_pattern: "naver_blog_image_downloader/**/*.dart"
