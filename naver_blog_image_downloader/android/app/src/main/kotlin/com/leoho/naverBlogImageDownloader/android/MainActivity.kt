@@ -1,4 +1,4 @@
-package com.example.naver_blog_image_downloader
+package com.leoho.naverBlogImageDownloader.android
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -16,7 +16,7 @@ class MainActivity : FlutterActivity() {
 
 // region Gallery Channel Extension
 
-private const val GALLERY_CHANNEL_NAME = "com.example.naver_blog_image_downloader/gallery"
+private const val GALLERY_CHANNEL_NAME = "com.leoho.naverBlogImageDownloader/gallery"
 
 /**
  * 註冊 Gallery MethodChannel，處理 `saveToGallery` 與 `requestPermission` 呼叫。

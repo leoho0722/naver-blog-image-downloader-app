@@ -1,4 +1,4 @@
-package com.example.naver_blog_image_downloader
+package com.leoho.naverBlogImageDownloader.android
 
 import android.content.ContentValues
 import android.content.Context

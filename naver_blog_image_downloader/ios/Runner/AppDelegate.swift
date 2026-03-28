@@ -30,7 +30,7 @@ private extension AppDelegate {
     /// - Parameter messenger: Flutter BinaryMessenger，用於建立 MethodChannel。
     func setupGalleryChannel(messenger: FlutterBinaryMessenger) {
         let channel = FlutterMethodChannel(
-            name: "com.example.naver_blog_image_downloader/gallery",
+            name: "com.leoho.naverBlogImageDownloader/gallery",
             binaryMessenger: messenger
         )
 

@@ -10,7 +10,7 @@ import '../../ui/core/app_error.dart';
 class GalleryService {
   /// 與原生平台（iOS / Android）溝通的 MethodChannel 通道名稱。
   static const _channel = MethodChannel(
-    'com.example.naver_blog_image_downloader/gallery',
+    'com.leoho.naverBlogImageDownloader/gallery',
   );
 
   /// 將指定路徑的圖片檔案儲存至系統相簿。
