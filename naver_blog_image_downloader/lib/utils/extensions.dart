@@ -1,32 +1,10 @@
-/// Dart 擴充方法：字串處理、格式化等常用功能。
+/// Dart 擴充方法：檔名清理、格式化等常用功能。
 ///
 /// 所有擴充方法集中於此單一檔案中，供專案各層級程式碼使用。
 library;
 
-/// 字串擴充方法，提供 URL 驗證與檔名清理功能。
+/// 字串擴充方法，提供檔名清理功能。
 extension StringExtension on String {
-  /// 驗證字串是否為有效的 http/https URL。
-  ///
-  /// 當字串為合法的 URL 且 scheme 為 `http` 或 `https` 時回傳 `true`，
-  /// 否則回傳 `false`。
-  bool get isValidUrl {
-    final uri = Uri.tryParse(this);
-    if (uri == null) return false;
-    return uri.hasScheme &&
-        (uri.scheme == 'http' || uri.scheme == 'https') &&
-        uri.host.isNotEmpty;
-  }
-
-  /// 驗證字串是否為有效的 Naver Blog URL。
-  ///
-  /// 當字串為合法的 URL 且網域為 `blog.naver.com` 時回傳 `true`，
-  /// 否則回傳 `false`。
-  bool get isNaverBlogUrl {
-    if (!isValidUrl) return false;
-    final uri = Uri.parse(this);
-    return uri.host == 'blog.naver.com';
-  }
-
   /// 清理字串使其適合作為檔案名稱。
   ///
   /// 移除檔案系統不允許的字元（`/`、`\`、`:`、`*`、`?`、`"`、`<`、`>`、`|`），

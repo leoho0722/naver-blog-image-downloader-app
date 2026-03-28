@@ -4,36 +4,44 @@ on:
   push:
     branches: [main]
     paths:
-      - 'lib/**'
-      - 'test/**'
-      - 'pubspec.yaml'
-      - 'pubspec.lock'
-      - 'analysis_options.yaml'
+      - 'naver_blog_image_downloader/lib/**'
+      - 'naver_blog_image_downloader/test/**'
+      - 'naver_blog_image_downloader/pubspec.yaml'
+      - 'naver_blog_image_downloader/pubspec.lock'
+      - 'naver_blog_image_downloader/analysis_options.yaml'
   pull_request:
     branches: [main]
     paths:
-      - 'lib/**'
-      - 'test/**'
-      - 'pubspec.yaml'
-      - 'pubspec.lock'
-      - 'analysis_options.yaml'
+      - 'naver_blog_image_downloader/lib/**'
+      - 'naver_blog_image_downloader/test/**'
+      - 'naver_blog_image_downloader/pubspec.yaml'
+      - 'naver_blog_image_downloader/pubspec.lock'
+      - 'naver_blog_image_downloader/analysis_options.yaml'
   workflow_dispatch:
 
 jobs:
   validate:
-    name: Analyze & Format
+    name: Test, Analyze & Format
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: naver_blog_image_downloader
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true
+          pub-cache: true
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Test
+        run: flutter test
 
       - name: Analyze
         run: flutter analyze

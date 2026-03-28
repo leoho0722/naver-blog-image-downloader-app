@@ -4,8 +4,7 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
 class MainActivity : FlutterActivity() {
@@ -45,7 +44,7 @@ private fun MainActivity.handleGalleryMethodCall(
     result: MethodChannel.Result,
     gallerySaver: GallerySaver
 ) {
-    CoroutineScope(Dispatchers.Main).launch {
+    lifecycleScope.launch {
         when (call.method) {
             "saveToGallery" -> handleSaveToGallery(call, result, gallerySaver)
             "requestPermission" -> handleRequestPermission(result, gallerySaver)

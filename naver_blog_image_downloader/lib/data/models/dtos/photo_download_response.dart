@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 import '../photo_entity.dart';
@@ -53,7 +52,6 @@ class PhotoDownloadResponse {
   /// - `id` 以 index 產生，確保唯一
   /// - `filename` 以 index prefix + URL 路徑末段組成，避免不同路徑同檔名碰撞
   List<PhotoEntity> toEntities() {
-    final seen = <String>{};
     final entities = <PhotoEntity>[];
 
     for (final entry in imageUrls.asMap().entries) {
@@ -63,23 +61,11 @@ class PhotoDownloadResponse {
       final baseName = uri != null ? p.basename(uri.path) : 'image.jpg';
       final filename = '${index}_$baseName';
 
-      if (!seen.add(baseName)) {
-        debugPrint(
-          '[toEntities] ⚠ baseName 重複: $baseName (index=$index)\n'
-          '  url: $url\n'
-          '  → 已加 prefix: $filename',
-        );
-      }
-
       entities.add(
         PhotoEntity(id: 'photo_$index', url: url, filename: filename),
       );
     }
 
-    debugPrint(
-      '[toEntities] 共 ${entities.length} 張，'
-      '唯一 baseName ${seen.length} 個',
-    );
     return entities;
   }
 }
