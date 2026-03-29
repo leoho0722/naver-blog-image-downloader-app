@@ -43,6 +43,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Code Generation (Riverpod)
+        run: dart run build_runner build --delete-conflicting-outputs
+
       - name: Test
         run: flutter test
 
