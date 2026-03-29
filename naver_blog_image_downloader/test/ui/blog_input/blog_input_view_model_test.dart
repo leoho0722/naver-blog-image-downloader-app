@@ -5,13 +5,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:naver_blog_image_downloader/data/models/fetch_result.dart';
 import 'package:naver_blog_image_downloader/data/models/photo_entity.dart';
+import 'package:naver_blog_image_downloader/data/repositories/log_repository.dart';
 import 'package:naver_blog_image_downloader/data/repositories/photo_repository.dart';
 import 'package:naver_blog_image_downloader/ui/blog_input/view_model/blog_input_view_model.dart';
 
 class MockPhotoRepository extends Mock implements PhotoRepository {}
 
+class MockLogRepository extends Mock implements LogRepository {}
+
 void main() {
   late MockPhotoRepository mockPhotoRepository;
+  late MockLogRepository mockLogRepository;
   late ProviderContainer container;
 
   const testBlogUrl = 'https://blog.naver.com/test/12345';
@@ -35,9 +39,11 @@ void main() {
 
   setUp(() {
     mockPhotoRepository = MockPhotoRepository();
+    mockLogRepository = MockLogRepository();
     container = ProviderContainer(
       overrides: [
         photoRepositoryProvider.overrideWithValue(mockPhotoRepository),
+        logRepositoryProvider.overrideWithValue(mockLogRepository),
       ],
     );
     container.listen(blogInputViewModelProvider, (_, _) {});

@@ -7,12 +7,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:naver_blog_image_downloader/data/models/photo_entity.dart';
 import 'package:naver_blog_image_downloader/data/repositories/cache_repository.dart';
+import 'package:naver_blog_image_downloader/data/repositories/log_repository.dart';
 import 'package:naver_blog_image_downloader/data/repositories/photo_repository.dart';
 import 'package:naver_blog_image_downloader/ui/photo_detail/view_model/photo_detail_view_model.dart';
 
 class MockCacheRepository extends Mock implements CacheRepository {}
 
 class MockPhotoRepository extends Mock implements PhotoRepository {}
+
+class MockLogRepository extends Mock implements LogRepository {}
 
 /// 建立包含有效 PNG 資料的暫存檔案。
 Future<File> _createTempImageFile() async {
@@ -36,6 +39,7 @@ Future<File> _createTempImageFile() async {
 void main() {
   late MockCacheRepository mockCacheRepository;
   late MockPhotoRepository mockPhotoRepository;
+  late MockLogRepository mockLogRepository;
   late ProviderContainer container;
 
   const testBlogId = 'blog123';
@@ -60,10 +64,12 @@ void main() {
   setUp(() {
     mockCacheRepository = MockCacheRepository();
     mockPhotoRepository = MockPhotoRepository();
+    mockLogRepository = MockLogRepository();
     container = ProviderContainer(
       overrides: [
         cacheRepositoryProvider.overrideWithValue(mockCacheRepository),
         photoRepositoryProvider.overrideWithValue(mockPhotoRepository),
+        logRepositoryProvider.overrideWithValue(mockLogRepository),
       ],
     );
     // 維持 auto-dispose provider 存活，避免在 async 操作中被提前釋放

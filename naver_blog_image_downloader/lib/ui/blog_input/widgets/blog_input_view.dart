@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../config/bottom_sheet_animation.dart';
+import '../../../data/repositories/log_repository.dart';
 import '../../../data/models/fetch_result.dart';
 import '../../core/naver_url_validator.dart';
 import '../../download/widgets/download_view.dart';
@@ -295,6 +296,7 @@ class _BlogInputViewState extends ConsumerState<BlogInputView>
   /// 使用 [_sheetAnimationController] 控制過場動畫，
   /// 並以 [SettingsView] 作為 bottom sheet 的內容。
   void _showSettingsSheet() {
+    ref.read(logRepositoryProvider).logPageNavigation(screenName: 'settings');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../data/models/photo_entity.dart';
 import '../../../data/repositories/cache_repository.dart';
+import '../../../data/repositories/log_repository.dart';
 import '../../../data/repositories/photo_repository.dart';
 
 part 'photo_detail_view_model.g.dart';
@@ -233,6 +234,13 @@ class PhotoDetailViewModel extends _$PhotoDetailViewModel {
       await ref
           .read(photoRepositoryProvider)
           .saveOneToGallery(state.cachedFile!.path);
+      ref
+          .read(logRepositoryProvider)
+          .logSaveToGallery(
+            blogId: state.blogId,
+            photoCount: 1,
+            mode: 'single',
+          );
       state = state.copyWith(saveOperation: () => const AsyncData(null));
     } catch (_) {
       state = state.copyWith(saveOperation: () => null);

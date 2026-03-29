@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../config/supported_locale.dart';
+import '../../../data/repositories/log_repository.dart';
 import '../../../data/repositories/settings_repository.dart';
 
 part 'app_settings_view_model.g.dart';
@@ -73,9 +74,17 @@ class AppSettingsViewModel extends _$AppSettingsViewModel {
   /// [mode] 為要套用的主題模式（系統 / 淺色 / 深色）。
   /// 採用樂觀更新：先更新 UI 狀態，再寫入持久化儲存。
   Future<void> setThemeMode(ThemeMode mode) async {
+    final oldMode = state.requireValue.themeMode;
     state = AsyncData(state.requireValue.copyWith(themeMode: mode));
     final repo = ref.read(settingsRepositoryProvider);
     await repo.saveThemeMode(mode);
+    ref
+        .read(logRepositoryProvider)
+        .logSettingsChange(
+          setting: 'theme',
+          oldValue: oldMode.name,
+          newValue: mode.name,
+        );
   }
 
   /// 切換語系並持久化。
@@ -83,8 +92,16 @@ class AppSettingsViewModel extends _$AppSettingsViewModel {
   /// [locale] 為要套用的語系（繁體中文 / English / 日本語 / 한국어）。
   /// 採用樂觀更新：先更新 UI 狀態，再寫入持久化儲存。
   Future<void> setLocale(SupportedLocale locale) async {
+    final oldLocale = state.requireValue.locale;
     state = AsyncData(state.requireValue.copyWith(locale: locale));
     final repo = ref.read(settingsRepositoryProvider);
     await repo.saveLocale(locale);
+    ref
+        .read(logRepositoryProvider)
+        .logSettingsChange(
+          setting: 'locale',
+          oldValue: oldLocale?.name ?? 'system',
+          newValue: locale.name,
+        );
   }
 }

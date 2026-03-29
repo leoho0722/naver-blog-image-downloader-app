@@ -662,3 +662,80 @@ tests:
   - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
   - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
 -->
+
+---
+### Requirement: Operation logging in fetchPhotos
+
+`BlogInputViewModel.fetchPhotos()` SHALL log operation results via `ref.read(logRepositoryProvider)` after each fetch attempt completes.
+
+On success (when `FetchResult` is obtained), `fetchPhotos()` SHALL call `logFetchPhotos` with the following parameters:
+
+- `blogUrl` -- the input blog URL
+- `blogId` -- the computed blog identifier
+- `resultCount` -- the number of photo URLs returned by the API
+- `isFromCache` -- whether the result was served from local cache
+- `totalImages` -- the total number of images in the fetch result
+- `failureDownloads` -- the number of failed image downloads (if any)
+- `durationMs` -- the elapsed time of the fetch operation in milliseconds
+
+On failure (when an exception is caught), `fetchPhotos()` SHALL:
+
+1. Call `logFetchPhotosError` with the `blogUrl` and the error message
+2. Call `logError` with the caught exception, stack trace, and context string `'fetchPhotos'`
+
+All log calls SHALL be fire-and-forget and SHALL NOT affect the ViewModel state transitions or error handling behavior.
+
+#### Scenario: Successful fetch logs operation data
+
+- **GIVEN** a valid Naver blog URL is provided
+- **WHEN** `fetchPhotos()` completes successfully with a `FetchResult` containing 15 photos
+- **THEN** `logFetchPhotos` SHALL be called with `resultCount: 15` and the computed `blogId`
+- **AND** `durationMs` SHALL reflect the actual elapsed time
+
+#### Scenario: Failed fetch logs error details
+
+- **GIVEN** the API returns an error during `fetchPhotos()`
+- **WHEN** the exception is caught
+- **THEN** `logFetchPhotosError` SHALL be called with the blog URL and error message
+- **AND** `logError` SHALL be called with the exception and stack trace
+- **AND** the existing error handling behavior (setting `errorMessage`) SHALL remain unchanged
+
+#### Scenario: Log failure does not affect fetch result
+
+- **GIVEN** `logFetchPhotos` throws an exception internally
+- **WHEN** `fetchPhotos()` completes successfully
+- **THEN** the `FetchResult` SHALL still be stored in state
+- **AND** no error SHALL be surfaced to the user
+
+<!-- @trace
+source: firebase-integration
+updated: 2026-03-30
+code:
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/ios/Runner/GoogleService-Info.plist
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/android/settings.gradle.kts
+  - naver_blog_image_downloader/android/app/build.gradle.kts
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/routing/app_router.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/android/app/google-services.json
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - CLAUDE.md
+  - naver_blog_image_downloader/lib/data/services/auth_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/ios/Podfile.lock
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/crashlytics_service.dart
+  - naver_blog_image_downloader/lib/data/repositories/log_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/log_service.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
+-->

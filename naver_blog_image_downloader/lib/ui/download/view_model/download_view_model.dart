@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../data/models/download_batch_result.dart';
 import '../../../data/models/photo_entity.dart';
+import '../../../data/repositories/log_repository.dart';
 import '../../../data/repositories/photo_repository.dart';
 
 export '../../../data/models/download_batch_result.dart';
@@ -83,6 +84,8 @@ class DownloadViewModel extends _$DownloadViewModel {
   }) async {
     if (state.isDownloading) return;
 
+    final stopwatch = Stopwatch()..start();
+
     state = DownloadViewModelState(
       total: photos.length,
       downloadResult: const AsyncLoading(),
@@ -99,8 +102,27 @@ class DownloadViewModel extends _$DownloadViewModel {
         },
       );
 
+      ref
+          .read(logRepositoryProvider)
+          .logDownload(
+            blogId: blogId,
+            successCount: result.successCount,
+            failedCount: result.failureCount,
+            skippedCount: result.skippedCount,
+            totalCount: photos.length,
+            durationMs: stopwatch.elapsedMilliseconds,
+          );
+
       state = state.copyWith(downloadResult: AsyncData(result));
     } catch (e, st) {
+      ref
+          .read(logRepositoryProvider)
+          .logError(
+            errorType: e.runtimeType.toString(),
+            message: e.toString(),
+            stackTrace: st.toString(),
+          );
+
       state = state.copyWith(downloadResult: AsyncError(e, st));
     }
   }

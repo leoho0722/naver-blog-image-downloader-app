@@ -371,3 +371,68 @@ tests:
   - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
   - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
 -->
+
+---
+### Requirement: Operation logging in clearAllCache
+
+`SettingsViewModel.clearAllCache()` SHALL log the cache clearing operation via `ref.read(logRepositoryProvider)` after `CacheRepository.clearAll()` completes.
+
+`clearAllCache()` SHALL call `logClearCache` with the following parameter:
+
+- `previousSizeBytes` -- the cache size in bytes before clearing, captured from `state.value?.cacheSizeBytes` prior to calling `CacheRepository.clearAll()`
+
+The log call SHALL be fire-and-forget and SHALL NOT affect the cache clearing behavior or state transitions.
+
+#### Scenario: Cache clear logged with previous size
+
+- **GIVEN** the current cache size is 5242880 bytes (5 MB)
+- **WHEN** `clearAllCache()` is called
+- **THEN** `logClearCache` SHALL be called with `previousSizeBytes: 5242880`
+- **AND** the cache SHALL still be cleared via `CacheRepository.clearAll()`
+- **AND** the state SHALL transition to `AsyncData(SettingsData(cacheSizeBytes: 0, cachedBlogs: []))`
+
+#### Scenario: Cache clear logged with zero size
+
+- **GIVEN** the current cache size is 0 bytes
+- **WHEN** `clearAllCache()` is called
+- **THEN** `logClearCache` SHALL be called with `previousSizeBytes: 0`
+
+#### Scenario: Log failure does not affect cache clearing
+
+- **GIVEN** `logClearCache` throws an exception internally
+- **WHEN** `clearAllCache()` is called
+- **THEN** the cache SHALL still be cleared via `CacheRepository.clearAll()`
+- **AND** the state SHALL still be updated to reflect the cleared cache
+
+<!-- @trace
+source: firebase-integration
+updated: 2026-03-30
+code:
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/ios/Runner/GoogleService-Info.plist
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/android/settings.gradle.kts
+  - naver_blog_image_downloader/android/app/build.gradle.kts
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/routing/app_router.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/android/app/google-services.json
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - CLAUDE.md
+  - naver_blog_image_downloader/lib/data/services/auth_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/ios/Podfile.lock
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/crashlytics_service.dart
+  - naver_blog_image_downloader/lib/data/repositories/log_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/log_service.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
+-->

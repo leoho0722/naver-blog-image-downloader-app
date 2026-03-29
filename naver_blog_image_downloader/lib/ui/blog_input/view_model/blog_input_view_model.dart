@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../data/models/dtos/job_status_response.dart';
 import '../../../data/models/fetch_result.dart';
+import '../../../data/repositories/log_repository.dart';
 import '../../../data/repositories/photo_repository.dart';
 import '../../../data/services/api_service.dart' show ApiServiceException;
 import '../../core/app_error.dart';
@@ -145,6 +146,8 @@ class BlogInputViewModel extends _$BlogInputViewModel {
       return;
     }
 
+    final stopwatch = Stopwatch()..start();
+
     if (state.isLoading) return;
 
     state = state.copyWith(
@@ -167,11 +170,38 @@ class BlogInputViewModel extends _$BlogInputViewModel {
         },
       );
 
+      ref
+          .read(logRepositoryProvider)
+          .logFetchPhotos(
+            blogUrl: state.blogUrl,
+            blogId: result.blogId,
+            resultCount: result.photos.length,
+            isFromCache: result.isFullyCached,
+            totalImages: result.totalImages,
+            failureDownloads: result.failureDownloads,
+            durationMs: stopwatch.elapsedMilliseconds,
+          );
+
       state = state.copyWith(
         fetchResult: AsyncData(result),
         loadingPhase: () => null,
       );
     } on Exception catch (e, st) {
+      ref
+          .read(logRepositoryProvider)
+          .logFetchPhotosError(
+            blogUrl: state.blogUrl,
+            errorType: e.runtimeType.toString(),
+            durationMs: stopwatch.elapsedMilliseconds,
+          );
+      ref
+          .read(logRepositoryProvider)
+          .logError(
+            errorType: e.runtimeType.toString(),
+            message: e.toString(),
+            stackTrace: st.toString(),
+          );
+
       state = state.copyWith(
         fetchResult: AsyncError(_mapException(e), st),
         loadingPhase: () => null,

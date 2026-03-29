@@ -443,3 +443,70 @@ tests:
   - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
   - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
 -->
+
+---
+### Requirement: Firebase initialization in main()
+
+The `main()` function SHALL initialize Firebase after `_configureAmplify()` completes and before `SharedPreferences.getInstance()`. The initialization sequence SHALL be:
+
+1. `await Firebase.initializeApp()` -- reads native configuration files (`GoogleService-Info.plist` / `google-services.json`)
+2. Set `FlutterError.onError` to `FirebaseCrashlytics.instance.recordFlutterFatalError` to capture Flutter framework fatal errors
+3. Set `PlatformDispatcher.instance.onError` to a callback that calls `FirebaseCrashlytics.instance.recordError(error, stack, fatal: true)` and returns `true`, to capture asynchronous platform errors
+4. Call `unawaited(AuthService().ensureSignedIn())` to trigger anonymous sign-in without blocking app startup
+
+The `main()` function SHALL NOT `await` the `AuthService().ensureSignedIn()` call. The anonymous sign-in SHALL proceed in the background.
+
+#### Scenario: Firebase initialized before SharedPreferences
+
+- **GIVEN** the application starts
+- **WHEN** `main()` is executed
+- **THEN** `Firebase.initializeApp()` SHALL be awaited before `SharedPreferences.getInstance()`
+- **AND** `FlutterError.onError` SHALL be assigned to the Crashlytics fatal error handler
+- **AND** `PlatformDispatcher.instance.onError` SHALL be assigned to a Crashlytics platform error handler that returns `true`
+- **AND** `AuthService().ensureSignedIn()` SHALL be called via `unawaited()`
+
+#### Scenario: Crashlytics captures Flutter errors
+
+- **GIVEN** Firebase has been initialized
+- **WHEN** a Flutter framework error occurs
+- **THEN** `FlutterError.onError` SHALL forward the error to `FirebaseCrashlytics.instance.recordFlutterFatalError`
+
+#### Scenario: Crashlytics captures platform errors
+
+- **GIVEN** Firebase has been initialized
+- **WHEN** an unhandled platform error occurs
+- **THEN** `PlatformDispatcher.instance.onError` SHALL forward the error and stack trace to `FirebaseCrashlytics.instance.recordError` with `fatal: true`
+- **AND** the callback SHALL return `true`
+
+<!-- @trace
+source: firebase-integration
+updated: 2026-03-30
+code:
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/ios/Runner/GoogleService-Info.plist
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/android/settings.gradle.kts
+  - naver_blog_image_downloader/android/app/build.gradle.kts
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/routing/app_router.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/android/app/google-services.json
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - CLAUDE.md
+  - naver_blog_image_downloader/lib/data/services/auth_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/ios/Podfile.lock
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/crashlytics_service.dart
+  - naver_blog_image_downloader/lib/data/repositories/log_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/log_service.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
+-->

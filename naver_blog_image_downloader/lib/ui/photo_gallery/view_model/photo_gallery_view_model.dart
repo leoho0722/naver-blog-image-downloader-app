@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../data/models/photo_entity.dart';
 import '../../../data/repositories/cache_repository.dart';
+import '../../../data/repositories/log_repository.dart';
 import '../../../data/repositories/photo_repository.dart';
 
 part 'photo_gallery_view_model.g.dart';
@@ -142,12 +143,26 @@ class PhotoGalleryViewModel extends _$PhotoGalleryViewModel {
           .toList();
       final repo = ref.read(photoRepositoryProvider);
       await repo.saveToGalleryFromCache(photos: selected, blogId: state.blogId);
+      ref
+          .read(logRepositoryProvider)
+          .logSaveToGallery(
+            blogId: state.blogId,
+            photoCount: selected.length,
+            mode: 'selected',
+          );
       state = state.copyWith(
         saveOperation: () => const AsyncData(null),
         selectedIds: {},
         isSelectMode: false,
       );
     } catch (e, st) {
+      ref
+          .read(logRepositoryProvider)
+          .logError(
+            errorType: e.runtimeType.toString(),
+            message: e.toString(),
+            stackTrace: st.toString(),
+          );
       state = state.copyWith(
         saveOperation: () => AsyncError(e, st),
         isSelectMode: false,
@@ -165,8 +180,22 @@ class PhotoGalleryViewModel extends _$PhotoGalleryViewModel {
         photos: state.photos,
         blogId: state.blogId,
       );
+      ref
+          .read(logRepositoryProvider)
+          .logSaveToGallery(
+            blogId: state.blogId,
+            photoCount: state.photos.length,
+            mode: 'all',
+          );
       state = state.copyWith(saveOperation: () => const AsyncData(null));
     } catch (e, st) {
+      ref
+          .read(logRepositoryProvider)
+          .logError(
+            errorType: e.runtimeType.toString(),
+            message: e.toString(),
+            stackTrace: st.toString(),
+          );
       state = state.copyWith(saveOperation: () => AsyncError(e, st));
     }
   }

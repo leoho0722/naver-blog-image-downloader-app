@@ -31,7 +31,7 @@ class NaverPhotoApp extends ConsumerWidget {
         locale: settings.locale?.locale,
         supportedLocales: AppLocalizations.supportedLocales,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
-        routerConfig: appRouter,
+        routerConfig: ref.watch(appRouterProvider),
       ),
       loading: () => const MaterialApp(
         home: Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -41,7 +41,7 @@ class NaverPhotoApp extends ConsumerWidget {
         darkTheme: AppTheme.darkTheme,
         supportedLocales: AppLocalizations.supportedLocales,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
-        routerConfig: appRouter,
+        routerConfig: ref.watch(appRouterProvider),
       ),
     );
   }

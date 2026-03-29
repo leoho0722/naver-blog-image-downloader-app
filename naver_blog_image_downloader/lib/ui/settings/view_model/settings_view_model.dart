@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../data/models/blog_cache_metadata.dart';
 import '../../../data/repositories/cache_repository.dart';
+import '../../../data/repositories/log_repository.dart';
 
 part 'settings_view_model.g.dart';
 
@@ -81,9 +82,13 @@ class SettingsViewModel extends _$SettingsViewModel {
 
   /// 清除所有快取檔案與 metadata，完成後重設狀態為空。
   Future<void> clearAllCache() async {
+    final previousSize = state.value?.cacheSizeBytes ?? 0;
     state = const AsyncLoading();
     final cacheRepository = ref.read(cacheRepositoryProvider);
     await cacheRepository.clearAll();
+    ref
+        .read(logRepositoryProvider)
+        .logClearCache(previousSizeBytes: previousSize);
     state = const AsyncData(SettingsData());
   }
 }

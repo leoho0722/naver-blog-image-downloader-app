@@ -347,3 +347,124 @@ tests:
   - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
   - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
 -->
+
+---
+### Requirement: Operation logging in setThemeMode
+
+`AppSettingsViewModel.setThemeMode(ThemeMode mode)` SHALL log the settings change via `ref.read(logRepositoryProvider)` after updating the state.
+
+`setThemeMode()` SHALL call `logSettingsChange` with the following parameters:
+
+- `setting` -- the string `'theme'`
+- `oldValue` -- the string representation of the previous `ThemeMode` value (e.g., `'ThemeMode.system'`)
+- `newValue` -- the string representation of the new `ThemeMode` value (e.g., `'ThemeMode.dark'`)
+
+The log call SHALL be fire-and-forget and SHALL NOT affect the state update or persistence behavior.
+
+#### Scenario: Theme change logged
+
+- **GIVEN** the current theme mode is `ThemeMode.system`
+- **WHEN** `setThemeMode(ThemeMode.dark)` is called
+- **THEN** `logSettingsChange` SHALL be called with `setting: 'theme'`, `oldValue: 'ThemeMode.system'`, `newValue: 'ThemeMode.dark'`
+- **AND** the state SHALL still be updated optimistically to `ThemeMode.dark`
+
+#### Scenario: Log failure does not affect theme change
+
+- **GIVEN** `logSettingsChange` throws an exception internally
+- **WHEN** `setThemeMode(ThemeMode.dark)` is called
+- **THEN** the state SHALL still be updated to `ThemeMode.dark`
+- **AND** `SettingsRepository.saveThemeMode()` SHALL still be called
+
+
+<!-- @trace
+source: firebase-integration
+updated: 2026-03-30
+code:
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/ios/Runner/GoogleService-Info.plist
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/android/settings.gradle.kts
+  - naver_blog_image_downloader/android/app/build.gradle.kts
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/routing/app_router.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/android/app/google-services.json
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - CLAUDE.md
+  - naver_blog_image_downloader/lib/data/services/auth_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/ios/Podfile.lock
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/crashlytics_service.dart
+  - naver_blog_image_downloader/lib/data/repositories/log_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/log_service.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
+-->
+
+---
+### Requirement: Operation logging in setLocale
+
+`AppSettingsViewModel.setLocale(SupportedLocale locale)` SHALL log the settings change via `ref.read(logRepositoryProvider)` after updating the state.
+
+`setLocale()` SHALL call `logSettingsChange` with the following parameters:
+
+- `setting` -- the string `'locale'`
+- `oldValue` -- the string representation of the previous locale value (e.g., `'null'` or `'SupportedLocale.en'`)
+- `newValue` -- the string representation of the new `SupportedLocale` value (e.g., `'SupportedLocale.ko'`)
+
+The log call SHALL be fire-and-forget and SHALL NOT affect the state update or persistence behavior.
+
+#### Scenario: Locale change logged
+
+- **GIVEN** the current locale is `null`
+- **WHEN** `setLocale(SupportedLocale.en)` is called
+- **THEN** `logSettingsChange` SHALL be called with `setting: 'locale'`, `oldValue: 'null'`, `newValue: 'SupportedLocale.en'`
+- **AND** the state SHALL still be updated optimistically to `SupportedLocale.en`
+
+#### Scenario: Log failure does not affect locale change
+
+- **GIVEN** `logSettingsChange` throws an exception internally
+- **WHEN** `setLocale(SupportedLocale.ko)` is called
+- **THEN** the state SHALL still be updated to `SupportedLocale.ko`
+- **AND** `SettingsRepository.saveLocale()` SHALL still be called
+
+<!-- @trace
+source: firebase-integration
+updated: 2026-03-30
+code:
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/ios/Runner/GoogleService-Info.plist
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/android/settings.gradle.kts
+  - naver_blog_image_downloader/android/app/build.gradle.kts
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/routing/app_router.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/android/app/google-services.json
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - CLAUDE.md
+  - naver_blog_image_downloader/lib/data/services/auth_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/ios/Podfile.lock
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/crashlytics_service.dart
+  - naver_blog_image_downloader/lib/data/repositories/log_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/log_service.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
+-->
