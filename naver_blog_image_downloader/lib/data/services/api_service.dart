@@ -3,9 +3,19 @@ import 'dart:convert';
 
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/foundation.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/dtos/job_status_response.dart';
 import '../models/dtos/photo_download_request.dart';
+
+part 'api_service.g.dart';
+
+/// ApiService 的 Riverpod provider（App 級單例）。
+///
+/// [ref] 為 Riverpod 的依賴參照。
+/// 回傳以預設配置建立的 [ApiService] 實例。
+@Riverpod(keepAlive: true)
+ApiService apiService(Ref ref) => ApiService();
 
 /// 與後端 API Gateway 溝通的服務層，使用 AWS Amplify SDK 發送 REST 請求。
 ///
@@ -33,7 +43,10 @@ class ApiService {
 
   /// 提交非同步下載任務。
   ///
-  /// 回傳 job_id；伺服器回應非 2xx 時拋出 [ApiServiceException]。
+  /// [blogUrl] 為要爬取的 Naver Blog 網址。
+  ///
+  /// 回傳伺服器指派的 job_id 字串。
+  /// 伺服器回應非 2xx 或回應中缺少 `job_id` 時拋出 [ApiServiceException]。
   Future<String> submitJob(String blogUrl) async {
     final payload = PhotoDownloadRequest.download(blogUrl: blogUrl).toJson();
     final response = await _post(payload);
@@ -47,9 +60,12 @@ class ApiService {
 
   /// 查詢任務狀態。
   ///
+  /// [jobId] 為先前 [submitJob] 回傳的任務識別碼。
+  ///
   /// 回傳 [JobStatusResponse]，包含 status 與 result。
   /// HTTP 200（processing / completed）和 HTTP 500（failed）都會被正常解析，
   /// 因為 failed 是合法的業務狀態，不應視為 API 錯誤。
+  /// 其餘非預期的 HTTP 狀態碼會拋出 [ApiServiceException]。
   Future<JobStatusResponse> checkJobStatus(String jobId) async {
     final payload = PhotoDownloadRequest.status(jobId: jobId).toJson();
     // 狀態查詢接受 200（processing/completed）和 500（failed）
@@ -59,8 +75,12 @@ class ApiService {
 
   /// 發送 POST 請求並解析回應 JSON。
   ///
-  /// [acceptStatusCodes] 指定可接受的 HTTP 狀態碼，其餘拋出 [ApiServiceException]。
-  /// 預設接受 200-299 範圍。
+  /// [body] 為請求的 JSON body。
+  /// [acceptStatusCodes] 指定可接受的 HTTP 狀態碼集合，其餘拋出 [ApiServiceException]；
+  /// 若為 `null` 則預設接受 200-299 範圍。
+  ///
+  /// 回傳解析後的 JSON [Map]。
+  /// 逾時時拋出 [TimeoutException]，其餘錯誤拋出 [ApiServiceException]。
   Future<Map<String, dynamic>> _post(
     Map<String, dynamic> body, {
     Set<int>? acceptStatusCodes,
@@ -120,7 +140,8 @@ class ApiService {
 class ApiServiceException implements Exception {
   /// 建立 [ApiServiceException]。
   ///
-  /// [message] 為錯誤描述，[statusCode] 為 HTTP 狀態碼（選填）。
+  /// - [message]：錯誤描述文字。
+  /// - [statusCode]：HTTP 狀態碼（選填），僅伺服器回應時有值。
   const ApiServiceException(this.message, {this.statusCode});
 
   /// 錯誤訊息。
@@ -130,9 +151,12 @@ class ApiServiceException implements Exception {
   final int? statusCode;
 
   /// 是否為可重試的伺服器錯誤（502、503、504）。
+  ///
+  /// 回傳 `true` 表示 [statusCode] 為 502、503 或 504。
   bool get isRetryable =>
       statusCode == 502 || statusCode == 503 || statusCode == 504;
 
+  /// 回傳錯誤訊息字串。
   @override
   String toString() => message;
 }

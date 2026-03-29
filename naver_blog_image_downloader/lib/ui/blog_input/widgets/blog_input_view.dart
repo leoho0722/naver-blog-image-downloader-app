@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:naver_blog_image_downloader/l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../config/bottom_sheet_animation.dart';
 import '../../../data/models/fetch_result.dart';
@@ -15,35 +15,33 @@ import '../../settings/widgets/settings_view.dart';
 import '../view_model/blog_input_view_model.dart';
 
 /// Blog 網址輸入頁面，提供文字輸入欄位讓使用者貼上 Naver Blog 網址並取得照片列表。
-class BlogInputView extends StatefulWidget {
+class BlogInputView extends ConsumerStatefulWidget {
   /// 建立 [BlogInputView]。
   const BlogInputView({super.key});
 
+  /// 建立 [BlogInputView] 對應的 [ConsumerState]。
+  ///
+  /// 回傳 [_BlogInputViewState] 實例。
   @override
-  State<BlogInputView> createState() => _BlogInputViewState();
+  ConsumerState<BlogInputView> createState() => _BlogInputViewState();
 }
 
-class _BlogInputViewState extends State<BlogInputView>
+/// [BlogInputView] 的狀態管理類，處理網址輸入、剪貼板偵測、API 擷取流程與導航。
+class _BlogInputViewState extends ConsumerState<BlogInputView>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
-  /// 頁面對應的 ViewModel，透過 Provider 取得。
-  late final BlogInputViewModel _viewModel;
-
-  /// 網址輸入欄位的文字控制器。
+  /// 網址輸入欄位的文字控制器，綁定至 [TextField]。
   final _controller = TextEditingController();
 
-  /// 設定頁面 bottom sheet 的動畫控制器。
+  /// 設定頁面 bottom sheet 的動畫控制器，控制 [SettingsView] 彈出動畫。
   late final AnimationController _sheetAnimationController;
 
   /// 初始化頁面狀態。
   ///
-  /// 透過 Provider 取得 [BlogInputViewModel] 並註冊狀態變更監聽器，
   /// 加入 [WidgetsBindingObserver] 以監聽 App 生命週期事件，
   /// 並建立設定頁面 bottom sheet 的動畫控制器。
   @override
   void initState() {
     super.initState();
-    _viewModel = context.read<BlogInputViewModel>();
-    _viewModel.addListener(_onViewModelChanged);
     WidgetsBinding.instance.addObserver(this);
     _sheetAnimationController = BottomSheetAnimation.createController(
       vsync: this,
@@ -53,12 +51,11 @@ class _BlogInputViewState extends State<BlogInputView>
 
   /// 釋放頁面資源。
   ///
-  /// 移除 [WidgetsBindingObserver]、ViewModel 狀態變更監聽器，
+  /// 移除 [WidgetsBindingObserver]，
   /// 並銷毀 bottom sheet 動畫控制器與文字輸入控制器，避免記憶體洩漏。
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _viewModel.removeListener(_onViewModelChanged);
     _sheetAnimationController.dispose();
     _controller.dispose();
     super.dispose();
@@ -80,8 +77,10 @@ class _BlogInputViewState extends State<BlogInputView>
   /// 將 [FetchErrorType] 映射為本地化錯誤訊息。
   ///
   /// [l10n] 為當前的本地化資源。
-  /// [error] 為擷取失敗狀態，包含錯誤類型與可選的 HTTP 狀態碼。
-  String _localizedError(AppLocalizations l10n, FetchError error) {
+  /// [error] 為擷取失敗例外，包含錯誤類型與可選的 HTTP 狀態碼。
+  ///
+  /// 回傳對應錯誤類型的本地化字串。
+  String _localizedError(AppLocalizations l10n, FetchException error) {
     return switch (error.errorType) {
       FetchErrorType.emptyUrl => l10n.errorEmptyUrl,
       FetchErrorType.timeout => l10n.errorTimeout,
@@ -99,6 +98,8 @@ class _BlogInputViewState extends State<BlogInputView>
   ///
   /// [l10n] 為當前的本地化資源。
   /// [phase] 為目前的載入階段。
+  ///
+  /// 回傳對應載入階段的本地化字串。
   String _localizedPhase(AppLocalizations l10n, FetchLoadingPhase phase) {
     return switch (phase) {
       FetchLoadingPhase.submitting => l10n.statusSubmitting,
@@ -200,32 +201,13 @@ class _BlogInputViewState extends State<BlogInputView>
   /// [url] 為要貼上的 Naver Blog 網址字串。
   void _pasteUrl(String url) {
     _controller.text = url;
-    _viewModel.onUrlChanged(url);
-  }
-
-  /// ViewModel 狀態變更的監聽回呼，以 switch 窮舉 [FetchState] 執行對應 UI 操作。
-  ///
-  /// - [FetchIdle]、[FetchLoading]：不執行額外動作（UI 由 `build` 自動更新）。
-  /// - [FetchError]：顯示錯誤對話框。
-  /// - [FetchSuccess]：重置狀態並處理擷取結果。
-  void _onViewModelChanged() {
-    switch (_viewModel.fetchState) {
-      case FetchIdle():
-      case FetchLoading():
-        break;
-      case final FetchError error:
-        _viewModel.onUrlChanged(_viewModel.blogUrl);
-        _showErrorDialog(error);
-      case FetchSuccess(:final result):
-        _viewModel.reset();
-        _handleFetchResult(result);
-    }
+    ref.read(blogInputViewModelProvider.notifier).onUrlChanged(url);
   }
 
   /// 以 AlertDialog 顯示錯誤訊息。
   ///
-  /// [error] 為擷取失敗狀態，包含錯誤類型與可選的 HTTP 狀態碼。
-  void _showErrorDialog(FetchError error) {
+  /// [error] 為擷取失敗例外，包含錯誤類型與可選的 HTTP 狀態碼。
+  void _showErrorDialog(FetchException error) {
     if (!mounted) return;
     final l10n = AppLocalizations.of(context);
     unawaited(
@@ -248,6 +230,8 @@ class _BlogInputViewState extends State<BlogInputView>
   /// 處理照片擷取結果：若有失敗先警告，若已快取直接導航，否則顯示下載對話框。
   ///
   /// [fetchResult] 為 API 回傳的照片擷取結果，包含照片清單與失敗資訊。
+  ///
+  /// 回傳 [Future<void>]，於警告對話框、下載對話框互動與導航完成後結束。
   Future<void> _handleFetchResult(FetchResult fetchResult) async {
     // 有擷取失敗時，先顯示警告對話框
     if (fetchResult.failureDownloads > 0) {
@@ -327,17 +311,35 @@ class _BlogInputViewState extends State<BlogInputView>
   /// 建構 Blog 網址輸入頁面的 Widget 樹。
   ///
   /// 包含 AppBar（標題與設定按鈕）、網址輸入欄位、載入狀態指示器，
-  /// 以及「取得照片」按鈕。根據 [BlogInputViewModel.fetchState] 自動切換
+  /// 以及「取得照片」按鈕。根據 [BlogInputState.fetchResult] 自動切換
   /// 載入中與一般狀態的 UI 呈現。
   ///
-  /// [context] 為目前的 [BuildContext]，用於取得 ViewModel 與本地化資源。
+  /// [context] 為目前的 [BuildContext]，用於取得本地化資源。
   ///
   /// 回傳完整的頁面 [Widget]。
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<BlogInputViewModel>();
-    final fetchState = viewModel.fetchState;
-    final isLoading = fetchState is FetchLoading;
+    final state = ref.watch(blogInputViewModelProvider);
+
+    ref.listen(blogInputViewModelProvider, (prev, next) {
+      final prevFetch = prev?.fetchResult;
+      final nextFetch = next.fetchResult;
+      if (nextFetch is AsyncError && prevFetch is! AsyncError) {
+        final error = nextFetch.error;
+        ref
+            .read(blogInputViewModelProvider.notifier)
+            .onUrlChanged(next.blogUrl);
+        if (error is FetchException) _showErrorDialog(error);
+      } else if (nextFetch is AsyncData<FetchResult?> &&
+          nextFetch.value != null &&
+          (prevFetch is! AsyncData<FetchResult?> || prevFetch.value == null)) {
+        ref.read(blogInputViewModelProvider.notifier).reset();
+        _handleFetchResult(nextFetch.value!);
+      }
+    });
+
+    final fetchResult = state.fetchResult;
+    final isLoading = state.isLoading;
     final l10n = AppLocalizations.of(context);
 
     return GestureDetector(
@@ -358,7 +360,9 @@ class _BlogInputViewState extends State<BlogInputView>
             children: [
               TextField(
                 controller: _controller,
-                onChanged: viewModel.onUrlChanged,
+                onChanged: ref
+                    .read(blogInputViewModelProvider.notifier)
+                    .onUrlChanged,
                 decoration: InputDecoration(
                   labelText: l10n.blogInputUrlLabel,
                   hintText: l10n.blogInputUrlHint,
@@ -370,7 +374,8 @@ class _BlogInputViewState extends State<BlogInputView>
                 ),
               ),
               const SizedBox(height: 16),
-              if (fetchState case FetchLoading(:final phase)) ...[
+              if (fetchResult is AsyncLoading &&
+                  state.loadingPhase != null) ...[
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -382,7 +387,7 @@ class _BlogInputViewState extends State<BlogInputView>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      _localizedPhase(l10n, phase),
+                      _localizedPhase(l10n, state.loadingPhase!),
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -396,7 +401,9 @@ class _BlogInputViewState extends State<BlogInputView>
                       ? null
                       : () {
                           FocusScope.of(context).unfocus();
-                          viewModel.fetchPhotos();
+                          ref
+                              .read(blogInputViewModelProvider.notifier)
+                              .fetchPhotos();
                         },
                   child: isLoading
                       ? const SizedBox(

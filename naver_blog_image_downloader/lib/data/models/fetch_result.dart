@@ -6,6 +6,14 @@ import 'photo_entity.dart';
 /// 並記錄該結果是否完全來自快取。
 class FetchResult {
   /// 建立 [FetchResult] 實例。
+  ///
+  /// - [photos]：擷取到的照片實體清單。
+  /// - [blogId]：部落格的唯一識別碼。
+  /// - [blogUrl]：原始的 Blog 網址。
+  /// - [isFullyCached]：此次結果是否完全來自本地快取。
+  /// - [totalImages]：Lambda API 回傳的總照片數量，預設為 `0`。
+  /// - [failureDownloads]：Lambda API 回傳的擷取失敗照片數量，預設為 `0`。
+  /// - [fetchErrors]：Lambda API 回傳的擷取失敗錯誤訊息清單，預設為空清單。
   const FetchResult({
     required this.photos,
     required this.blogId,

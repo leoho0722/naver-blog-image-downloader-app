@@ -4,9 +4,19 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/blog_cache_metadata.dart';
+
+part 'cache_repository.g.dart';
+
+/// CacheRepository 的 Riverpod provider（App 級單例）。
+///
+/// [ref] 為 Riverpod 的依賴參照。
+/// 回傳 [CacheRepository] 實例。
+@Riverpod(keepAlive: true)
+CacheRepository cacheRepository(Ref ref) => CacheRepository();
 
 /// 快取子系統的唯一存取介面，負責管理本地磁碟上的照片檔案快取
 /// 與對應的 [BlogCacheMetadata]。
@@ -35,6 +45,10 @@ class CacheRepository {
   final Map<String, BlogCacheMetadata> _metadataStore = {};
 
   /// 以 SHA-256 對 Blog URL 進行 hash，回傳前 16 碼十六進制字串作為 blogId。
+  ///
+  /// [blogUrl] 為 Naver Blog 的完整網址。
+  ///
+  /// 回傳 SHA-256 前 16 碼的十六進制字串。
   String blogId(String blogUrl) {
     final bytes = utf8.encode(blogUrl);
     final digest = sha256.convert(bytes);
@@ -62,6 +76,10 @@ class CacheRepository {
   }
 
   /// 取得指定 blogId 的快取目錄，不存在時遞迴建立。
+  ///
+  /// [blogId] 為 Blog 的唯一識別碼。
+  ///
+  /// 回傳 `<appCacheDir>/blogs/<blogId>` 路徑的 [Directory]。
   Future<Directory> cacheDirectory(String blogId) async {
     await _ensureInitialized();
     final dir = Directory(p.join(_cacheDir.path, 'blogs', blogId));
@@ -72,13 +90,24 @@ class CacheRepository {
   }
 
   /// 將臨時檔案複製到快取目錄。
+  ///
+  /// - [tempFile]：下載完成的臨時檔案。
+  /// - [filename]：目標檔案名稱。
+  /// - [blogId]：Blog 的唯一識別碼，決定快取子目錄。
+  ///
+  /// 回傳複製後的快取 [File]。
   Future<File> storeFile(File tempFile, String filename, String blogId) async {
     final dir = await cacheDirectory(blogId);
     final targetPath = p.join(dir.path, filename);
     return tempFile.copy(targetPath);
   }
 
-  /// 查詢已快取檔案，存在則回傳 File，否則回傳 null。
+  /// 查詢已快取檔案，存在則回傳 [File]，否則回傳 `null`。
+  ///
+  /// - [filename]：要查詢的檔案名稱。
+  /// - [blogId]：Blog 的唯一識別碼。
+  ///
+  /// 回傳對應的快取 [File]；檔案不存在時回傳 `null`。
   Future<File?> cachedFile(String filename, String blogId) async {
     final dir = await cacheDirectory(blogId);
     final file = File(p.join(dir.path, filename));
@@ -89,6 +118,11 @@ class CacheRepository {
   }
 
   /// 判斷 Blog 是否已完整快取：檢查所有預期檔案是否存在。
+  ///
+  /// - [blogId]：Blog 的唯一識別碼。
+  /// - [expectedFilenames]：預期應存在的檔案名稱清單。
+  ///
+  /// 回傳 `true` 表示所有預期檔案皆已存在於快取中。
   Future<bool> isBlogFullyCached(
     String blogId,
     List<String> expectedFilenames,
@@ -104,6 +138,8 @@ class CacheRepository {
   }
 
   /// 更新 metadata 並持久化至 shared_preferences。
+  ///
+  /// [metadata] 為要儲存或更新的 [BlogCacheMetadata]，以 `blogId` 作為 key。
   Future<void> updateMetadata(BlogCacheMetadata metadata) async {
     await _ensureInitialized();
     _metadataStore[metadata.blogId] = metadata;
@@ -111,18 +147,27 @@ class CacheRepository {
   }
 
   /// 查詢指定 blogId 的 metadata。
+  ///
+  /// [blogId] 為 Blog 的唯一識別碼。
+  ///
+  /// 回傳對應的 [BlogCacheMetadata]；尚未記錄時回傳 `null`。
   Future<BlogCacheMetadata?> metadata(String blogId) async {
     await _ensureInitialized();
     return _metadataStore[blogId];
   }
 
   /// 回傳所有已儲存的 metadata。
+  ///
+  /// 回傳所有 [BlogCacheMetadata] 的清單；無資料時回傳空清單。
   Future<List<BlogCacheMetadata>> allMetadata() async {
     await _ensureInitialized();
     return _metadataStore.values.toList();
   }
 
   /// 標記指定 Blog 的照片已儲存至相簿。
+  ///
+  /// [blogId] 為 Blog 的唯一識別碼。
+  /// 若該 blogId 不存在於 metadata 中，則不做任何處理。
   Future<void> markAsSavedToGallery(String blogId) async {
     final meta = _metadataStore[blogId];
     if (meta == null) return;
@@ -131,6 +176,8 @@ class CacheRepository {
   }
 
   /// 計算目前快取總大小（bytes），遞迴遍歷 `blogs/` 目錄下所有檔案。
+  ///
+  /// 回傳快取總大小的 bytes 整數值；`blogs/` 目錄不存在時回傳 0。
   Future<int> totalCacheSize() async {
     await _ensureInitialized();
     int total = 0;
@@ -175,6 +222,8 @@ class CacheRepository {
   }
 
   /// 清除指定 Blog 的快取檔案與 metadata。
+  ///
+  /// [blogId] 為要清除的 Blog 唯一識別碼。
   Future<void> clearBlog(String blogId) async {
     final dir = await cacheDirectory(blogId);
     if (await dir.exists()) await dir.delete(recursive: true);

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:naver_blog_image_downloader/data/models/photo_entity.dart';
@@ -10,7 +11,7 @@ class MockPhotoRepository extends Mock implements PhotoRepository {}
 
 void main() {
   late MockPhotoRepository mockPhotoRepository;
-  late DownloadViewModel viewModel;
+  late ProviderContainer container;
 
   const testBlogId = 'test_blog_id';
   const testBlogUrl = 'https://blog.naver.com/test';
@@ -37,39 +38,53 @@ void main() {
 
   setUp(() {
     mockPhotoRepository = MockPhotoRepository();
-    viewModel = DownloadViewModel(photoRepository: mockPhotoRepository);
+    container = ProviderContainer(
+      overrides: [
+        photoRepositoryProvider.overrideWithValue(mockPhotoRepository),
+      ],
+    );
+    container.listen(downloadViewModelProvider, (_, _) {});
+    addTearDown(container.dispose);
   });
 
   group('Download state properties - 初始狀態', () {
     test('completed 初始值為 0', () {
-      expect(viewModel.completed, 0);
+      final state = container.read(downloadViewModelProvider);
+      expect(state.completed, 0);
     });
 
     test('total 初始值為 0', () {
-      expect(viewModel.total, 0);
+      final state = container.read(downloadViewModelProvider);
+      expect(state.total, 0);
     });
 
     test('isDownloading 初始值為 false', () {
-      expect(viewModel.isDownloading, isFalse);
+      final state = container.read(downloadViewModelProvider);
+      expect(state.isDownloading, isFalse);
     });
 
-    test('downloadState 初始值為 DownloadState.idle', () {
-      expect(viewModel.downloadState, DownloadState.idle);
+    test('downloadResult 初始值為 AsyncData(null)', () {
+      final state = container.read(downloadViewModelProvider);
+      expect(state.downloadResult, isA<AsyncData>());
+      expect(state.downloadResult.value, isNull);
     });
 
     test('result 初始值為 null', () {
-      expect(viewModel.result, isNull);
+      final state = container.read(downloadViewModelProvider);
+      expect(state.result, isNull);
     });
 
     test('progress 初始值為 0.0', () {
-      expect(viewModel.progress, 0.0);
+      final state = container.read(downloadViewModelProvider);
+      expect(state.progress, 0.0);
     });
   });
 
   group('Progress calculation', () {
     test('total 為 0 時 progress 回傳 0.0（避免除以零）', () {
       // 初始狀態 total = 0
-      expect(viewModel.progress, 0.0);
+      final state = container.read(downloadViewModelProvider);
+      expect(state.progress, 0.0);
     });
 
     test('total 大於 0 時 progress 回傳 completed / total', () async {
@@ -87,14 +102,15 @@ void main() {
         final onProgress =
             invocation.namedArguments[#onProgress] as void Function(int, int)?;
         onProgress?.call(1, 3);
-        capturedProgress = viewModel.progress;
+        capturedProgress = container.read(downloadViewModelProvider).progress;
         onProgress?.call(2, 3);
         onProgress?.call(3, 3);
         return successResult;
       });
 
       // Act
-      await viewModel.startDownload(
+      final notifier = container.read(downloadViewModelProvider.notifier);
+      await notifier.startDownload(
         photos: testPhotos,
         blogId: testBlogId,
         blogUrl: testBlogUrl,
@@ -103,14 +119,17 @@ void main() {
       // Assert — 在 1/3 時 progress 應約為 0.333
       expect(capturedProgress, closeTo(1 / 3, 0.001));
       // 完成後 progress 為 1.0
-      expect(viewModel.progress, closeTo(1.0, 0.001));
+      expect(
+        container.read(downloadViewModelProvider).progress,
+        closeTo(1.0, 0.001),
+      );
     });
   });
 
   group('Start download with progress tracking', () {
     test('成功批次下載：狀態依序正確更新', () async {
       // Arrange
-      final stateSnapshots = <Map<String, dynamic>>[];
+      final stateSnapshots = <DownloadViewModelState>[];
 
       when(
         () => mockPhotoRepository.downloadAllToCache(
@@ -130,17 +149,13 @@ void main() {
         return successResult;
       });
 
-      viewModel.addListener(() {
-        stateSnapshots.add({
-          'isDownloading': viewModel.isDownloading,
-          'completed': viewModel.completed,
-          'total': viewModel.total,
-          'result': viewModel.result,
-        });
+      container.listen(downloadViewModelProvider, (prev, next) {
+        stateSnapshots.add(next);
       });
 
       // Act
-      await viewModel.startDownload(
+      final notifier = container.read(downloadViewModelProvider.notifier);
+      await notifier.startDownload(
         photos: testPhotos,
         blogId: testBlogId,
         blogUrl: testBlogUrl,
@@ -148,21 +163,21 @@ void main() {
 
       // Assert
       // 第一次通知：isDownloading = true, total = 3, completed = 0, result = null
-      expect(stateSnapshots[0]['isDownloading'], isTrue);
-      expect(stateSnapshots[0]['completed'], 0);
-      expect(stateSnapshots[0]['total'], 3);
-      expect(stateSnapshots[0]['result'], isNull);
+      expect(stateSnapshots[0].isDownloading, isTrue);
+      expect(stateSnapshots[0].completed, 0);
+      expect(stateSnapshots[0].total, 3);
+      expect(stateSnapshots[0].result, isNull);
 
       // 中間通知：progress 更新
-      expect(stateSnapshots[1]['completed'], 1);
-      expect(stateSnapshots[2]['completed'], 2);
-      expect(stateSnapshots[3]['completed'], 3);
+      expect(stateSnapshots[1].completed, 1);
+      expect(stateSnapshots[2].completed, 2);
+      expect(stateSnapshots[3].completed, 3);
 
       // 最後通知：isDownloading = false, result 有值
       final lastSnapshot = stateSnapshots.last;
-      expect(lastSnapshot['isDownloading'], isFalse);
-      expect(lastSnapshot['result'], isNotNull);
-      expect((lastSnapshot['result'] as DownloadBatchResult).successCount, 3);
+      expect(lastSnapshot.isDownloading, isFalse);
+      expect(lastSnapshot.result, isNotNull);
+      expect(lastSnapshot.result!.successCount, 3);
 
       verify(
         () => mockPhotoRepository.downloadAllToCache(
@@ -186,12 +201,15 @@ void main() {
           onProgress: any(named: 'onProgress'),
         ),
       ).thenAnswer((_) async {
-        isDownloadingBeforeCall = viewModel.isDownloading;
+        isDownloadingBeforeCall = container
+            .read(downloadViewModelProvider)
+            .isDownloading;
         return successResult;
       });
 
       // Act
-      await viewModel.startDownload(
+      final notifier = container.read(downloadViewModelProvider.notifier);
+      await notifier.startDownload(
         photos: testPhotos,
         blogId: testBlogId,
         blogUrl: testBlogUrl,
@@ -199,7 +217,7 @@ void main() {
 
       // Assert
       expect(isDownloadingBeforeCall, isTrue);
-      expect(viewModel.isDownloading, isFalse);
+      expect(container.read(downloadViewModelProvider).isDownloading, isFalse);
     });
 
     test('下載完成後 result 持有 DownloadBatchResult', () async {
@@ -220,16 +238,18 @@ void main() {
       ).thenAnswer((_) async => expectedResult);
 
       // Act
-      await viewModel.startDownload(
+      final notifier = container.read(downloadViewModelProvider.notifier);
+      await notifier.startDownload(
         photos: testPhotos,
         blogId: testBlogId,
         blogUrl: testBlogUrl,
       );
 
       // Assert
-      expect(viewModel.result, equals(expectedResult));
-      expect(viewModel.result!.successCount, 2);
-      expect(viewModel.result!.failureCount, 1);
+      final state = container.read(downloadViewModelProvider);
+      expect(state.result, equals(expectedResult));
+      expect(state.result!.successCount, 2);
+      expect(state.result!.failureCount, 1);
     });
 
     test('duplicate download prevention：下載中再次呼叫 startDownload 時直接返回', () async {
@@ -245,15 +265,17 @@ void main() {
         ),
       ).thenAnswer((_) => completer.future);
 
+      final notifier = container.read(downloadViewModelProvider.notifier);
+
       // Act — 啟動第一次下載（不完成）
-      final firstCall = viewModel.startDownload(
+      final firstCall = notifier.startDownload(
         photos: testPhotos,
         blogId: testBlogId,
         blogUrl: testBlogUrl,
       );
 
       // 下載中嘗試第二次呼叫
-      await viewModel.startDownload(
+      await notifier.startDownload(
         photos: testPhotos,
         blogId: testBlogId,
         blogUrl: testBlogUrl,
@@ -286,14 +308,15 @@ void main() {
       ).thenAnswer((_) async => successResult);
 
       int? capturedTotal;
-      viewModel.addListener(() {
-        if (capturedTotal == null && viewModel.isDownloading) {
-          capturedTotal = viewModel.total;
+      container.listen(downloadViewModelProvider, (prev, next) {
+        if (capturedTotal == null && next.isDownloading) {
+          capturedTotal = next.total;
         }
       });
 
       // Act
-      await viewModel.startDownload(
+      final notifier = container.read(downloadViewModelProvider.notifier);
+      await notifier.startDownload(
         photos: testPhotos,
         blogId: testBlogId,
         blogUrl: testBlogUrl,
@@ -303,9 +326,9 @@ void main() {
       expect(capturedTotal, 3);
     });
 
-    test('每次 progress 更新都呼叫 notifyListeners', () async {
+    test('每次 progress 更新都觸發狀態變更', () async {
       // Arrange
-      int notifyCount = 0;
+      int stateChangeCount = 0;
 
       when(
         () => mockPhotoRepository.downloadAllToCache(
@@ -323,12 +346,13 @@ void main() {
         return successResult;
       });
 
-      viewModel.addListener(() {
-        notifyCount++;
+      container.listen(downloadViewModelProvider, (prev, next) {
+        stateChangeCount++;
       });
 
       // Act
-      await viewModel.startDownload(
+      final notifier = container.read(downloadViewModelProvider.notifier);
+      await notifier.startDownload(
         photos: testPhotos,
         blogId: testBlogId,
         blogUrl: testBlogUrl,
@@ -336,14 +360,14 @@ void main() {
 
       // Assert
       // 1 (start) + 3 (progress) + 1 (done) = 5
-      expect(notifyCount, 5);
+      expect(stateChangeCount, 5);
     });
   });
 
   group('DownloadState transitions - 狀態轉換', () {
-    test('downloadState 依序從 idle → downloading → completed 轉換', () async {
+    test('downloadResult 依序從 idle → downloading → completed 轉換', () async {
       // Arrange
-      final stateTransitions = <DownloadState>[];
+      final stateTransitions = <DownloadViewModelState>[];
 
       when(
         () => mockPhotoRepository.downloadAllToCache(
@@ -362,32 +386,39 @@ void main() {
       });
 
       // 記錄初始狀態
-      stateTransitions.add(viewModel.downloadState);
+      stateTransitions.add(container.read(downloadViewModelProvider));
 
-      viewModel.addListener(() {
-        stateTransitions.add(viewModel.downloadState);
+      container.listen(downloadViewModelProvider, (prev, next) {
+        stateTransitions.add(next);
       });
 
       // Act
-      await viewModel.startDownload(
+      final notifier = container.read(downloadViewModelProvider.notifier);
+      await notifier.startDownload(
         photos: testPhotos,
         blogId: testBlogId,
         blogUrl: testBlogUrl,
       );
 
       // Assert
-      // 初始: idle → 開始下載: downloading → 進度更新 x3: downloading → 完成: completed
-      expect(stateTransitions.first, DownloadState.idle);
+      // 初始: idle (AsyncData(null)) → 開始下載: downloading (AsyncLoading) → 進度更新 x3: downloading → 完成: completed (AsyncData(result))
+      final first = stateTransitions.first;
+      expect(first.downloadResult, isA<AsyncData>());
+      expect(first.downloadResult.value, isNull);
+
       expect(
-        stateTransitions.where((s) => s == DownloadState.downloading).length,
+        stateTransitions.where((s) => s.isDownloading).length,
         4, // 1 (start) + 3 (progress)
       );
-      expect(stateTransitions.last, DownloadState.completed);
+
+      final last = stateTransitions.last;
+      expect(last.downloadResult, isA<AsyncData>());
+      expect(last.downloadResult.value, isNotNull);
     });
 
-    test('下載中 downloadState 為 DownloadState.downloading', () async {
+    test('下載中 isDownloading 為 true', () async {
       // Arrange
-      DownloadState? stateDuringDownload;
+      bool? isDownloadingDuringDownload;
 
       when(
         () => mockPhotoRepository.downloadAllToCache(
@@ -397,23 +428,28 @@ void main() {
           onProgress: any(named: 'onProgress'),
         ),
       ).thenAnswer((_) async {
-        stateDuringDownload = viewModel.downloadState;
+        isDownloadingDuringDownload = container
+            .read(downloadViewModelProvider)
+            .isDownloading;
         return successResult;
       });
 
       // Act
-      await viewModel.startDownload(
+      final notifier = container.read(downloadViewModelProvider.notifier);
+      await notifier.startDownload(
         photos: testPhotos,
         blogId: testBlogId,
         blogUrl: testBlogUrl,
       );
 
       // Assert
-      expect(stateDuringDownload, DownloadState.downloading);
-      expect(viewModel.downloadState, DownloadState.completed);
+      expect(isDownloadingDuringDownload, isTrue);
+      final state = container.read(downloadViewModelProvider);
+      expect(state.downloadResult, isA<AsyncData>());
+      expect(state.downloadResult.value, isNotNull);
     });
 
-    test('下載完成後 downloadState 為 DownloadState.completed', () async {
+    test('下載完成後 downloadResult 為 AsyncData 且值非 null', () async {
       // Arrange
       when(
         () => mockPhotoRepository.downloadAllToCache(
@@ -425,15 +461,18 @@ void main() {
       ).thenAnswer((_) async => successResult);
 
       // Act
-      await viewModel.startDownload(
+      final notifier = container.read(downloadViewModelProvider.notifier);
+      await notifier.startDownload(
         photos: testPhotos,
         blogId: testBlogId,
         blogUrl: testBlogUrl,
       );
 
       // Assert
-      expect(viewModel.downloadState, DownloadState.completed);
-      expect(viewModel.isDownloading, isFalse);
+      final state = container.read(downloadViewModelProvider);
+      expect(state.downloadResult, isA<AsyncData>());
+      expect(state.downloadResult.value, isNotNull);
+      expect(state.isDownloading, isFalse);
     });
   });
 }

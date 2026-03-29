@@ -71,165 +71,153 @@ then it SHALL delegate to `CacheRepository.cachedFile(photo.filename, blogId)`.
 
 ## Requirements
 
-### Requirement: Detail state properties
-
-The `PhotoDetailViewModel` class SHALL extend `ChangeNotifier` and provide a constructor that accepts a `CacheRepository` instance via the `required` named parameter `cacheRepository` and a `PhotoRepository` instance via the `required` named parameter `photoRepository`.
-
-The ViewModel SHALL expose the following read-only properties:
-- `photo` (PhotoEntity?) — the currently loaded photo entity, computed from `_photos[_currentIndex]`
-- `photos` (List<PhotoEntity>) — the full photo list
-- `currentIndex` (int) — the index of the currently displayed photo
-- `totalCount` (int) — the total number of photos
-- `blogId` (String) — the blog identifier
-- `cachedFile` (File?) — the cached file for the current photo, retrieved from metadata cache
-- `fileSizeBytes` (int?) — the file size in bytes for the current photo
-- `imageWidth` (int?) — the image width in pixels for the current photo
-- `imageHeight` (int?) — the image height in pixels for the current photo
-- `saveState` (SaveState) — the current save operation state
-- `formattedFileSize` (String) — human-readable file size string
-- `formattedDimensions` (String) — human-readable image dimensions string
-
-#### Scenario: Initial state
-
-- **WHEN** a new `PhotoDetailViewModel` is created
-- **THEN** `photo` SHALL be `null`
-- **AND** `photos` SHALL be an empty list
-- **AND** `currentIndex` SHALL be `0`
-- **AND** `totalCount` SHALL be `0`
-- **AND** `blogId` SHALL be an empty string
-- **AND** `cachedFile` SHALL be `null`
-- **AND** `saveState` SHALL be `SaveState.idle`
-
-
-<!-- @trace
-source: architecture-enum-state-refactor
-updated: 2026-03-24
-code:
-  - naver_blog_image_downloader/lib/main.dart
-  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
-  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
-  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
-  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
-  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
-  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
-tests:
-  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
-  - naver_blog_image_downloader/test/widget_test.dart
-  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
-  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
-  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
-  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
--->
-
----
 ### Requirement: Load photo detail
 
-The `loadAll` method SHALL be async. It SHALL accept a `List<PhotoEntity>`, a `String blogId`, and an `int initialIndex`. It SHALL store the photo list and blogId, set `_currentIndex` to `initialIndex`, then load metadata (cached file, file size, image dimensions) for the current photo via `CacheRepository` and `ui.instantiateImageCodec`, and call `notifyListeners()`.
+`PhotoDetailViewModel.loadAll()` SHALL update the state with photos, blogId, and initial index via `state = state.copyWith(...)`. Metadata SHALL be loaded for the initial index and stored in the Notifier's private `_metadataCache` field (not part of the state).
 
 #### Scenario: Load photo list
 
-- **WHEN** `loadAll` is called with a list of photos, a blogId, and an initialIndex
-- **THEN** `photos` SHALL hold the provided list
-- **AND** `blogId` SHALL equal the provided blogId
-- **AND** `currentIndex` SHALL equal the provided initialIndex
-- **AND** `photo` SHALL return the `PhotoEntity` at initialIndex
-- **AND** `cachedFile` SHALL hold the resolved cached file for the initial photo
-- **AND** `notifyListeners` SHALL be called
+- **GIVEN** a list of photos, blogId, and initialIndex
+- **WHEN** `loadAll(photos, blogId, initialIndex)` is called
+- **THEN** `state.photos` SHALL contain the provided photos
+- **AND** `state.blogId` SHALL be the provided blogId
+- **AND** `state.currentIndex` SHALL be the provided initialIndex
+- **AND** `state.saveOperation` SHALL be `null`
+- **AND** metadata for the initial index SHALL be loaded into the state
 
 
 <!-- @trace
-source: photo-detail-viewer-redesign
-updated: 2026-03-23
+source: riverpod-migration
+updated: 2026-03-29
 code:
-  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
-  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/config/theme.dart
+  - naver_blog_image_downloader/lib/data/models/download_batch_result.dart
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/config/app_config.dart
   - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/ui/core/result.dart
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/config/bottom_sheet_animation.dart
+  - naver_blog_image_downloader/lib/data/models/blog_cache_metadata.dart
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/utils/constants.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/naver_url_validator.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/data/models/dtos/job_status_response.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/amplifyconfiguration.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_card.dart
+  - naver_blog_image_downloader/lib/utils/extensions.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/data/models/photo_entity.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/data/services/file_download_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
   - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/api_service.dart
+  - CLAUDE.md
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_request.dart
 tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
   - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
 -->
 
 ---
 ### Requirement: Save to gallery
 
-The `saveToGallery()` method SHALL save the current photo (at `_currentIndex`) to the device gallery via `PhotoRepository.saveOneToGallery`.
+`saveToGallery()` SHALL set `state.saveOperation` to `AsyncLoading`, call `PhotoRepository.saveOneToGallery()`, and set `state.saveOperation` to `AsyncData(null)` on success or revert to `null` on failure.
 
 #### Scenario: Save photo to gallery
 
-- **GIVEN** `cachedFile` holds a valid File
+- **GIVEN** the current photo has a cached file
 - **WHEN** `saveToGallery()` is called
-- **THEN** `saveState` SHALL transition from `idle` to `saving` before the save operation
-- **AND** `PhotoRepository.saveOneToGallery` SHALL be called with the file path
-- **AND** on `Result.ok`, `saveState` SHALL transition to `saved`
-- **AND** `notifyListeners` SHALL be called
+- **THEN** `state.saveOperation` SHALL transition to `AsyncLoading`
+- **AND** on success, `state.saveOperation` SHALL be `AsyncData(null)`
 
 #### Scenario: Save fails with error
 
-- **GIVEN** `cachedFile` holds a valid File
-- **AND** `PhotoRepository.saveOneToGallery` returns `Result.error`
+- **GIVEN** `PhotoRepository.saveOneToGallery()` throws an exception
 - **WHEN** `saveToGallery()` is called
-- **THEN** `saveState` SHALL return to `idle`
-- **AND** `notifyListeners` SHALL be called
+- **THEN** `state.saveOperation` SHALL revert to `null` (idle)
 
 #### Scenario: Save prevented when already saving
 
-- **GIVEN** `saveState` is `saving`
+- **GIVEN** `state.saveOperation` is `AsyncLoading`
 - **WHEN** `saveToGallery()` is called
-- **THEN** the method SHALL return immediately without performing any operation
-
-#### Scenario: Permission denied
-
-- **GIVEN** `PhotoRepository.saveOneToGallery` returns `Result.error` with permission denial
-- **WHEN** `saveToGallery()` is called
-- **THEN** `saveState` SHALL return to `idle`
-- **AND** `notifyListeners` SHALL be called
+- **THEN** the call SHALL return immediately without starting a new save
 
 
 <!-- @trace
-source: architecture-enum-state-refactor
-updated: 2026-03-24
+source: riverpod-migration
+updated: 2026-03-29
 code:
-  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/config/theme.dart
+  - naver_blog_image_downloader/lib/data/models/download_batch_result.dart
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/config/app_config.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/ui/core/result.dart
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/config/bottom_sheet_animation.dart
+  - naver_blog_image_downloader/lib/data/models/blog_cache_metadata.dart
   - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
-  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/utils/constants.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
   - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
   - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/naver_url_validator.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/data/models/dtos/job_status_response.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/amplifyconfiguration.dart
   - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
-  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
-tests:
-  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
-  - naver_blog_image_downloader/test/widget_test.dart
-  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
-  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
-  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
-  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
--->
-
----
-### Requirement: SaveState enum
-
-The `PhotoDetailViewModel` file SHALL define a `SaveState` enum with three values: `idle`, `saving`, and `saved`. The ViewModel SHALL use `SaveState` instead of separate `isSaving` and `isSaved` boolean flags to represent the save operation state.
-
-#### Scenario: SaveState enum values
-
-- **GIVEN** the `SaveState` enum
-- **WHEN** its values are inspected
-- **THEN** it SHALL contain exactly `idle`, `saving`, and `saved`
-
-
-<!-- @trace
-source: photo-detail-viewer-redesign
-updated: 2026-03-23
-code:
-  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
-  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_card.dart
+  - naver_blog_image_downloader/lib/utils/extensions.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/data/models/photo_entity.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/data/services/file_download_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
   - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/api_service.dart
+  - CLAUDE.md
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_request.dart
 tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
   - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
 -->
 
@@ -262,50 +250,270 @@ tests:
 ---
 ### Requirement: Metadata caching
 
-The `PhotoDetailViewModel` SHALL maintain a metadata cache (`Map<int, _PhotoMetadata>`) to avoid redundant I/O and image decoding when revisiting previously viewed photos. The `_PhotoMetadata` class SHALL hold `cachedFile` (File?), `fileSizeBytes` (int?), `imageWidth` (int?), and `imageHeight` (int?).
+Metadata (cached file, file size, image dimensions) SHALL be cached in a private `Map<int, _PhotoMetadata>` field on the Notifier. It SHALL NOT be part of the `PhotoDetailState`. Only the current index's metadata SHALL be exposed via state fields.
 
 #### Scenario: Cached metadata retrieval
 
-- **GIVEN** a photo at index N has been loaded previously
-- **WHEN** `setCurrentIndex` is called with index N again
-- **THEN** the ViewModel SHALL retrieve metadata from the cache
-- **AND** SHALL NOT call `CacheRepository.cachedFile` again for that index
+- **GIVEN** metadata for index 0 has been loaded
+- **WHEN** `setCurrentIndex(0)` is called
+- **THEN** the metadata SHALL be retrieved from cache without re-reading the file
 
 
 <!-- @trace
-source: photo-detail-viewer-redesign
-updated: 2026-03-23
+source: riverpod-migration
+updated: 2026-03-29
 code:
-  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
-  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/config/theme.dart
+  - naver_blog_image_downloader/lib/data/models/download_batch_result.dart
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/config/app_config.dart
   - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/ui/core/result.dart
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/config/bottom_sheet_animation.dart
+  - naver_blog_image_downloader/lib/data/models/blog_cache_metadata.dart
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/utils/constants.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/naver_url_validator.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/data/models/dtos/job_status_response.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/amplifyconfiguration.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_card.dart
+  - naver_blog_image_downloader/lib/utils/extensions.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/data/models/photo_entity.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/data/services/file_download_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
   - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/api_service.dart
+  - CLAUDE.md
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_request.dart
 tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
   - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
 -->
 
 ---
 ### Requirement: Set current index
 
-The `PhotoDetailViewModel` SHALL provide a `setCurrentIndex(int index)` method. When called, it SHALL update `_currentIndex`, reset `_saveState` to `SaveState.idle`, load metadata for the new index (from cache or I/O), and call `notifyListeners()`.
+`setCurrentIndex(int index)` SHALL update `state.currentIndex`, reset `state.saveOperation` to `null`, and lazy-load metadata if not already cached.
 
 #### Scenario: Switch to a different photo
 
-- **GIVEN** a loaded ViewModel with multiple photos
-- **WHEN** `setCurrentIndex` is called with a different index
-- **THEN** `currentIndex` SHALL equal the new index
-- **AND** `photo` SHALL return the `PhotoEntity` at the new index
-- **AND** `saveState` SHALL be `SaveState.idle`
-- **AND** `notifyListeners` SHALL be called
+- **GIVEN** the current index is 0
+- **WHEN** `setCurrentIndex(2)` is called
+- **THEN** `state.currentIndex` SHALL be `2`
+- **AND** `state.saveOperation` SHALL be `null`
+- **AND** metadata for index 2 SHALL be loaded if not cached
+
 
 <!-- @trace
-source: photo-detail-viewer-redesign
-updated: 2026-03-23
+source: riverpod-migration
+updated: 2026-03-29
 code:
-  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
-  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/config/theme.dart
+  - naver_blog_image_downloader/lib/data/models/download_batch_result.dart
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/config/app_config.dart
   - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/ui/core/result.dart
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/config/bottom_sheet_animation.dart
+  - naver_blog_image_downloader/lib/data/models/blog_cache_metadata.dart
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/utils/constants.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/naver_url_validator.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/data/models/dtos/job_status_response.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/amplifyconfiguration.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_card.dart
+  - naver_blog_image_downloader/lib/utils/extensions.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/data/models/photo_entity.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/data/services/file_download_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
   - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/api_service.dart
+  - CLAUDE.md
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_request.dart
 tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
+-->
+
+---
+### Requirement: PhotoDetailState immutable class
+
+`PhotoDetailState` SHALL be an immutable class with fields: `photos` (default `[]`), `blogId` (default `""`), `currentIndex` (default `0`), `saveOperation` (default `null`), `cachedFile` (default `null`), `fileSizeBytes` (default `null`), `imageWidth` (default `null`), `imageHeight` (default `null`). It SHALL provide `copyWith`, `isSaving`, `isSaved`, `photo`, `totalCount`, `formattedFileSize`, and `formattedDimensions` computed getters.
+
+#### Scenario: Default PhotoDetailState
+
+- **GIVEN** a new `PhotoDetailState` is created with defaults
+- **WHEN** inspecting its fields
+- **THEN** `saveOperation` SHALL be `null`
+- **AND** `isSaving` SHALL be `false`
+- **AND** `isSaved` SHALL be `false`
+
+
+<!-- @trace
+source: riverpod-migration
+updated: 2026-03-29
+code:
+  - naver_blog_image_downloader/lib/config/theme.dart
+  - naver_blog_image_downloader/lib/data/models/download_batch_result.dart
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/config/app_config.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/ui/core/result.dart
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/config/bottom_sheet_animation.dart
+  - naver_blog_image_downloader/lib/data/models/blog_cache_metadata.dart
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/utils/constants.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/naver_url_validator.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/data/models/dtos/job_status_response.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/amplifyconfiguration.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_card.dart
+  - naver_blog_image_downloader/lib/utils/extensions.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/data/models/photo_entity.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/data/services/file_download_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/api_service.dart
+  - CLAUDE.md
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_request.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
+-->
+
+---
+### Requirement: PhotoDetailViewModel as Notifier
+
+`PhotoDetailViewModel` SHALL extend the generated `_$PhotoDetailViewModel` (Riverpod `Notifier<PhotoDetailState>`). `build()` SHALL return `const PhotoDetailState()`.
+
+#### Scenario: PhotoDetailViewModel initial state
+
+- **GIVEN** `photoDetailViewModelProvider` is first accessed
+- **WHEN** `build()` is called
+- **THEN** it SHALL return a `PhotoDetailState` with all default values
+
+<!-- @trace
+source: riverpod-migration
+updated: 2026-03-29
+code:
+  - naver_blog_image_downloader/lib/config/theme.dart
+  - naver_blog_image_downloader/lib/data/models/download_batch_result.dart
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/config/app_config.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/ui/core/result.dart
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/config/bottom_sheet_animation.dart
+  - naver_blog_image_downloader/lib/data/models/blog_cache_metadata.dart
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/utils/constants.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/naver_url_validator.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/data/models/dtos/job_status_response.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/amplifyconfiguration.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_card.dart
+  - naver_blog_image_downloader/lib/utils/extensions.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/data/models/photo_entity.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/data/services/file_download_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/api_service.dart
+  - CLAUDE.md
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_request.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
   - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
 -->

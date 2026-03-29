@@ -5,11 +5,15 @@
 /// - `status`：查詢任務執行狀態
 class PhotoDownloadRequest {
   /// 建立下載請求。
+  ///
+  /// - [blogUrl]：要下載照片的 Naver 部落格網址。
   const PhotoDownloadRequest.download({required this.blogUrl})
     : action = 'download',
       jobId = null;
 
   /// 建立狀態查詢請求。
+  ///
+  /// - [jobId]：要查詢狀態的任務識別碼。
   const PhotoDownloadRequest.status({required String this.jobId})
     : action = 'status',
       blogUrl = null;
@@ -24,6 +28,8 @@ class PhotoDownloadRequest {
   final String? jobId;
 
   /// 將此請求序列化為 JSON 格式的 [Map]。
+  ///
+  /// 回傳包含 `action` 以及對應操作參數的 `Map<String, dynamic>`。
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{'action': action};
     if (blogUrl != null) json['blog_url'] = blogUrl;

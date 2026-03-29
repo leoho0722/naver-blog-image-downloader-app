@@ -8,6 +8,13 @@ import '../photo_entity.dart';
 /// 透過 [toEntities] 可將 URL 清單轉換為領域層的 [PhotoEntity] 清單。
 class PhotoDownloadResponse {
   /// 建立 [PhotoDownloadResponse] 實例。
+  ///
+  /// - [totalImages]：部落格中偵測到的總圖片數量。
+  /// - [successfulDownloads]：成功取得的圖片數量。
+  /// - [failureDownloads]：取得失敗的圖片數量。
+  /// - [imageUrls]：成功取得的圖片 URL 清單。
+  /// - [errors]：取得失敗時的錯誤訊息清單。
+  /// - [elapsedTime]：API 處理耗時（秒）。
   const PhotoDownloadResponse({
     required this.totalImages,
     required this.successfulDownloads,
@@ -36,6 +43,10 @@ class PhotoDownloadResponse {
   final double elapsedTime;
 
   /// 從 JSON 格式的 [Map] 反序列化為 [PhotoDownloadResponse] 實例。
+  ///
+  /// - [json]：API 回傳的 JSON [Map]。
+  ///
+  /// 回傳對應的 [PhotoDownloadResponse] 實例。
   factory PhotoDownloadResponse.fromJson(Map<String, dynamic> json) =>
       PhotoDownloadResponse(
         totalImages: json['total_images'] as int,
@@ -51,6 +62,8 @@ class PhotoDownloadResponse {
   /// 由於 API 僅回傳 URL，因此：
   /// - `id` 以 index 產生，確保唯一
   /// - `filename` 以 index prefix + URL 路徑末段組成，避免不同路徑同檔名碰撞
+  ///
+  /// 回傳轉換後的 [PhotoEntity] 清單。
   List<PhotoEntity> toEntities() {
     final entities = <PhotoEntity>[];
 

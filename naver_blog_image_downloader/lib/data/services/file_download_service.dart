@@ -1,8 +1,20 @@
 import 'package:dio/dio.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'file_download_service.g.dart';
+
+/// FileDownloadService 的 Riverpod provider（App 級單例）。
+///
+/// [ref] 為 Riverpod 的依賴參照。
+/// 回傳以預設 [Dio] 實例建立的 [FileDownloadService]。
+@Riverpod(keepAlive: true)
+FileDownloadService fileDownloadService(Ref ref) => FileDownloadService(Dio());
 
 /// 檔案下載服務，使用 [Dio] 將遠端檔案下載至本機路徑，內建指數退避重試機制。
 class FileDownloadService {
-  /// 建立 [FileDownloadService]，需傳入 [Dio] 實例。
+  /// 建立 [FileDownloadService]。
+  ///
+  /// [dio] 為負責執行 HTTP 請求的 [Dio] 實例。
   FileDownloadService(Dio dio) : _dio = dio;
 
   /// HTTP 客戶端，負責執行實際的檔案下載請求。
@@ -13,8 +25,12 @@ class FileDownloadService {
 
   /// 下載指定 [url] 的檔案並儲存至 [savePath]。
   ///
+  /// - [url]：遠端檔案的下載網址。
+  /// - [savePath]：本機儲存路徑。
+  ///
   /// 失敗時以指數退避策略重試最多 [_maxRetries] 次。
-  /// 成功回傳 [savePath]；全部重試耗盡後拋出最後一次的 [DioException]。
+  /// 回傳成功儲存後的 [savePath]。
+  /// 全部重試耗盡後拋出最後一次的 [DioException]。
   Future<String> downloadFile(String url, String savePath) async {
     DioException? lastError;
 

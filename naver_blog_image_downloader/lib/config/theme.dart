@@ -9,6 +9,8 @@ abstract final class AppTheme {
   static const Color _seedColor = Color(0xFF1565C0);
 
   /// 亮色主題，適用於一般日間使用情境。
+  ///
+  /// 回傳以 [_seedColor] 為基礎產生的亮色 [ThemeData]。
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -20,6 +22,8 @@ abstract final class AppTheme {
   }
 
   /// 暗色主題，適用於夜間或低光源使用情境。
+  ///
+  /// 回傳以 [_seedColor] 為基礎產生的暗色 [ThemeData]。
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,

@@ -7,6 +7,13 @@ import '../../../data/models/photo_entity.dart';
 /// 照片卡片元件，負責單張照片的縮圖顯示與選取互動。
 class PhotoCard extends StatelessWidget {
   /// 建立 [PhotoCard]。
+  ///
+  /// [photo] 為照片實體資料。
+  /// [cachedFile] 為本機快取的照片檔案，若尚未快取則為 `null`。
+  /// [isSelected] 表示此卡片是否已被選取。
+  /// [isSelectMode] 表示是否處於選取模式。
+  /// [onTap] 為非選取模式下點擊照片的回呼。
+  /// [onSelect] 為選取模式下點擊照片的回呼。
   const PhotoCard({
     super.key,
     required this.photo,
@@ -35,6 +42,11 @@ class PhotoCard extends StatelessWidget {
   /// 選取模式下點擊照片的回呼（切換選取狀態）。
   final VoidCallback onSelect;
 
+  /// 建構照片卡片的 Widget 樹。
+  ///
+  /// [context] 為目前的 [BuildContext]。
+  ///
+  /// 回傳包含縮圖與選取勾選框的堆疊 [Widget]。
   @override
   Widget build(BuildContext context) {
     return GestureDetector(

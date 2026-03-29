@@ -1,6 +1,16 @@
 import 'package:flutter/services.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../ui/core/app_error.dart';
+
+part 'gallery_service.g.dart';
+
+/// GalleryService 的 Riverpod provider（App 級單例）。
+///
+/// [ref] 為 Riverpod 的依賴參照。
+/// 回傳 [GalleryService] 實例。
+@Riverpod(keepAlive: true)
+GalleryService galleryService(Ref ref) => GalleryService();
 
 /// 系統相簿存取服務，透過 MethodChannel 呼叫原生 API 儲存照片。
 ///
@@ -15,8 +25,12 @@ class GalleryService {
 
   /// 將指定路徑的圖片檔案儲存至系統相簿。
   ///
+  /// - [filePath]：本機圖片檔案的絕對路徑。
+  /// - [totalCount]：本次批次的照片總數，用於原生端判斷是否需要批次優化，預設為 1。
+  ///
   /// 透過原生 API 直接寫入檔案，不經過 UIImage 或其他轉碼處理，
   /// 保留原始編碼與大小。iOS 會自動指派 IMG_xxxx 格式的檔名。
+  /// 失敗時拋出 [AppError]（type: [AppErrorType.gallery]）。
   Future<void> saveToGallery(String filePath, {int totalCount = 1}) async {
     try {
       await _channel.invokeMethod<bool>('saveToGallery', {
@@ -32,6 +46,8 @@ class GalleryService {
   }
 
   /// 請求相簿存取權限。
+  ///
+  /// 回傳 `true` 表示使用者已授權相簿存取；授權失敗或發生例外時回傳 `false`。
   Future<bool> requestPermission() async {
     try {
       final result = await _channel.invokeMethod<bool>('requestPermission');

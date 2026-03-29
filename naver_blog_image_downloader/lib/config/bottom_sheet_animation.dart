@@ -8,8 +8,10 @@ abstract final class BottomSheetAnimation {
   /// 建立平台特定的 [AnimationController]，傳入 `showModalBottomSheet` 的
   /// `transitionAnimationController` 參數即可套用。
   ///
-  /// - [vsync] 為動畫 ticker 來源，通常由 [SingleTickerProviderStateMixin] 提供。
-  /// - [platform] 決定使用 iOS 或 Android 的動畫時長。
+  /// [vsync] 為動畫 ticker 來源，通常由 [SingleTickerProviderStateMixin] 提供。
+  /// [platform] 決定使用 iOS 或 Android 的動畫時長。
+  ///
+  /// 回傳已設定展開與收合時長的 [AnimationController]。
   static AnimationController createController({
     required TickerProvider vsync,
     required TargetPlatform platform,

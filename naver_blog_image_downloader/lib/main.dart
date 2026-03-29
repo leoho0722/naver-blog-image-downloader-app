@@ -1,110 +1,35 @@
 import 'package:amplify_api/amplify_api.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'amplifyconfiguration.dart';
 import 'app.dart';
-import 'data/repositories/cache_repository.dart';
-import 'data/repositories/photo_repository.dart';
-import 'data/repositories/settings_repository.dart';
-import 'data/services/api_service.dart';
-import 'data/services/file_download_service.dart';
-import 'data/services/gallery_service.dart';
 import 'data/services/local_storage_service.dart';
-import 'ui/blog_input/view_model/blog_input_view_model.dart';
-import 'ui/core/view_model/app_settings_view_model.dart';
-import 'ui/download/view_model/download_view_model.dart';
-import 'ui/photo_detail/view_model/photo_detail_view_model.dart';
-import 'ui/photo_gallery/view_model/photo_gallery_view_model.dart';
-import 'ui/settings/view_model/settings_view_model.dart';
 
-/// 應用程式進入點，負責初始化 Amplify SDK 與依賴注入（DI），並啟動 [NaverPhotoApp]。
+/// 應用程式進入點，負責初始化 Amplify SDK 並啟動 [NaverPhotoApp]。
 ///
-/// 使用 [MultiProvider] 建立三層依賴結構：
-/// 1. **Service 層** — API 通訊（Amplify REST）、檔案下載、相簿存取
-/// 2. **Repository 層** — 快取管理、照片操作的統一存取介面
-/// 3. **ViewModel 層** — 各頁面的狀態管理
+/// 依序執行 Flutter binding 初始化、Amplify SDK 配置與 [SharedPreferences] 載入，
+/// 最後以 [ProviderScope] 建立 Riverpod 依賴注入容器，
+/// 透過 `overrides` 注入預先初始化的 [SharedPreferences] 並啟動應用程式。
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _configureAmplify();
   final prefs = await SharedPreferences.getInstance();
 
   runApp(
-    MultiProvider(
-      providers: [
-        // Service 層
-        Provider(create: (_) => ApiService()),
-        Provider(create: (_) => FileDownloadService(Dio())),
-        Provider(create: (_) => GalleryService()),
-        Provider(create: (_) => LocalStorageService(prefs: prefs)),
-        // Repository 層
-        Provider(create: (_) => CacheRepository()),
-        Provider(
-          create: (context) => SettingsRepository(
-            localStorageService: context.read<LocalStorageService>(),
-          ),
-        ),
-        ProxyProvider4<
-          ApiService,
-          FileDownloadService,
-          GalleryService,
-          CacheRepository,
-          PhotoRepository
-        >(
-          update: (_, api, download, gallery, cache, _) => PhotoRepository(
-            apiService: api,
-            fileDownloadService: download,
-            galleryService: gallery,
-            cacheRepository: cache,
-          ),
-        ),
-        // ViewModel 層
-        ChangeNotifierProvider(
-          create: (context) {
-            final vm = AppSettingsViewModel(
-              settingsRepository: context.read<SettingsRepository>(),
-            );
-            vm.loadSettings();
-            return vm;
-          },
-        ),
-        ChangeNotifierProvider(
-          create: (context) => BlogInputViewModel(
-            photoRepository: context.read<PhotoRepository>(),
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (context) => DownloadViewModel(
-            photoRepository: context.read<PhotoRepository>(),
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (context) => PhotoGalleryViewModel(
-            photoRepository: context.read<PhotoRepository>(),
-            cacheRepository: context.read<CacheRepository>(),
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (context) => PhotoDetailViewModel(
-            cacheRepository: context.read<CacheRepository>(),
-            photoRepository: context.read<PhotoRepository>(),
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (context) => SettingsViewModel(
-            cacheRepository: context.read<CacheRepository>(),
-          ),
-        ),
-      ],
+    ProviderScope(
+      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
       child: const NaverPhotoApp(),
     ),
   );
 }
 
 /// 初始化 Amplify SDK，註冊 REST API 插件。
+///
+/// 若 Amplify 已經初始化過（[AmplifyAlreadyConfiguredException]），
+/// 則靜默忽略；其他例外則印出錯誤訊息。
 Future<void> _configureAmplify() async {
   try {
     final apiPlugin = AmplifyAPI();

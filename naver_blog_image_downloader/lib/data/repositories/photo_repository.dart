@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/blog_cache_metadata.dart';
 import '../models/dtos/job_status_response.dart';
@@ -12,8 +13,23 @@ import '../services/api_service.dart';
 import '../services/file_download_service.dart';
 import '../services/gallery_service.dart';
 import '../../ui/core/app_error.dart';
-import '../../ui/core/result.dart';
 import 'cache_repository.dart';
+
+part 'photo_repository.g.dart';
+
+/// PhotoRepository 的 Riverpod provider（App 級單例）。
+///
+/// [ref] 為 Riverpod 的依賴參照，用於取得各 Service 與 Repository 的實例。
+/// 回傳注入所有依賴的 [PhotoRepository] 實例。
+@Riverpod(keepAlive: true)
+PhotoRepository photoRepository(Ref ref) {
+  return PhotoRepository(
+    apiService: ref.watch(apiServiceProvider),
+    fileDownloadService: ref.watch(fileDownloadServiceProvider),
+    galleryService: ref.watch(galleryServiceProvider),
+    cacheRepository: ref.watch(cacheRepositoryProvider),
+  );
+}
 
 /// 照片 Repository，負責協調 API 呼叫、快取與相簿儲存操作。
 ///
@@ -21,6 +37,11 @@ import 'cache_repository.dart';
 /// [FileDownloadService] 與 [GalleryService] 的操作組合為上層可直接使用的用例。
 class PhotoRepository {
   /// 建立 [PhotoRepository]，需注入所有依賴的服務與子 Repository。
+  ///
+  /// - [apiService]：API 通訊服務，負責提交爬蟲任務與查詢狀態。
+  /// - [cacheRepository]：快取 Repository，負責本機檔案快取與 metadata 管理。
+  /// - [fileDownloadService]：檔案下載服務，負責從遠端 URL 下載圖片。
+  /// - [galleryService]：系統相簿存取服務，負責將照片儲存至使用者相簿。
   PhotoRepository({
     required ApiService apiService,
     required CacheRepository cacheRepository,
@@ -54,156 +75,142 @@ class PhotoRepository {
 
   /// 取得指定 Blog URL 的照片列表（非同步任務模式）。
   ///
+  /// - [blogUrl]：要爬取的 Naver Blog 完整網址。
+  /// - [onStatusChanged]：任務狀態變更時的回呼，可用於通知 UI 目前的 [JobStatus]。
+  ///
   /// 流程：
   /// 1. 以 [CacheRepository.blogId] 產生 blogId
   /// 2. 呼叫 [ApiService.submitJob] 提交非同步爬蟲任務
   /// 3. 每 3 秒輪詢 [ApiService.checkJobStatus] 直到完成或失敗
   /// 4. 透過 [PhotoDownloadResponse.toEntities] 將 URL 轉為 [PhotoEntity]
   /// 5. 檢查快取狀態
-  /// 6. 回傳 [Result.ok] 包含 [FetchResult]，例外時回傳 [Result.error]
   ///
-  /// [onStatusChanged] 可用於通知 UI 目前的任務狀態。
-  Future<Result<FetchResult>> fetchPhotos(
+  /// 回傳 [FetchResult]，包含照片清單、blogId 與快取狀態。
+  /// 伺服器處理失敗時拋出 [AppError]（type: [AppErrorType.serverError]）。
+  /// 輪詢逾時時拋出 [AppError]（type: [AppErrorType.timeout]）。
+  Future<FetchResult> fetchPhotos(
     String blogUrl, {
     void Function(JobStatus status)? onStatusChanged,
   }) async {
-    try {
-      final blogId = _cacheRepository.blogId(blogUrl);
+    final blogId = _cacheRepository.blogId(blogUrl);
 
-      // 快取優先：若 metadata 存在且所有檔案完整快取，直接回傳
-      final metadata = await _cacheRepository.metadata(blogId);
-      if (metadata != null) {
-        final isFullyCached = await _cacheRepository.isBlogFullyCached(
-          blogId,
-          metadata.filenames,
-        );
-        if (isFullyCached) {
-          final photos = metadata.filenames
-              .asMap()
-              .entries
-              .map(
-                (e) => PhotoEntity(
-                  id: 'photo_${e.key}',
-                  url: '',
-                  filename: e.value,
-                ),
-              )
-              .toList();
-          return Result.ok(
-            FetchResult(
-              photos: photos,
-              blogId: blogId,
-              blogUrl: blogUrl,
-              isFullyCached: true,
-            ),
-          );
-        }
-      }
-
-      // 提交非同步任務
-      final jobId = await _apiService.submitJob(blogUrl);
-      onStatusChanged?.call(JobStatus.processing);
-
-      // 輪詢任務狀態
-      for (var attempt = 0; attempt < _maxPollAttempts; attempt++) {
-        await Future<void>.delayed(_pollInterval);
-
-        final jobStatus = await _apiService.checkJobStatus(jobId);
-        onStatusChanged?.call(jobStatus.status);
-
-        switch (jobStatus.status) {
-          case JobStatus.processing:
-            continue;
-
-          case JobStatus.completed:
-            final response = jobStatus.result!;
-            final photos = response.toEntities();
-            final filenames = photos.map((p) => p.filename).toList();
-            final isFullyCached = await _cacheRepository.isBlogFullyCached(
-              blogId,
-              filenames,
-            );
-
-            return Result.ok(
-              FetchResult(
-                photos: photos,
-                blogId: blogId,
-                blogUrl: blogUrl,
-                isFullyCached: isFullyCached,
-                totalImages: response.totalImages,
-                failureDownloads: response.failureDownloads,
-                fetchErrors: response.errors,
-              ),
-            );
-
-          case JobStatus.failed:
-            final errors = jobStatus.result?.errors ?? [];
-            final message = errors.isNotEmpty ? errors.join('; ') : '伺服器處理失敗';
-            return Result.error(
-              AppError(type: AppErrorType.serverError, message: message),
-            );
-        }
-      }
-
-      return Result.error(
-        const AppError(type: AppErrorType.timeout, message: '任務處理逾時，請稍後再試'),
+    // 快取優先：若 metadata 存在且所有檔案完整快取，直接回傳
+    final metadata = await _cacheRepository.metadata(blogId);
+    if (metadata != null) {
+      final isFullyCached = await _cacheRepository.isBlogFullyCached(
+        blogId,
+        metadata.filenames,
       );
-    } on Exception catch (e) {
-      return Result.error(e);
+      if (isFullyCached) {
+        final photos = metadata.filenames
+            .asMap()
+            .entries
+            .map(
+              (e) =>
+                  PhotoEntity(id: 'photo_${e.key}', url: '', filename: e.value),
+            )
+            .toList();
+        return FetchResult(
+          photos: photos,
+          blogId: blogId,
+          blogUrl: blogUrl,
+          isFullyCached: true,
+        );
+      }
     }
+
+    // 提交非同步任務
+    final jobId = await _apiService.submitJob(blogUrl);
+    onStatusChanged?.call(JobStatus.processing);
+
+    // 輪詢任務狀態
+    for (var attempt = 0; attempt < _maxPollAttempts; attempt++) {
+      await Future<void>.delayed(_pollInterval);
+
+      final jobStatus = await _apiService.checkJobStatus(jobId);
+      onStatusChanged?.call(jobStatus.status);
+
+      switch (jobStatus.status) {
+        case JobStatus.processing:
+          continue;
+
+        case JobStatus.completed:
+          final response = jobStatus.result!;
+          final photos = response.toEntities();
+          final filenames = photos.map((p) => p.filename).toList();
+          final isFullyCached = await _cacheRepository.isBlogFullyCached(
+            blogId,
+            filenames,
+          );
+
+          return FetchResult(
+            photos: photos,
+            blogId: blogId,
+            blogUrl: blogUrl,
+            isFullyCached: isFullyCached,
+            totalImages: response.totalImages,
+            failureDownloads: response.failureDownloads,
+            fetchErrors: response.errors,
+          );
+
+        case JobStatus.failed:
+          final errors = jobStatus.result?.errors ?? [];
+          final message = errors.isNotEmpty ? errors.join('; ') : '伺服器處理失敗';
+          throw AppError(type: AppErrorType.serverError, message: message);
+      }
+    }
+
+    throw const AppError(type: AppErrorType.timeout, message: '任務處理逾時，請稍後再試');
   }
 
   /// 將單張照片儲存至系統相簿。
   ///
+  /// [filePath] 為本機照片檔案的絕對路徑。
+  ///
   /// 先透過 [GalleryService.requestPermission] 確認權限，
   /// 再呼叫 [GalleryService.saveToGallery] 寫入相簿。
-  /// 成功回傳 [Result.ok]，權限不足或例外回傳 [Result.error]。
-  Future<Result<void>> saveOneToGallery(String filePath) async {
-    try {
-      final hasPermission = await _galleryService.requestPermission();
-      if (!hasPermission) {
-        return Result.error(
-          const AppError(type: AppErrorType.gallery, message: '相簿權限未授權'),
-        );
-      }
-      await _galleryService.saveToGallery(filePath);
-      return Result.ok(null);
-    } on Exception catch (e) {
-      return Result.error(e);
+  /// 權限不足時拋出 [AppError]（type: [AppErrorType.gallery]）。
+  Future<void> saveOneToGallery(String filePath) async {
+    final hasPermission = await _galleryService.requestPermission();
+    if (!hasPermission) {
+      throw const AppError(type: AppErrorType.gallery, message: '相簿權限未授權');
     }
+    await _galleryService.saveToGallery(filePath);
   }
 
   /// 從快取讀取照片檔案並逐一儲存至系統相簿，完成後標記 metadata。
   ///
+  /// - [photos]：要儲存的照片實體清單。
+  /// - [blogId]：Blog 的唯一識別碼，用於查詢快取檔案。
+  ///
   /// 若快取中找不到某張照片的檔案，則跳過該張照片繼續處理。
-  /// 成功回傳 [Result.ok]，任何例外回傳 [Result.error]。
-  Future<Result<void>> saveToGalleryFromCache({
+  /// 儲存完成後會呼叫 [CacheRepository.markAsSavedToGallery] 標記 metadata。
+  /// 失敗時直接拋出例外。
+  Future<void> saveToGalleryFromCache({
     required List<PhotoEntity> photos,
     required String blogId,
   }) async {
-    try {
-      for (final photo in photos) {
-        final file = await _cacheRepository.cachedFile(photo.filename, blogId);
-        if (file == null) continue;
-        await _galleryService.saveToGallery(
-          file.path,
-          totalCount: photos.length,
-        );
-      }
-      await _cacheRepository.markAsSavedToGallery(blogId);
-      return Result.ok(null);
-    } on Exception catch (e) {
-      return Result.error(e);
+    for (final photo in photos) {
+      final file = await _cacheRepository.cachedFile(photo.filename, blogId);
+      if (file == null) continue;
+      await _galleryService.saveToGallery(file.path, totalCount: photos.length);
     }
+    await _cacheRepository.markAsSavedToGallery(blogId);
   }
 
   /// 將照片列表並行下載至本地快取。
   ///
-  /// - 最多 _maxConcurrency 條並行下載（分批 Future.wait）
-  /// - 已快取的檔案自動跳過
-  /// - 單一下載失敗不中斷整批下載
-  /// - 完成後更新 [BlogCacheMetadata]
-  /// - 回傳 [DownloadBatchResult] 包含成功、失敗、跳過統計
+  /// - [photos]：要下載的照片實體清單。
+  /// - [blogId]：Blog 的唯一識別碼，決定快取子目錄。
+  /// - [blogUrl]：原始 Blog 網址，用於記錄 [BlogCacheMetadata]。
+  /// - [onProgress]：每完成一張照片（含跳過與失敗）時觸發的進度回呼，
+  ///   參數為 `(completed, total)`。
+  ///
+  /// 最多 [_maxConcurrency] 條並行下載（分批 `Future.wait`），
+  /// 已快取的檔案自動跳過，單一下載失敗不中斷整批下載。
+  /// 完成後更新 [BlogCacheMetadata]。
+  ///
+  /// 回傳 [DownloadBatchResult]，包含成功、失敗與跳過的統計。
   Future<DownloadBatchResult> downloadAllToCache({
     required List<PhotoEntity> photos,
     required String blogId,

@@ -15,6 +15,8 @@ enum SupportedLocale {
   ko(Locale('ko'), '한국어');
 
   /// 建立 [SupportedLocale]。
+  ///
+  /// [locale] 為對應的 [Locale] 物件，[label] 為該語言的原生名稱。
   const SupportedLocale(this.locale, this.label);
 
   /// 對應的 [Locale] 物件。

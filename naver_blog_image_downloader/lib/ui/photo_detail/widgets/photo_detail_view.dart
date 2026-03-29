@@ -2,26 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:naver_blog_image_downloader/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/photo_entity.dart';
 import '../view_model/photo_detail_view_model.dart';
 import 'photo_detail_capsule_bar.dart';
 
 /// 照片詳細頁面，以全螢幕顯示照片並支援手勢縮放、水平滑動切換與沈浸模式。
-class PhotoDetailView extends StatefulWidget {
-  /// 建立 [PhotoDetailView]，需指定要顯示的 [photoId]。
+class PhotoDetailView extends ConsumerStatefulWidget {
+  /// 建立 [PhotoDetailView]。
+  ///
+  /// [photoId] 為要顯示的照片識別碼。
   const PhotoDetailView({super.key, required this.photoId});
 
   /// 要顯示的照片識別碼，由路由參數傳入。
   final String photoId;
 
+  /// 建立 [PhotoDetailView] 對應的 [ConsumerState]。
+  ///
+  /// 回傳 [_PhotoDetailViewState] 實例。
   @override
-  State<PhotoDetailView> createState() => _PhotoDetailViewState();
+  ConsumerState<PhotoDetailView> createState() => _PhotoDetailViewState();
 }
 
 /// [PhotoDetailView] 的狀態管理類，處理照片分頁、手勢縮放與沈浸模式切換。
-class _PhotoDetailViewState extends State<PhotoDetailView> {
+class _PhotoDetailViewState extends ConsumerState<PhotoDetailView> {
   /// 是否已完成初始載入（防止 [didChangeDependencies] 重複觸發）。
   bool _loaded = false;
 
@@ -61,11 +66,9 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
         _pageController = PageController(initialPage: extra.initialIndex);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            context.read<PhotoDetailViewModel>().loadAll(
-              extra.photos,
-              extra.blogId,
-              extra.initialIndex,
-            );
+            ref
+                .read(photoDetailViewModelProvider.notifier)
+                .loadAll(extra.photos, extra.blogId, extra.initialIndex);
           }
         });
       }
@@ -101,10 +104,12 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
 
   /// 建構照片詳細頁面的 Widget 樹。
   ///
+  /// [context] 為目前的 [BuildContext]，用於取得本地化資源與安全區域資訊。
+  ///
   /// 回傳包含全螢幕 PageView、頂部覆蓋列與底部膠囊操作列的 [Scaffold]。
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<PhotoDetailViewModel>();
+    final state = ref.watch(photoDetailViewModelProvider);
     final l10n = AppLocalizations.of(context);
     final topPadding = MediaQuery.of(context).padding.top;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
@@ -113,7 +118,7 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
       backgroundColor: _isImmersive
           ? Colors.black
           : Theme.of(context).scaffoldBackgroundColor,
-      body: viewModel.photos.isEmpty
+      body: state.photos.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
@@ -123,14 +128,16 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
                   physics: _isZoomed
                       ? const NeverScrollableScrollPhysics()
                       : const PageScrollPhysics(),
-                  itemCount: viewModel.totalCount,
+                  itemCount: state.totalCount,
                   onPageChanged: (index) {
-                    viewModel.setCurrentIndex(index);
+                    ref
+                        .read(photoDetailViewModelProvider.notifier)
+                        .setCurrentIndex(index);
                     _transformationController.value = Matrix4.identity();
                   },
                   itemBuilder: (context, index) {
-                    final file = index == viewModel.currentIndex
-                        ? viewModel.cachedFile
+                    final file = index == state.currentIndex
+                        ? state.cachedFile
                         : null;
 
                     return GestureDetector(
@@ -171,8 +178,8 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
                         const Spacer(),
                         Text(
                           l10n.detailPhotoCounter(
-                            viewModel.currentIndex + 1,
-                            viewModel.totalCount,
+                            state.currentIndex + 1,
+                            state.totalCount,
                           ),
                           style: TextStyle(
                             color:
@@ -202,9 +209,11 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
                       padding: EdgeInsets.only(bottom: bottomPadding + 20),
                       child: Center(
                         child: PhotoDetailCapsuleBar(
-                          onInfoTap: () => _showInfoSheet(context, viewModel),
-                          onSaveTap: viewModel.saveToGallery,
-                          saveState: viewModel.saveState,
+                          onInfoTap: () => _showInfoSheet(context, state),
+                          onSaveTap: ref
+                              .read(photoDetailViewModelProvider.notifier)
+                              .saveToGallery,
+                          saveOperation: state.saveOperation,
                         ),
                       ),
                     ),
@@ -218,8 +227,8 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
   /// 以 bottom sheet 顯示當前照片的檔案資訊（大小、尺寸）。
   ///
   /// [context] 為當前的 BuildContext，用於開啟 bottom sheet。
-  /// [viewModel] 為照片詳細頁面的 ViewModel，提供檔案大小與尺寸資訊。
-  void _showInfoSheet(BuildContext context, PhotoDetailViewModel viewModel) {
+  /// [state] 為照片詳細頁面的狀態，提供檔案大小與尺寸資訊。
+  void _showInfoSheet(BuildContext context, PhotoDetailState state) {
     final l10n = AppLocalizations.of(context);
     showModalBottomSheet<void>(
       context: context,
@@ -236,11 +245,11 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
             const SizedBox(height: 16),
             _InfoRow(
               label: l10n.detailFileSize,
-              value: viewModel.formattedFileSize,
+              value: state.formattedFileSize,
             ),
             _InfoRow(
               label: l10n.detailDimensions,
-              value: viewModel.formattedDimensions,
+              value: state.formattedDimensions,
             ),
             const SizedBox(height: 8),
           ],
@@ -253,6 +262,9 @@ class _PhotoDetailViewState extends State<PhotoDetailView> {
 /// 資訊列元件，以「標籤：值」的水平排列顯示單項照片資訊。
 class _InfoRow extends StatelessWidget {
   /// 建立 [_InfoRow]。
+  ///
+  /// [label] 為左側標籤文字。
+  /// [value] 為右側數值文字。
   const _InfoRow({required this.label, required this.value});
 
   /// 左側標籤文字（例如「檔案大小」）。
@@ -261,6 +273,11 @@ class _InfoRow extends StatelessWidget {
   /// 右側數值文字（例如「1.5 MB」）。
   final String value;
 
+  /// 建構資訊列的 Widget 樹。
+  ///
+  /// [context] 為目前的 [BuildContext]，用於取得主題文字樣式與配色。
+  ///
+  /// 回傳包含標籤與數值的水平排列 [Widget]。
   @override
   Widget build(BuildContext context) {
     return Padding(

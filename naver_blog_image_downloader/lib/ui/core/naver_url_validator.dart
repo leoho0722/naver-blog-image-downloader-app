@@ -8,8 +8,12 @@ abstract final class NaverUrlValidator {
 
   /// 驗證 [url] 是否為合法的 Naver Blog 網址。
   ///
+  /// - [url]：待驗證的網址字串。
+  ///
   /// 合法範例：
   /// - `https://blog.naver.com/example/12345`
   /// - `https://m.blog.naver.com/example/12345`
+  ///
+  /// 回傳 `true` 表示為合法的 Naver Blog 網址，否則回傳 `false`。
   static bool isValid(String url) => _pattern.hasMatch(url);
 }

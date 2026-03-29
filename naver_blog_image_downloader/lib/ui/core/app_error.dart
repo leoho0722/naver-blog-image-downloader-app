@@ -25,7 +25,8 @@ enum AppErrorType {
 class AppError implements Exception {
   /// 建立 [AppError]。
   ///
-  /// [type] 指定錯誤類型，[message] 為使用者可讀的錯誤描述。
+  /// - [type]：指定錯誤類型，用於判斷錯誤來源。
+  /// - [message]：使用者可讀的錯誤描述，供 UI 顯示或日誌紀錄使用。
   const AppError({required this.type, required this.message});
 
   /// 錯誤類型，用於判斷錯誤來源。
@@ -34,6 +35,7 @@ class AppError implements Exception {
   /// 錯誤描述訊息，供 UI 顯示或日誌紀錄使用。
   final String message;
 
+  /// 回傳此錯誤的字串表示，格式為 `AppError(<type>: <message>)`。
   @override
   String toString() => 'AppError(${type.name}: $message)';
 }

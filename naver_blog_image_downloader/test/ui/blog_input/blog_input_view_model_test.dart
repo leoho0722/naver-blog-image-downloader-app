@@ -1,24 +1,18 @@
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:naver_blog_image_downloader/data/models/fetch_result.dart';
 import 'package:naver_blog_image_downloader/data/models/photo_entity.dart';
 import 'package:naver_blog_image_downloader/data/repositories/photo_repository.dart';
 import 'package:naver_blog_image_downloader/ui/blog_input/view_model/blog_input_view_model.dart';
-import 'package:naver_blog_image_downloader/ui/core/result.dart';
-
-// ignore: unused_import —確保 FetchState 子類別可用於 type check
-// FetchState, FetchIdle, FetchLoading, FetchError, FetchSuccess
-// 已在 blog_input_view_model.dart 中定義並透過上方 import 匯入。
 
 class MockPhotoRepository extends Mock implements PhotoRepository {}
 
 void main() {
   late MockPhotoRepository mockPhotoRepository;
-  late BlogInputViewModel viewModel;
-
-  setUpAll(() {
-    registerFallbackValue((dynamic _) {});
-  });
+  late ProviderContainer container;
 
   const testBlogUrl = 'https://blog.naver.com/test/12345';
 
@@ -35,78 +29,100 @@ void main() {
     isFullyCached: false,
   );
 
+  BlogInputState readState() => container.read(blogInputViewModelProvider);
+  BlogInputViewModel readNotifier() =>
+      container.read(blogInputViewModelProvider.notifier);
+
   setUp(() {
     mockPhotoRepository = MockPhotoRepository();
-    viewModel = BlogInputViewModel(photoRepository: mockPhotoRepository);
+    container = ProviderContainer(
+      overrides: [
+        photoRepositoryProvider.overrideWithValue(mockPhotoRepository),
+      ],
+    );
+    container.listen(blogInputViewModelProvider, (_, _) {});
+    addTearDown(container.dispose);
   });
 
   group('URL input state management', () {
     test('初始狀態正確', () {
-      expect(viewModel.blogUrl, '');
-      expect(viewModel.isLoading, isFalse);
-      expect(viewModel.fetchState, isA<FetchIdle>());
-      expect(viewModel.fetchResult, isNull);
+      final state = readState();
+      expect(state.blogUrl, '');
+      expect(state.isLoading, isFalse);
+      expect(state.fetchResult, isA<AsyncData<FetchResult?>>());
+      expect(state.fetchResult.value, isNull);
+      expect(state.fetchResultValue, isNull);
     });
 
     test('onUrlChanged 更新 blogUrl 並通知 listeners', () {
-      int notifyCount = 0;
-      viewModel.addListener(() => notifyCount++);
+      final states = <BlogInputState>[];
+      container.listen(
+        blogInputViewModelProvider,
+        (prev, next) => states.add(next),
+      );
 
-      viewModel.onUrlChanged(testBlogUrl);
+      readNotifier().onUrlChanged(testBlogUrl);
 
-      expect(viewModel.blogUrl, testBlogUrl);
-      expect(notifyCount, 1);
+      expect(readState().blogUrl, testBlogUrl);
+      expect(states.length, 1);
     });
 
-    test('onUrlChanged 清除 fetchState 中的錯誤', () {
-      // 先產生一個 error
-      viewModel.fetchPhotos(); // blogUrl 為空會設定 FetchError
-      expect(viewModel.fetchState, isA<FetchError>());
+    test('onUrlChanged 清除 fetchResult 中的錯誤', () async {
+      // 先產生一個 error（blogUrl 為空會設定 FetchException）
+      await readNotifier().fetchPhotos();
+      expect(readState().fetchResult, isA<AsyncError<FetchResult?>>());
 
-      viewModel.onUrlChanged(testBlogUrl);
+      readNotifier().onUrlChanged(testBlogUrl);
 
-      expect(viewModel.fetchState, isA<FetchIdle>());
+      final state = readState();
+      expect(state.fetchResult, isA<AsyncData<FetchResult?>>());
+      expect(state.fetchResult.value, isNull);
     });
   });
 
   group('Empty URL validation', () {
-    test('blogUrl 為空時設定 FetchError(emptyUrl) 且不呼叫 repository', () async {
-      int notifyCount = 0;
-      viewModel.addListener(() => notifyCount++);
-
-      await viewModel.fetchPhotos();
-
-      expect(viewModel.fetchState, isA<FetchError>());
-      expect(
-        (viewModel.fetchState as FetchError).errorType,
-        FetchErrorType.emptyUrl,
+    test('blogUrl 為空時設定 FetchException(emptyUrl) 且不呼叫 repository', () async {
+      final states = <BlogInputState>[];
+      container.listen(
+        blogInputViewModelProvider,
+        (prev, next) => states.add(next),
       );
-      expect(viewModel.isLoading, isFalse);
-      expect(notifyCount, 1);
+
+      await readNotifier().fetchPhotos();
+
+      final state = readState();
+      expect(state.fetchResult, isA<AsyncError<FetchResult?>>());
+      final error = (state.fetchResult as AsyncError).error;
+      expect(error, isA<FetchException>());
+      expect((error as FetchException).errorType, FetchErrorType.emptyUrl);
+      expect(state.isLoading, isFalse);
+      expect(states.length, 1);
       verifyNever(() => mockPhotoRepository.fetchPhotos(any()));
     });
   });
 
   group('Fetch photos with loading state', () {
     test('成功取得照片', () async {
-      viewModel.onUrlChanged(testBlogUrl);
+      readNotifier().onUrlChanged(testBlogUrl);
 
       when(
         () => mockPhotoRepository.fetchPhotos(
           testBlogUrl,
           onStatusChanged: any(named: 'onStatusChanged'),
         ),
-      ).thenAnswer((_) async => Result.ok(testFetchResult));
+      ).thenAnswer((_) async => testFetchResult);
 
-      await viewModel.fetchPhotos();
+      await readNotifier().fetchPhotos();
 
-      expect(viewModel.isLoading, isFalse);
-      expect(viewModel.fetchResult, testFetchResult);
-      expect(viewModel.fetchState, isA<FetchSuccess>());
+      final state = readState();
+      expect(state.isLoading, isFalse);
+      expect(state.fetchResult.value, testFetchResult);
+      expect(state.fetchResult, isA<AsyncData<FetchResult?>>());
+      expect(state.fetchResult.value, isNotNull);
     });
 
     test('fetchPhotos 開始時 isLoading 設為 true', () async {
-      viewModel.onUrlChanged(testBlogUrl);
+      readNotifier().onUrlChanged(testBlogUrl);
 
       bool wasLoadingDuringFetch = false;
       when(
@@ -115,18 +131,18 @@ void main() {
           onStatusChanged: any(named: 'onStatusChanged'),
         ),
       ).thenAnswer((_) async {
-        wasLoadingDuringFetch = viewModel.isLoading;
-        return Result.ok(testFetchResult);
+        wasLoadingDuringFetch = readState().isLoading;
+        return testFetchResult;
       });
 
-      await viewModel.fetchPhotos();
+      await readNotifier().fetchPhotos();
 
       expect(wasLoadingDuringFetch, isTrue);
-      expect(viewModel.isLoading, isFalse);
+      expect(readState().isLoading, isFalse);
     });
 
-    test('取得照片失敗時 fetchState 設為 FetchError', () async {
-      viewModel.onUrlChanged(testBlogUrl);
+    test('取得照片失敗時 fetchResult 設為 AsyncError', () async {
+      readNotifier().onUrlChanged(testBlogUrl);
 
       final exception = Exception('Network error');
       when(
@@ -134,40 +150,40 @@ void main() {
           testBlogUrl,
           onStatusChanged: any(named: 'onStatusChanged'),
         ),
-      ).thenAnswer((_) async => Result.error(exception));
+      ).thenThrow(exception);
 
-      await viewModel.fetchPhotos();
+      await readNotifier().fetchPhotos();
 
-      expect(viewModel.isLoading, isFalse);
-      expect(viewModel.fetchState, isA<FetchError>());
-      expect(
-        (viewModel.fetchState as FetchError).errorType,
-        FetchErrorType.unknown,
-      );
-      expect(viewModel.fetchResult, isNull);
+      final state = readState();
+      expect(state.isLoading, isFalse);
+      expect(state.fetchResult, isA<AsyncError<FetchResult?>>());
+      final error = (state.fetchResult as AsyncError).error;
+      expect(error, isA<FetchException>());
+      expect((error as FetchException).errorType, FetchErrorType.unknown);
+      expect(state.fetchResult.value, isNull);
     });
 
     test(
       'isLoading 為 true 時不重複呼叫 repository（duplicate fetch prevention）',
       () async {
-        viewModel.onUrlChanged(testBlogUrl);
+        readNotifier().onUrlChanged(testBlogUrl);
 
-        final completer = Future<Result<FetchResult>>.delayed(
-          const Duration(milliseconds: 100),
-          () => Result.ok(testFetchResult),
-        );
+        final completer = Completer<FetchResult>();
 
         when(
           () => mockPhotoRepository.fetchPhotos(
             testBlogUrl,
             onStatusChanged: any(named: 'onStatusChanged'),
           ),
-        ).thenAnswer((_) => completer);
+        ).thenAnswer((_) => completer.future);
 
         // 同時觸發兩次 fetchPhotos
-        final future1 = viewModel.fetchPhotos();
-        final future2 = viewModel.fetchPhotos(); // 應該立即回傳
+        final future1 = readNotifier().fetchPhotos();
+        final future2 = readNotifier()
+            .fetchPhotos(); // 應該立即回傳（isLoading 為 true）
 
+        // 完成 future 後等待兩個 fetchPhotos 結束
+        completer.complete(testFetchResult);
         await Future.wait([future1, future2]);
 
         // repository 只被呼叫一次
@@ -181,68 +197,73 @@ void main() {
     );
 
     test('通知 listeners 在 loading 開始和結束時各一次（加上 URL 變更）', () async {
-      final notifications = <bool>[];
-      viewModel.addListener(() {
-        notifications.add(viewModel.isLoading);
-      });
+      final states = <BlogInputState>[];
+      container.listen(
+        blogInputViewModelProvider,
+        (prev, next) => states.add(next),
+      );
 
-      viewModel.onUrlChanged(testBlogUrl);
+      readNotifier().onUrlChanged(testBlogUrl);
 
       when(
         () => mockPhotoRepository.fetchPhotos(
           testBlogUrl,
           onStatusChanged: any(named: 'onStatusChanged'),
         ),
-      ).thenAnswer((_) async => Result.ok(testFetchResult));
+      ).thenAnswer((_) async => testFetchResult);
 
-      await viewModel.fetchPhotos();
+      await readNotifier().fetchPhotos();
 
       // onUrlChanged: 1 次, fetchPhotos: loading=true 1 次 + 完成 1 次 = 共 3 次
-      expect(notifications.length, 3);
-      expect(notifications[0], isFalse); // onUrlChanged 時 isLoading 仍為 false
-      expect(notifications[1], isTrue); // fetchPhotos 開始 loading
-      expect(notifications[2], isFalse); // fetchPhotos 完成
+      expect(states.length, 3);
+      expect(states[0].isLoading, isFalse); // onUrlChanged 時 isLoading 仍為 false
+      expect(states[1].isLoading, isTrue); // fetchPhotos 開始 loading
+      expect(states[2].isLoading, isFalse); // fetchPhotos 完成
     });
   });
 
   group('Reset state', () {
-    test('reset 清除 fetchResult 並將 fetchState 重設為 FetchIdle', () async {
+    test('reset 清除 fetchResult 並將 fetchResult 重設為初始值', () async {
       // 先取得一個成功結果
-      viewModel.onUrlChanged(testBlogUrl);
+      readNotifier().onUrlChanged(testBlogUrl);
       when(
         () => mockPhotoRepository.fetchPhotos(
           testBlogUrl,
           onStatusChanged: any(named: 'onStatusChanged'),
         ),
-      ).thenAnswer((_) async => Result.ok(testFetchResult));
-      await viewModel.fetchPhotos();
-      expect(viewModel.fetchResult, isNotNull);
+      ).thenAnswer((_) async => testFetchResult);
+      await readNotifier().fetchPhotos();
+      expect(readState().fetchResult.value, isNotNull);
 
-      int notifyCount = 0;
-      viewModel.addListener(() => notifyCount++);
+      final states = <BlogInputState>[];
+      container.listen(
+        blogInputViewModelProvider,
+        (prev, next) => states.add(next),
+      );
 
-      viewModel.reset();
+      readNotifier().reset();
 
-      expect(viewModel.fetchResult, isNull);
-      expect(viewModel.fetchState, isA<FetchIdle>());
-      expect(notifyCount, 1);
+      final state = readState();
+      expect(state.fetchResult.value, isNull);
+      expect(state.fetchResult, isA<AsyncData<FetchResult?>>());
+      expect(states.length, 1);
     });
 
     test('reset 後仍可重新 fetchPhotos', () async {
-      viewModel.onUrlChanged(testBlogUrl);
+      readNotifier().onUrlChanged(testBlogUrl);
       when(
         () => mockPhotoRepository.fetchPhotos(
           testBlogUrl,
           onStatusChanged: any(named: 'onStatusChanged'),
         ),
-      ).thenAnswer((_) async => Result.ok(testFetchResult));
+      ).thenAnswer((_) async => testFetchResult);
 
-      await viewModel.fetchPhotos();
-      viewModel.reset();
-      expect(viewModel.fetchResult, isNull);
+      await readNotifier().fetchPhotos();
+      readNotifier().reset();
+      expect(readState().fetchResult.value, isNull);
 
-      await viewModel.fetchPhotos();
-      expect(viewModel.fetchResult, testFetchResult);
+      await readNotifier().fetchPhotos();
+      expect(readState().fetchResult.value, testFetchResult);
       verify(
         () => mockPhotoRepository.fetchPhotos(
           testBlogUrl,
@@ -251,69 +272,73 @@ void main() {
       ).called(2);
     });
 
-    test('reset 清除 fetchState 中的錯誤', () async {
-      viewModel.onUrlChanged(testBlogUrl);
+    test('reset 清除 fetchResult 中的錯誤', () async {
+      readNotifier().onUrlChanged(testBlogUrl);
       final exception = Exception('Some error');
       when(
         () => mockPhotoRepository.fetchPhotos(
           testBlogUrl,
           onStatusChanged: any(named: 'onStatusChanged'),
         ),
-      ).thenAnswer((_) async => Result.error(exception));
+      ).thenThrow(exception);
 
-      await viewModel.fetchPhotos();
-      expect(viewModel.fetchState, isA<FetchError>());
+      await readNotifier().fetchPhotos();
+      expect(readState().fetchResult, isA<AsyncError<FetchResult?>>());
 
-      viewModel.reset();
-      expect(viewModel.fetchState, isA<FetchIdle>());
+      readNotifier().reset();
+      final state = readState();
+      expect(state.fetchResult, isA<AsyncData<FetchResult?>>());
+      expect(state.fetchResult.value, isNull);
     });
   });
 
-  group('FetchState 狀態轉換', () {
-    test('初始 fetchState 為 FetchIdle', () {
-      expect(viewModel.fetchState, isA<FetchIdle>());
+  group('BlogInputState 狀態轉換', () {
+    test('初始 fetchResult 為 AsyncData(null)', () {
+      final state = readState();
+      expect(state.fetchResult, isA<AsyncData<FetchResult?>>());
+      expect(state.fetchResult.value, isNull);
     });
 
-    test('fetchPhotos 執行中 fetchState 轉為 FetchLoading', () async {
-      viewModel.onUrlChanged(testBlogUrl);
+    test('fetchPhotos 執行中 fetchResult 轉為 AsyncLoading', () async {
+      readNotifier().onUrlChanged(testBlogUrl);
 
-      FetchState? stateDuringFetch;
+      BlogInputState? stateDuringFetch;
       when(
         () => mockPhotoRepository.fetchPhotos(
           testBlogUrl,
           onStatusChanged: any(named: 'onStatusChanged'),
         ),
       ).thenAnswer((_) async {
-        stateDuringFetch = viewModel.fetchState;
-        return Result.ok(testFetchResult);
+        stateDuringFetch = readState();
+        return testFetchResult;
       });
 
-      await viewModel.fetchPhotos();
+      await readNotifier().fetchPhotos();
 
-      expect(stateDuringFetch, isA<FetchLoading>());
-      final loading = stateDuringFetch! as FetchLoading;
-      expect(loading.phase, FetchLoadingPhase.submitting);
+      expect(stateDuringFetch, isNotNull);
+      expect(stateDuringFetch!.fetchResult, isA<AsyncLoading<FetchResult?>>());
+      expect(stateDuringFetch!.loadingPhase, FetchLoadingPhase.submitting);
     });
 
-    test('fetchPhotos 成功後 fetchState 轉為 FetchSuccess', () async {
-      viewModel.onUrlChanged(testBlogUrl);
+    test('fetchPhotos 成功後 fetchResult 轉為 AsyncData 且值非 null', () async {
+      readNotifier().onUrlChanged(testBlogUrl);
 
       when(
         () => mockPhotoRepository.fetchPhotos(
           testBlogUrl,
           onStatusChanged: any(named: 'onStatusChanged'),
         ),
-      ).thenAnswer((_) async => Result.ok(testFetchResult));
+      ).thenAnswer((_) async => testFetchResult);
 
-      await viewModel.fetchPhotos();
+      await readNotifier().fetchPhotos();
 
-      expect(viewModel.fetchState, isA<FetchSuccess>());
-      final success = viewModel.fetchState as FetchSuccess;
-      expect(success.result, testFetchResult);
+      final state = readState();
+      expect(state.fetchResult, isA<AsyncData<FetchResult?>>());
+      expect(state.fetchResult.value, testFetchResult);
     });
 
-    test('fetchPhotos 失敗後 fetchState 轉為 FetchError', () async {
-      viewModel.onUrlChanged(testBlogUrl);
+    test('fetchPhotos 失敗後 fetchResult 轉為 AsyncError', () async {
+      readNotifier().onUrlChanged(testBlogUrl);
 
       final exception = Exception('Network error');
       when(
@@ -321,81 +346,99 @@ void main() {
           testBlogUrl,
           onStatusChanged: any(named: 'onStatusChanged'),
         ),
-      ).thenAnswer((_) async => Result.error(exception));
+      ).thenThrow(exception);
 
-      await viewModel.fetchPhotos();
+      await readNotifier().fetchPhotos();
 
-      expect(viewModel.fetchState, isA<FetchError>());
-      final error = viewModel.fetchState as FetchError;
-      expect(error.errorType, FetchErrorType.unknown);
+      final state = readState();
+      expect(state.fetchResult, isA<AsyncError<FetchResult?>>());
+      final error = (state.fetchResult as AsyncError).error;
+      expect(error, isA<FetchException>());
+      expect((error as FetchException).errorType, FetchErrorType.unknown);
     });
 
-    test('blogUrl 為空時 fetchPhotos 將 fetchState 設為 FetchError', () async {
-      // blogUrl 預設為空字串
-      await viewModel.fetchPhotos();
+    test(
+      'blogUrl 為空時 fetchPhotos 將 fetchResult 設為 AsyncError(emptyUrl)',
+      () async {
+        // blogUrl 預設為空字串
+        await readNotifier().fetchPhotos();
 
-      expect(viewModel.fetchState, isA<FetchError>());
-      final error = viewModel.fetchState as FetchError;
-      expect(error.errorType, FetchErrorType.emptyUrl);
+        final state = readState();
+        expect(state.fetchResult, isA<AsyncError<FetchResult?>>());
+        final error = (state.fetchResult as AsyncError).error;
+        expect(error, isA<FetchException>());
+        expect((error as FetchException).errorType, FetchErrorType.emptyUrl);
+      },
+    );
+
+    test('onUrlChanged 將 fetchResult 重設為 AsyncData(null)', () async {
+      // 先讓 fetchResult 進入 AsyncError 狀態
+      await readNotifier().fetchPhotos();
+      expect(readState().fetchResult, isA<AsyncError<FetchResult?>>());
+
+      readNotifier().onUrlChanged(testBlogUrl);
+
+      final state = readState();
+      expect(state.fetchResult, isA<AsyncData<FetchResult?>>());
+      expect(state.fetchResult.value, isNull);
     });
 
-    test('onUrlChanged 將 fetchState 重設為 FetchIdle', () async {
-      // 先讓 fetchState 進入非 Idle 狀態（FetchError）
-      await viewModel.fetchPhotos();
-      expect(viewModel.fetchState, isA<FetchError>());
-
-      viewModel.onUrlChanged(testBlogUrl);
-
-      expect(viewModel.fetchState, isA<FetchIdle>());
-    });
-
-    test('reset 將 fetchState 重設為 FetchIdle', () async {
-      viewModel.onUrlChanged(testBlogUrl);
+    test('reset 將 fetchResult 重設為 AsyncData(null)', () async {
+      readNotifier().onUrlChanged(testBlogUrl);
 
       when(
         () => mockPhotoRepository.fetchPhotos(
           testBlogUrl,
           onStatusChanged: any(named: 'onStatusChanged'),
         ),
-      ).thenAnswer((_) async => Result.ok(testFetchResult));
+      ).thenAnswer((_) async => testFetchResult);
 
-      await viewModel.fetchPhotos();
-      expect(viewModel.fetchState, isA<FetchSuccess>());
+      await readNotifier().fetchPhotos();
+      expect(readState().fetchResult.value, isNotNull);
 
-      viewModel.reset();
+      readNotifier().reset();
 
-      expect(viewModel.fetchState, isA<FetchIdle>());
+      final state = readState();
+      expect(state.fetchResult, isA<AsyncData<FetchResult?>>());
+      expect(state.fetchResult.value, isNull);
     });
 
-    test('fetchState 完整轉換流程：Idle → Loading → Success → reset → Idle', () async {
-      // 1. 初始為 Idle
-      expect(viewModel.fetchState, isA<FetchIdle>());
+    test(
+      'fetchResult 完整轉換流程：AsyncData(null) → AsyncLoading → AsyncData(result) → reset → AsyncData(null)',
+      () async {
+        // 1. 初始為 AsyncData(null)
+        expect(readState().fetchResult, isA<AsyncData<FetchResult?>>());
+        expect(readState().fetchResult.value, isNull);
 
-      viewModel.onUrlChanged(testBlogUrl);
+        readNotifier().onUrlChanged(testBlogUrl);
 
-      final states = <FetchState>[];
-      viewModel.addListener(() {
-        states.add(viewModel.fetchState);
-      });
+        final states = <BlogInputState>[];
+        container.listen(
+          blogInputViewModelProvider,
+          (prev, next) => states.add(next),
+        );
 
-      when(
-        () => mockPhotoRepository.fetchPhotos(
-          testBlogUrl,
-          onStatusChanged: any(named: 'onStatusChanged'),
-        ),
-      ).thenAnswer((_) async => Result.ok(testFetchResult));
+        when(
+          () => mockPhotoRepository.fetchPhotos(
+            testBlogUrl,
+            onStatusChanged: any(named: 'onStatusChanged'),
+          ),
+        ).thenAnswer((_) async => testFetchResult);
 
-      // 2. 執行 fetch
-      await viewModel.fetchPhotos();
+        // 2. 執行 fetch
+        await readNotifier().fetchPhotos();
 
-      // 3. reset
-      viewModel.reset();
+        // 3. reset
+        readNotifier().reset();
 
-      // 驗證轉換順序：Loading → Success → Idle
-      expect(states.length, 3);
-      expect(states[0], isA<FetchLoading>());
-      expect(states[1], isA<FetchSuccess>());
-      expect(states[2], isA<FetchIdle>());
-    });
+        // 驗證轉換順序：AsyncLoading → AsyncData(result) → AsyncData(null)
+        expect(states.length, 3);
+        expect(states[0].fetchResult, isA<AsyncLoading<FetchResult?>>());
+        expect(states[1].fetchResult, isA<AsyncData<FetchResult?>>());
+        expect(states[1].fetchResult.value, testFetchResult);
+        expect(states[2].fetchResult, isA<AsyncData<FetchResult?>>());
+        expect(states[2].fetchResult.value, isNull);
+      },
+    );
   });
 }

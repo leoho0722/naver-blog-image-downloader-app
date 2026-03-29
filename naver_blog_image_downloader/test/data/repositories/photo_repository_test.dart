@@ -13,7 +13,6 @@ import 'package:naver_blog_image_downloader/data/services/api_service.dart';
 import 'package:naver_blog_image_downloader/data/services/file_download_service.dart';
 import 'package:naver_blog_image_downloader/data/services/gallery_service.dart';
 import 'package:naver_blog_image_downloader/ui/core/app_error.dart';
-import 'package:naver_blog_image_downloader/ui/core/result.dart';
 
 class MockApiService extends Mock implements ApiService {}
 
@@ -126,11 +125,9 @@ void main() {
 
       final result = await repository.fetchPhotos(testBlogUrlWithPath);
 
-      expect(result, isA<Ok<FetchResult>>());
-      final fetchResult = (result as Ok<FetchResult>).value;
-      expect(fetchResult.photos.length, 2);
-      expect(fetchResult.blogId, testBlogId);
-      expect(fetchResult.fetchErrors, isEmpty);
+      expect(result.photos.length, 2);
+      expect(result.blogId, testBlogId);
+      expect(result.fetchErrors, isEmpty);
     });
 
     test('任務完成但部分圖片擷取失敗時，fetchErrors 包含錯誤訊息', () async {
@@ -147,13 +144,11 @@ void main() {
 
       final result = await repository.fetchPhotos(testBlogUrlWithPath);
 
-      expect(result, isA<Ok<FetchResult>>());
-      final fetchResult = (result as Ok<FetchResult>).value;
-      expect(fetchResult.photos.length, 1);
-      expect(fetchResult.fetchErrors, ['第2張圖片無法擷取']);
+      expect(result.photos.length, 1);
+      expect(result.fetchErrors, ['第2張圖片無法擷取']);
     });
 
-    test('submitJob 失敗時回傳 Result.error', () async {
+    test('submitJob 失敗時拋出例外', () async {
       when(
         () => mockCacheRepository.blogId(testBlogUrlWithPath),
       ).thenReturn(testBlogId);
@@ -164,12 +159,13 @@ void main() {
         () => mockApiService.submitJob(testBlogUrlWithPath),
       ).thenThrow(const ApiServiceException('伺服器錯誤（500）', statusCode: 500));
 
-      final result = await repository.fetchPhotos(testBlogUrlWithPath);
-
-      expect(result, isA<Error<FetchResult>>());
+      expect(
+        () => repository.fetchPhotos(testBlogUrlWithPath),
+        throwsA(isA<ApiServiceException>()),
+      );
     });
 
-    test('任務失敗時回傳 Result.error 含錯誤訊息', () async {
+    test('任務失敗時拋出含錯誤訊息的例外', () async {
       setupSubmitJob();
       when(() => mockApiService.checkJobStatus(testJobId)).thenAnswer(
         (_) async => const JobStatusResponse(
@@ -186,14 +182,13 @@ void main() {
         ),
       );
 
-      final result = await repository.fetchPhotos(testBlogUrlWithPath);
-
-      expect(result, isA<Error<FetchResult>>());
-      final error = (result as Error<FetchResult>).error;
-      expect(error, isA<AppError>());
-      final appError = error as AppError;
-      expect(appError.type, AppErrorType.serverError);
-      expect(appError.toString(), contains('等待圖片元素超時'));
+      try {
+        await repository.fetchPhotos(testBlogUrlWithPath);
+        fail('應拋出例外');
+      } on AppError catch (appError) {
+        expect(appError.type, AppErrorType.serverError);
+        expect(appError.toString(), contains('等待圖片元素超時'));
+      }
     });
   });
 
@@ -221,13 +216,11 @@ void main() {
 
       final result = await repository.fetchPhotos(testBlogUrlWithPath);
 
-      expect(result, isA<Ok<FetchResult>>());
-      final fetchResult = (result as Ok<FetchResult>).value;
-      expect(fetchResult.isFullyCached, isTrue);
-      expect(fetchResult.photos.length, 2);
-      expect(fetchResult.photos[0].filename, '0_photo1.jpg');
-      expect(fetchResult.photos[1].filename, '1_photo2.jpg');
-      expect(fetchResult.blogId, testBlogId);
+      expect(result.isFullyCached, isTrue);
+      expect(result.photos.length, 2);
+      expect(result.photos[0].filename, '0_photo1.jpg');
+      expect(result.photos[1].filename, '1_photo2.jpg');
+      expect(result.blogId, testBlogId);
 
       // 不應呼叫 API
       verifyNever(() => mockApiService.submitJob(any()));
@@ -264,7 +257,7 @@ void main() {
 
       final result = await repository.fetchPhotos(testBlogUrlWithPath);
 
-      expect(result, isA<Ok<FetchResult>>());
+      expect(result, isA<FetchResult>());
       verify(() => mockApiService.submitJob(testBlogUrlWithPath)).called(1);
     });
 
@@ -308,7 +301,7 @@ void main() {
 
       final result = await repository.fetchPhotos(testBlogUrlWithPath);
 
-      expect(result, isA<Ok<FetchResult>>());
+      expect(result, isA<FetchResult>());
       verify(() => mockApiService.submitJob(testBlogUrlWithPath)).called(1);
     });
   });
@@ -763,13 +756,12 @@ void main() {
         ).thenAnswer((_) async {});
 
         // Act
-        final result = await repository.saveToGalleryFromCache(
+        await repository.saveToGalleryFromCache(
           photos: savePhotos,
           blogId: saveBlogId,
         );
 
-        // Assert
-        expect(result, isA<Ok<void>>());
+        // Assert — 完成無例外
         verify(
           () => mockGalleryService.saveToGallery(
             any(),
@@ -804,13 +796,12 @@ void main() {
         ).thenAnswer((_) async {});
 
         // Act
-        final result = await repository.saveToGalleryFromCache(
+        await repository.saveToGalleryFromCache(
           photos: savePhotos,
           blogId: saveBlogId,
         );
 
-        // Assert
-        expect(result, isA<Ok<void>>());
+        // Assert — 完成無例外
         verify(
           () => mockGalleryService.saveToGallery(
             any(),
@@ -906,7 +897,7 @@ void main() {
     });
 
     group('錯誤處理策略', () {
-      test('成功時回傳 Result.ok', () async {
+      test('成功時正常完成無例外', () async {
         // Arrange
         final mockFile1 = FakeFile('/tmp/cache/photo1.jpg');
         when(
@@ -928,17 +919,14 @@ void main() {
           () => mockCacheRepository.markAsSavedToGallery(saveBlogId),
         ).thenAnswer((_) async {});
 
-        // Act
-        final result = await repository.saveToGalleryFromCache(
+        // Act & Assert — 正常完成無例外
+        await repository.saveToGalleryFromCache(
           photos: savePhotos,
           blogId: saveBlogId,
         );
-
-        // Assert
-        expect(result, isA<Ok<void>>());
       });
 
-      test('GalleryService 例外時回傳 Result.error', () async {
+      test('GalleryService 例外時拋出例外', () async {
         // Arrange
         final mockFile1 = FakeFile('/tmp/cache/photo1.jpg');
         when(
@@ -951,19 +939,21 @@ void main() {
           ),
         ).thenThrow(Exception('Gallery save failed'));
 
-        // Act
-        final result = await repository.saveToGalleryFromCache(
-          photos: savePhotos,
-          blogId: saveBlogId,
+        // Act & Assert
+        expect(
+          () => repository.saveToGalleryFromCache(
+            photos: savePhotos,
+            blogId: saveBlogId,
+          ),
+          throwsA(
+            predicate<dynamic>(
+              (e) => e.toString().contains('Gallery save failed'),
+            ),
+          ),
         );
-
-        // Assert
-        expect(result, isA<Error<void>>());
-        final error = result as Error<void>;
-        expect(error.error.toString(), contains('Gallery save failed'));
       });
 
-      test('markAsSavedToGallery 例外時回傳 Result.error', () async {
+      test('markAsSavedToGallery 例外時拋出例外', () async {
         // Arrange
         final mockFile1 = FakeFile('/tmp/cache/photo1.jpg');
         when(
@@ -985,16 +975,16 @@ void main() {
           () => mockCacheRepository.markAsSavedToGallery(saveBlogId),
         ).thenThrow(Exception('Mark failed'));
 
-        // Act
-        final result = await repository.saveToGalleryFromCache(
-          photos: savePhotos,
-          blogId: saveBlogId,
+        // Act & Assert
+        expect(
+          () => repository.saveToGalleryFromCache(
+            photos: savePhotos,
+            blogId: saveBlogId,
+          ),
+          throwsA(
+            predicate<dynamic>((e) => e.toString().contains('Mark failed')),
+          ),
         );
-
-        // Assert
-        expect(result, isA<Error<void>>());
-        final error = result as Error<void>;
-        expect(error.error.toString(), contains('Mark failed'));
       });
     });
   });
@@ -1002,7 +992,7 @@ void main() {
   group('saveOneToGallery', () {
     const testFilePath = '/cache/blogs/abc/photo.jpg';
 
-    test('權限授予時成功儲存並回傳 Result.ok', () async {
+    test('權限授予時成功儲存無例外', () async {
       when(
         () => mockGalleryService.requestPermission(),
       ).thenAnswer((_) async => true);
@@ -1010,24 +1000,24 @@ void main() {
         () => mockGalleryService.saveToGallery(testFilePath),
       ).thenAnswer((_) async {});
 
-      final result = await repository.saveOneToGallery(testFilePath);
+      await repository.saveOneToGallery(testFilePath);
 
-      expect(result, isA<Ok<void>>());
       verify(() => mockGalleryService.requestPermission()).called(1);
       verify(() => mockGalleryService.saveToGallery(testFilePath)).called(1);
     });
 
-    test('權限拒絕時回傳 Result.error 且不呼叫 saveToGallery', () async {
+    test('權限拒絕時拋出例外且不呼叫 saveToGallery', () async {
       when(
         () => mockGalleryService.requestPermission(),
       ).thenAnswer((_) async => false);
 
-      final result = await repository.saveOneToGallery(testFilePath);
+      try {
+        await repository.saveOneToGallery(testFilePath);
+        fail('應拋出例外');
+      } on AppError catch (appError) {
+        expect(appError.type, AppErrorType.gallery);
+      }
 
-      expect(result, isA<Error<void>>());
-      final error = (result as Error<void>).error;
-      expect(error, isA<AppError>());
-      expect((error as AppError).type, AppErrorType.gallery);
       verifyNever(
         () => mockGalleryService.saveToGallery(
           any(),
@@ -1036,7 +1026,7 @@ void main() {
       );
     });
 
-    test('GalleryService 拋出例外時回傳 Result.error', () async {
+    test('GalleryService 拋出例外時拋出例外', () async {
       when(
         () => mockGalleryService.requestPermission(),
       ).thenAnswer((_) async => true);
@@ -1044,9 +1034,10 @@ void main() {
         () => mockGalleryService.saveToGallery(testFilePath),
       ).thenThrow(const AppError(type: AppErrorType.gallery, message: '儲存失敗'));
 
-      final result = await repository.saveOneToGallery(testFilePath);
-
-      expect(result, isA<Error<void>>());
+      expect(
+        () => repository.saveOneToGallery(testFilePath),
+        throwsA(isA<AppError>()),
+      );
     });
   });
 }

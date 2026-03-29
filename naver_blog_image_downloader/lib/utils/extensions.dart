@@ -9,6 +9,8 @@ extension StringExtension on String {
   ///
   /// 移除檔案系統不允許的字元（`/`、`\`、`:`、`*`、`?`、`"`、`<`、`>`、`|`），
   /// 並確保回傳非空字串。若清理後字串為空，則回傳 `"unnamed"`。
+  ///
+  /// 回傳清理後可安全用於檔案系統的名稱字串。
   String sanitizeFileName() {
     final sanitized = replaceAll(RegExp(r'[/\\:*?"<>|]'), '');
     final trimmed = sanitized.trim();
@@ -26,6 +28,8 @@ extension IntExtension on int {
   /// 範例：
   /// - `512.toFileSizeString()` → `"512 B"`
   /// - `1572864.toFileSizeString()` → `"1.50 MB"`
+  ///
+  /// 回傳帶有適當單位的檔案大小字串。
   String toFileSizeString() {
     const units = ['B', 'KB', 'MB', 'GB'];
     double size = toDouble();

@@ -170,54 +170,6 @@ then it SHALL delegate to `CacheRepository.cachedFile(photo.filename, blogId)`.
 
 ## Requirements
 
-### Requirement: Gallery state properties
-
-PhotoGalleryViewModel SHALL extend `ChangeNotifier` and manage the gallery interaction mode through a `GalleryMode` enum with three values: `browsing`, `selecting`, `saving`. The ViewModel SHALL NOT use separate boolean flags for select mode and saving state.
-
-PhotoGalleryViewModel SHALL call `notifyListeners()` after every state change.
-
-PhotoGalleryViewModel SHALL expose the following read-only properties:
-- `photos` (List<PhotoEntity>) — the loaded photo list
-- `blogId` (String) — the Blog identifier
-- `mode` (GalleryMode) — the current gallery interaction mode
-- `isSelectMode` (bool) — convenience getter, `true` when mode is `selecting` or `saving`
-- `selectedIds` (Set<String>) — the set of selected photo identifiers
-- `isSaving` (bool) — convenience getter, `true` when mode is `saving`
-- `errorMessage` (String?) — the error message from the last failed save operation, or null
-
-#### Scenario: Initial state
-
-- **WHEN** a new `PhotoGalleryViewModel` is created
-- **THEN** `mode` SHALL be `GalleryMode.browsing`
-- **AND** `isSelectMode` SHALL be `false`
-- **AND** `isSaving` SHALL be `false`
-- **AND** `selectedIds` SHALL be an empty set
-- **AND** `errorMessage` SHALL be `null`
-
-
-<!-- @trace
-source: architecture-enum-state-refactor
-updated: 2026-03-24
-code:
-  - naver_blog_image_downloader/lib/main.dart
-  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
-  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
-  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
-  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
-  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
-  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
-tests:
-  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
-  - naver_blog_image_downloader/test/widget_test.dart
-  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
-  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
-  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
-  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
--->
-
----
 ### Requirement: Load photos
 
 The `load` method SHALL accept a `List<PhotoEntity>` and a `String blogId`, storing them for display and subsequent operations.
@@ -766,4 +718,146 @@ code:
 tests:
   - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
   - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+-->
+
+---
+### Requirement: PhotoGalleryState immutable class
+
+`PhotoGalleryState` SHALL be an immutable class with fields: `photos` (default `[]`), `blogId` (default `""`), `cachedFiles` (default `{}`), `selectedIds` (default `{}`), `isSelectMode` (default `false`), `saveOperation` (default `null`). It SHALL provide `copyWith` and `isSaving` computed getter.
+
+#### Scenario: Default PhotoGalleryState
+
+- **GIVEN** a new `PhotoGalleryState` is created with defaults
+- **WHEN** inspecting its fields
+- **THEN** `isSelectMode` SHALL be `false`
+- **AND** `saveOperation` SHALL be `null`
+- **AND** `isSaving` SHALL be `false`
+
+
+<!-- @trace
+source: riverpod-migration
+updated: 2026-03-29
+code:
+  - naver_blog_image_downloader/lib/config/theme.dart
+  - naver_blog_image_downloader/lib/data/models/download_batch_result.dart
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/config/app_config.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/ui/core/result.dart
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/config/bottom_sheet_animation.dart
+  - naver_blog_image_downloader/lib/data/models/blog_cache_metadata.dart
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/utils/constants.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/naver_url_validator.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/data/models/dtos/job_status_response.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/amplifyconfiguration.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_card.dart
+  - naver_blog_image_downloader/lib/utils/extensions.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/data/models/photo_entity.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/data/services/file_download_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/api_service.dart
+  - CLAUDE.md
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_request.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
+-->
+
+---
+### Requirement: PhotoGalleryViewModel as Notifier
+
+`PhotoGalleryViewModel` SHALL extend the generated `_$PhotoGalleryViewModel` (Riverpod `Notifier<PhotoGalleryState>`). `build()` SHALL return `const PhotoGalleryState()`.
+
+#### Scenario: Toggle select mode
+
+- **GIVEN** `state.isSelectMode` is `false`
+- **WHEN** `toggleSelectMode()` is called
+- **THEN** `state.isSelectMode` SHALL be `true`
+
+#### Scenario: Exit select mode clears selections
+
+- **GIVEN** `state.isSelectMode` is `true` with selected photos
+- **WHEN** `toggleSelectMode()` is called
+- **THEN** `state.isSelectMode` SHALL be `false`
+- **AND** `state.selectedIds` SHALL be empty
+
+<!-- @trace
+source: riverpod-migration
+updated: 2026-03-29
+code:
+  - naver_blog_image_downloader/lib/config/theme.dart
+  - naver_blog_image_downloader/lib/data/models/download_batch_result.dart
+  - naver_blog_image_downloader/lib/config/supported_locale.dart
+  - naver_blog_image_downloader/lib/config/app_config.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/app_error.dart
+  - naver_blog_image_downloader/lib/ui/core/result.dart
+  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
+  - naver_blog_image_downloader/lib/config/bottom_sheet_animation.dart
+  - naver_blog_image_downloader/lib/data/models/blog_cache_metadata.dart
+  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
+  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
+  - naver_blog_image_downloader/lib/main.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_capsule_bar.dart
+  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/lib/utils/constants.dart
+  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
+  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
+  - naver_blog_image_downloader/lib/ui/core/naver_url_validator.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/data/models/dtos/job_status_response.dart
+  - naver_blog_image_downloader/pubspec.lock
+  - naver_blog_image_downloader/lib/amplifyconfiguration.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
+  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_card.dart
+  - naver_blog_image_downloader/lib/utils/extensions.dart
+  - naver_blog_image_downloader/lib/app.dart
+  - naver_blog_image_downloader/lib/data/models/photo_entity.dart
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
+  - naver_blog_image_downloader/lib/data/services/file_download_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/ui/core/view_model/app_settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
+  - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
+  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
+  - naver_blog_image_downloader/lib/data/services/api_service.dart
+  - CLAUDE.md
+  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_request.dart
+tests:
+  - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
+  - naver_blog_image_downloader/test/widget_test.dart
+  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
+  - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
 -->

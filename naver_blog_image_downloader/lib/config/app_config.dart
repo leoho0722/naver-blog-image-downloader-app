@@ -52,11 +52,16 @@ abstract final class AppConfig {
   );
 
   /// 目前使用的部署階段，由 `--dart-define=API_STAGE` 決定。
+  ///
+  /// 回傳與編譯參數 `API_STAGE` 匹配的 [ApiStage]，
+  /// 若無匹配則回傳 [ApiStage.defaultStage]。
   static final ApiStage stage = ApiStage.values.firstWhere(
     (s) => s.value == _stageName,
     orElse: () => ApiStage.defaultStage,
   );
 
   /// 完整的 API base URL（根路徑 + 部署階段）。
+  ///
+  /// 回傳格式為 `https://<host>/<stage>` 的完整 URL 字串。
   static String get baseUrl => '$_apiHost/${stage.value}';
 }

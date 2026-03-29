@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../data/models/download_batch_result.dart';
 import '../../../data/models/photo_entity.dart';
@@ -6,56 +6,71 @@ import '../../../data/repositories/photo_repository.dart';
 
 export '../../../data/models/download_batch_result.dart';
 
-/// 下載流程的狀態列舉，用以取代多個互斥的 boolean flags。
-enum DownloadState {
-  /// 閒置，尚未開始或已重置。
-  idle,
+part 'download_view_model.g.dart';
 
-  /// 正在執行批次下載。
-  downloading,
+/// 下載頁面的不可變狀態，封裝下載進度與結果。
+class DownloadViewModelState {
+  /// 建立 [DownloadViewModelState]。
+  ///
+  /// - [completed]：已完成下載的照片數量，預設為 0。
+  /// - [total]：本次批次需下載的照片總數，預設為 0。
+  /// - [downloadResult]：批次下載的非同步結果，預設為 `AsyncData(null)`。
+  const DownloadViewModelState({
+    this.completed = 0,
+    this.total = 0,
+    this.downloadResult = const AsyncData(null),
+  });
 
-  /// 批次下載已完成（不論成功或部分失敗）。
-  completed,
+  /// 已完成下載的照片數量（含成功、失敗與跳過）。
+  final int completed;
+
+  /// 本次批次需下載的照片總數。
+  final int total;
+
+  /// 批次下載的非同步結果。
+  final AsyncValue<DownloadBatchResult?> downloadResult;
+
+  /// 下載進度比例（0.0 ~ 1.0），用於進度條顯示。
+  ///
+  /// 回傳 [completed] / [total] 的比例值；[total] 為 0 時回傳 0.0。
+  double get progress => total > 0 ? completed / total : 0.0;
+
+  /// 是否正在下載中。
+  ///
+  /// 回傳 `true` 表示 [downloadResult] 為 [AsyncLoading] 狀態。
+  bool get isDownloading => downloadResult is AsyncLoading;
+
+  /// 批次下載結果，下載完成後可檢查失敗項目。
+  ///
+  /// 回傳 [DownloadBatchResult]；尚未完成或未開始時回傳 `null`。
+  DownloadBatchResult? get result => downloadResult.value;
+
+  /// 複製並覆寫指定欄位，回傳新的 [DownloadViewModelState]。
+  ///
+  /// - [completed]：若提供則覆寫已完成數量。
+  /// - [total]：若提供則覆寫照片總數。
+  /// - [downloadResult]：若提供則覆寫下載結果。
+  ///
+  /// 回傳新的 [DownloadViewModelState]，未指定的欄位保留原值。
+  DownloadViewModelState copyWith({
+    int? completed,
+    int? total,
+    AsyncValue<DownloadBatchResult?>? downloadResult,
+  }) {
+    return DownloadViewModelState(
+      completed: completed ?? this.completed,
+      total: total ?? this.total,
+      downloadResult: downloadResult ?? this.downloadResult,
+    );
+  }
 }
 
 /// 下載頁面的 ViewModel，負責管理批次照片下載進度與結果。
-class DownloadViewModel extends ChangeNotifier {
-  /// 建立 [DownloadViewModel]，需注入 [PhotoRepository] 以執行下載操作。
-  DownloadViewModel({required PhotoRepository photoRepository})
-    : _photoRepository = photoRepository;
-
-  /// 注入的照片 Repository，用於執行實際的下載與儲存操作。
-  final PhotoRepository _photoRepository;
-
-  /// 已完成下載的照片數量（含成功、失敗與跳過）。
-  int _completed = 0;
-
-  /// 本次批次需下載的照片總數。
-  int _total = 0;
-
-  /// 目前的下載狀態。
-  DownloadState _downloadState = DownloadState.idle;
-
-  /// 批次下載的結果摘要，下載完成後才有值。
-  DownloadBatchResult? _result;
-
-  /// 已完成下載的照片數量。
-  int get completed => _completed;
-
-  /// 需下載的照片總數。
-  int get total => _total;
-
-  /// 目前的下載狀態。
-  DownloadState get downloadState => _downloadState;
-
-  /// 是否正在下載中（便利 getter，等同 `downloadState == DownloadState.downloading`）。
-  bool get isDownloading => _downloadState == DownloadState.downloading;
-
-  /// 批次下載結果，下載完成後可檢查失敗項目。
-  DownloadBatchResult? get result => _result;
-
-  /// 下載進度比例（0.0 ~ 1.0），用於進度條顯示。
-  double get progress => _total > 0 ? _completed / _total : 0.0;
+@riverpod
+class DownloadViewModel extends _$DownloadViewModel {
+  /// 初始化狀態，回傳預設的 [DownloadViewModelState]。
+  @override
+  DownloadViewModelState build() => const DownloadViewModelState();
 
   /// 開始批次下載指定的照片至本機快取。
   ///
@@ -66,37 +81,27 @@ class DownloadViewModel extends ChangeNotifier {
     required String blogId,
     required String blogUrl,
   }) async {
-    if (_downloadState == DownloadState.downloading) return;
+    if (state.isDownloading) return;
 
-    _downloadState = DownloadState.downloading;
-    _completed = 0;
-    _total = photos.length;
-    _result = null;
-    notifyListeners();
+    state = DownloadViewModelState(
+      total: photos.length,
+      downloadResult: const AsyncLoading(),
+    );
 
-    debugPrint('[DownloadVM] 開始下載 ${photos.length} 張照片 (blogId: $blogId)');
-    for (final photo in photos) {
-      debugPrint('[DownloadVM]   - ${photo.filename}: ${photo.url}');
+    try {
+      final repo = ref.read(photoRepositoryProvider);
+      final result = await repo.downloadAllToCache(
+        photos: photos,
+        blogId: blogId,
+        blogUrl: blogUrl,
+        onProgress: (completed, total) {
+          state = state.copyWith(completed: completed, total: total);
+        },
+      );
+
+      state = state.copyWith(downloadResult: AsyncData(result));
+    } catch (e, st) {
+      state = state.copyWith(downloadResult: AsyncError(e, st));
     }
-
-    _result = await _photoRepository.downloadAllToCache(
-      photos: photos,
-      blogId: blogId,
-      blogUrl: blogUrl,
-      onProgress: (completed, total) {
-        _completed = completed;
-        _total = total;
-        debugPrint('[DownloadVM] 進度: $completed/$total');
-        notifyListeners();
-      },
-    );
-
-    debugPrint(
-      '[DownloadVM] 下載完成 — 成功: ${_result!.successCount}, '
-      '失敗: ${_result!.failureCount}, 跳過: ${_result!.skippedCount}',
-    );
-
-    _downloadState = DownloadState.completed;
-    notifyListeners();
   }
 }

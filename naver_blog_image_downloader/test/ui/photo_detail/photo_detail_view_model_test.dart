@@ -2,13 +2,12 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:naver_blog_image_downloader/data/models/photo_entity.dart';
 import 'package:naver_blog_image_downloader/data/repositories/cache_repository.dart';
 import 'package:naver_blog_image_downloader/data/repositories/photo_repository.dart';
-import 'package:naver_blog_image_downloader/ui/core/app_error.dart';
-import 'package:naver_blog_image_downloader/ui/core/result.dart';
 import 'package:naver_blog_image_downloader/ui/photo_detail/view_model/photo_detail_view_model.dart';
 
 class MockCacheRepository extends Mock implements CacheRepository {}
@@ -37,7 +36,7 @@ Future<File> _createTempImageFile() async {
 void main() {
   late MockCacheRepository mockCacheRepository;
   late MockPhotoRepository mockPhotoRepository;
-  late PhotoDetailViewModel viewModel;
+  late ProviderContainer container;
 
   const testBlogId = 'blog123';
   const testPhotos = [
@@ -61,43 +60,56 @@ void main() {
   setUp(() {
     mockCacheRepository = MockCacheRepository();
     mockPhotoRepository = MockPhotoRepository();
-    viewModel = PhotoDetailViewModel(
-      cacheRepository: mockCacheRepository,
-      photoRepository: mockPhotoRepository,
+    container = ProviderContainer(
+      overrides: [
+        cacheRepositoryProvider.overrideWithValue(mockCacheRepository),
+        photoRepositoryProvider.overrideWithValue(mockPhotoRepository),
+      ],
     );
+    // 維持 auto-dispose provider 存活，避免在 async 操作中被提前釋放
+    container.listen(photoDetailViewModelProvider, (_, _) {});
+    addTearDown(container.dispose);
   });
 
   group('initial state', () {
     test('photos 初始為空 list', () {
-      expect(viewModel.photos, isEmpty);
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.photos, isEmpty);
     });
 
     test('currentIndex 初始為 0', () {
-      expect(viewModel.currentIndex, 0);
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.currentIndex, 0);
     });
 
     test('totalCount 初始為 0', () {
-      expect(viewModel.totalCount, 0);
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.totalCount, 0);
     });
 
     test('photo 初始為 null', () {
-      expect(viewModel.photo, isNull);
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.photo, isNull);
     });
 
     test('cachedFile 初始為 null', () {
-      expect(viewModel.cachedFile, isNull);
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.cachedFile, isNull);
     });
 
-    test('saveState 初始為 SaveState.idle', () {
-      expect(viewModel.saveState, SaveState.idle);
+    test('saveOperation 初始為 null（idle）', () {
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.saveOperation, isNull);
     });
 
     test('formattedFileSize 初始為 "-"', () {
-      expect(viewModel.formattedFileSize, '-');
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.formattedFileSize, '-');
     });
 
     test('formattedDimensions 初始為 "-"', () {
-      expect(viewModel.formattedDimensions, '-');
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.formattedDimensions, '-');
     });
   });
 
@@ -107,11 +119,13 @@ void main() {
         () => mockCacheRepository.cachedFile(any(), any()),
       ).thenAnswer((_) async => null);
 
-      await viewModel.loadAll(testPhotos, testBlogId, 0);
+      final notifier = container.read(photoDetailViewModelProvider.notifier);
+      await notifier.loadAll(testPhotos, testBlogId, 0);
 
-      expect(viewModel.photos, testPhotos);
-      expect(viewModel.blogId, testBlogId);
-      expect(viewModel.currentIndex, 0);
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.photos, testPhotos);
+      expect(state.blogId, testBlogId);
+      expect(state.currentIndex, 0);
     });
 
     test('載入後 photo 為 photos[initialIndex]', () async {
@@ -119,10 +133,12 @@ void main() {
         () => mockCacheRepository.cachedFile(any(), any()),
       ).thenAnswer((_) async => null);
 
-      await viewModel.loadAll(testPhotos, testBlogId, 1);
+      final notifier = container.read(photoDetailViewModelProvider.notifier);
+      await notifier.loadAll(testPhotos, testBlogId, 1);
 
-      expect(viewModel.photo, testPhotos[1]);
-      expect(viewModel.currentIndex, 1);
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.photo, testPhotos[1]);
+      expect(state.currentIndex, 1);
     });
 
     test('initialIndex 非 0 時正確定位', () async {
@@ -130,24 +146,29 @@ void main() {
         () => mockCacheRepository.cachedFile(any(), any()),
       ).thenAnswer((_) async => null);
 
-      await viewModel.loadAll(testPhotos, testBlogId, 2);
+      final notifier = container.read(photoDetailViewModelProvider.notifier);
+      await notifier.loadAll(testPhotos, testBlogId, 2);
 
-      expect(viewModel.currentIndex, 2);
-      expect(viewModel.photo?.id, '3');
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.currentIndex, 2);
+      expect(state.photo?.id, '3');
     });
 
-    test('載入會通知 listeners', () async {
+    test('載入會觸發狀態變更', () async {
       when(
         () => mockCacheRepository.cachedFile(any(), any()),
       ).thenAnswer((_) async => null);
 
-      int notifyCount = 0;
-      viewModel.addListener(() => notifyCount++);
+      int stateChangeCount = 0;
+      container.listen(photoDetailViewModelProvider, (prev, next) {
+        stateChangeCount++;
+      });
 
-      await viewModel.loadAll(testPhotos, testBlogId, 0);
+      final notifier = container.read(photoDetailViewModelProvider.notifier);
+      await notifier.loadAll(testPhotos, testBlogId, 0);
 
       // 第一次：設定 photos/blogId 後通知；第二次：metadata 載入完成後通知
-      expect(notifyCount, 2);
+      expect(stateChangeCount, 2);
     });
 
     test('重新 loadAll 會清除 metadataCache', () async {
@@ -155,7 +176,8 @@ void main() {
         () => mockCacheRepository.cachedFile(any(), any()),
       ).thenAnswer((_) async => null);
 
-      await viewModel.loadAll(testPhotos, testBlogId, 0);
+      final notifier = container.read(photoDetailViewModelProvider.notifier);
+      await notifier.loadAll(testPhotos, testBlogId, 0);
 
       // 第二次 loadAll 應重設所有狀態
       const newPhotos = [
@@ -166,11 +188,12 @@ void main() {
         ),
       ];
 
-      await viewModel.loadAll(newPhotos, 'newBlog', 0);
+      await notifier.loadAll(newPhotos, 'newBlog', 0);
 
-      expect(viewModel.photos, newPhotos);
-      expect(viewModel.blogId, 'newBlog');
-      expect(viewModel.photo?.id, '4');
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.photos, newPhotos);
+      expect(state.blogId, 'newBlog');
+      expect(state.photo?.id, '4');
     });
   });
 
@@ -182,25 +205,30 @@ void main() {
     });
 
     test('切換後 currentIndex 更新', () async {
-      await viewModel.loadAll(testPhotos, testBlogId, 0);
+      final notifier = container.read(photoDetailViewModelProvider.notifier);
+      await notifier.loadAll(testPhotos, testBlogId, 0);
 
-      await viewModel.setCurrentIndex(2);
+      await notifier.setCurrentIndex(2);
 
-      expect(viewModel.currentIndex, 2);
-      expect(viewModel.photo?.id, '3');
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.currentIndex, 2);
+      expect(state.photo?.id, '3');
     });
 
-    test('切換後 saveState 重設為 SaveState.idle', () async {
-      await viewModel.loadAll(testPhotos, testBlogId, 0);
+    test('切換後 saveOperation 重設為 null（idle）', () async {
+      final notifier = container.read(photoDetailViewModelProvider.notifier);
+      await notifier.loadAll(testPhotos, testBlogId, 0);
 
-      // 直接測試 setCurrentIndex 是否重設 saveState
-      await viewModel.setCurrentIndex(1);
+      // 直接測試 setCurrentIndex 是否重設 saveOperation
+      await notifier.setCurrentIndex(1);
 
-      expect(viewModel.saveState, SaveState.idle);
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.saveOperation, isNull);
     });
 
     test('切換到已快取索引時不重複呼叫 CacheRepository', () async {
-      await viewModel.loadAll(testPhotos, testBlogId, 0);
+      final notifier = container.read(photoDetailViewModelProvider.notifier);
+      await notifier.loadAll(testPhotos, testBlogId, 0);
 
       // loadAll 已對 index 0 呼叫 cachedFile
       verify(
@@ -208,38 +236,42 @@ void main() {
       ).called(1);
 
       // 切換到 index 1
-      await viewModel.setCurrentIndex(1);
+      await notifier.setCurrentIndex(1);
       verify(
         () => mockCacheRepository.cachedFile('photo2.jpg', testBlogId),
       ).called(1);
 
       // 回到 index 0 — 應從 metadataCache 取值，不再呼叫 CacheRepository
-      await viewModel.setCurrentIndex(0);
+      await notifier.setCurrentIndex(0);
       verifyNever(
         () => mockCacheRepository.cachedFile('photo1.jpg', testBlogId),
       );
     });
 
-    test('切換會通知 listeners', () async {
-      await viewModel.loadAll(testPhotos, testBlogId, 0);
+    test('切換會觸發狀態變更', () async {
+      final notifier = container.read(photoDetailViewModelProvider.notifier);
+      await notifier.loadAll(testPhotos, testBlogId, 0);
 
-      int notifyCount = 0;
-      viewModel.addListener(() => notifyCount++);
+      int stateChangeCount = 0;
+      container.listen(photoDetailViewModelProvider, (prev, next) {
+        stateChangeCount++;
+      });
 
-      await viewModel.setCurrentIndex(1);
+      await notifier.setCurrentIndex(1);
 
       // 1 次立即通知 + 1 次 metadata 載入完成
-      expect(notifyCount, 2);
+      expect(stateChangeCount, 2);
     });
 
     test('索引超出範圍時不執行', () async {
-      await viewModel.loadAll(testPhotos, testBlogId, 0);
+      final notifier = container.read(photoDetailViewModelProvider.notifier);
+      await notifier.loadAll(testPhotos, testBlogId, 0);
 
-      await viewModel.setCurrentIndex(-1);
-      expect(viewModel.currentIndex, 0);
+      await notifier.setCurrentIndex(-1);
+      expect(container.read(photoDetailViewModelProvider).currentIndex, 0);
 
-      await viewModel.setCurrentIndex(10);
-      expect(viewModel.currentIndex, 0);
+      await notifier.setCurrentIndex(10);
+      expect(container.read(photoDetailViewModelProvider).currentIndex, 0);
     });
   });
 
@@ -249,14 +281,16 @@ void main() {
         () => mockCacheRepository.cachedFile(any(), any()),
       ).thenAnswer((_) async => null);
 
-      await viewModel.loadAll(testPhotos, testBlogId, 0);
-      await viewModel.saveToGallery();
+      final notifier = container.read(photoDetailViewModelProvider.notifier);
+      await notifier.loadAll(testPhotos, testBlogId, 0);
+      await notifier.saveToGallery();
 
-      expect(viewModel.saveState, SaveState.idle);
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.saveOperation, isNull);
       verifyNever(() => mockPhotoRepository.saveOneToGallery(any()));
     });
 
-    test('儲存時 saveState 流轉：idle → saving → saved', () async {
+    test('儲存時 saveOperation 流轉：null → saving → saved', () async {
       final tempFile = await _createTempImageFile();
       addTearDown(() => tempFile.parent.deleteSync(recursive: true));
 
@@ -265,22 +299,24 @@ void main() {
       ).thenAnswer((_) async => tempFile);
       when(
         () => mockPhotoRepository.saveOneToGallery(any()),
-      ).thenAnswer((_) async => Result.ok(null));
+      ).thenAnswer((_) async {});
 
-      await viewModel.loadAll(testPhotos, testBlogId, 0);
+      final notifier = container.read(photoDetailViewModelProvider.notifier);
+      await notifier.loadAll(testPhotos, testBlogId, 0);
 
-      final stateSnapshots = <SaveState>[];
-      viewModel.addListener(() {
-        stateSnapshots.add(viewModel.saveState);
+      final stateSnapshots = <PhotoDetailState>[];
+      container.listen(photoDetailViewModelProvider, (prev, next) {
+        stateSnapshots.add(next);
       });
 
-      await viewModel.saveToGallery();
+      await notifier.saveToGallery();
 
-      expect(stateSnapshots, contains(SaveState.saving));
-      expect(viewModel.saveState, SaveState.saved);
+      expect(stateSnapshots.any((s) => s.isSaving), isTrue);
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.isSaved, isTrue);
     });
 
-    test('saveState 為 saving 時再次呼叫直接返回', () async {
+    test('isSaving 為 true 時再次呼叫直接返回', () async {
       final tempFile = await _createTempImageFile();
       addTearDown(() => tempFile.parent.deleteSync(recursive: true));
 
@@ -291,41 +327,43 @@ void main() {
         _,
       ) async {
         // 在儲存過程中嘗試再次呼叫
-        await viewModel.saveToGallery();
-        return Result.ok(null);
+        final notifier = container.read(photoDetailViewModelProvider.notifier);
+        await notifier.saveToGallery();
       });
 
-      await viewModel.loadAll(testPhotos, testBlogId, 0);
-      await viewModel.saveToGallery();
+      final notifier = container.read(photoDetailViewModelProvider.notifier);
+      await notifier.loadAll(testPhotos, testBlogId, 0);
+      await notifier.saveToGallery();
 
       // saveOneToGallery 只被呼叫一次
       verify(() => mockPhotoRepository.saveOneToGallery(any())).called(1);
     });
 
-    test('Repository 回傳 Error 時 saveState 回到 idle', () async {
+    test('Repository 拋出例外時 saveOperation 回到 null（idle）', () async {
       final tempFile = await _createTempImageFile();
       addTearDown(() => tempFile.parent.deleteSync(recursive: true));
 
       when(
         () => mockCacheRepository.cachedFile('photo1.jpg', testBlogId),
       ).thenAnswer((_) async => tempFile);
-      when(() => mockPhotoRepository.saveOneToGallery(any())).thenAnswer(
-        (_) async => Result.error(
-          const AppError(type: AppErrorType.gallery, message: '權限未授權'),
-        ),
-      );
+      when(
+        () => mockPhotoRepository.saveOneToGallery(any()),
+      ).thenThrow(Exception('權限未授權'));
 
-      await viewModel.loadAll(testPhotos, testBlogId, 0);
-      await viewModel.saveToGallery();
+      final notifier = container.read(photoDetailViewModelProvider.notifier);
+      await notifier.loadAll(testPhotos, testBlogId, 0);
+      await notifier.saveToGallery();
 
-      expect(viewModel.saveState, SaveState.idle);
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.saveOperation, isNull);
     });
   });
 
   group('formattedFileSize / formattedDimensions', () {
     test('無資料時回傳 "-"', () {
-      expect(viewModel.formattedFileSize, '-');
-      expect(viewModel.formattedDimensions, '-');
+      final state = container.read(photoDetailViewModelProvider);
+      expect(state.formattedFileSize, '-');
+      expect(state.formattedDimensions, '-');
     });
   });
 }

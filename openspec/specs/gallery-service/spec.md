@@ -11,7 +11,7 @@ TBD - created by archiving change 's012-gallery-service'. Update Purpose after a
 The file `lib/data/services/gallery_service.dart` SHALL define a `GalleryService` class that provides a `saveToGallery` method for saving images to the device gallery.
 
 - `saveToGallery` SHALL accept a `String filePath` parameter specifying the path of the image file to save.
-- `saveToGallery` SHALL use a `MethodChannel` named `com.example.naver_blog_image_downloader/gallery` to invoke the native platform method `saveToGallery` with the file path.
+- `saveToGallery` SHALL use a `MethodChannel` named `com.leoho.naverBlogImageDownloader/gallery` to invoke the native platform method `saveToGallery` with the file path.
 - On iOS, the native implementation SHALL use `PHAssetCreationRequest.addResource(with: .photo, fileURL:)` to write the file directly without re-encoding.
 - On Android, the native implementation SHALL use `MediaStore` API with `FileInputStream.copyTo` to copy the file directly without re-encoding.
 - `saveToGallery` SHALL return a `Future<void>`.
@@ -28,31 +28,27 @@ The file `lib/data/services/gallery_service.dart` SHALL define a `GalleryService
 
 - **GIVEN** the native platform encounters an error during save
 - **WHEN** `saveToGallery` is called
-- **THEN** an `AppError` with type `AppErrorType.gallery` SHALL be thrown
+- **THEN** a `PlatformException` SHALL be caught and an `AppError` with type `AppErrorType.gallery` SHALL be thrown
 
-#### Scenario: File size preserved after save
+#### Scenario: MethodChannel name matches across platforms
 
-- **GIVEN** a cached image file with a specific file size
-- **WHEN** `saveToGallery` saves the file to the gallery
-- **THEN** the saved file in the gallery SHALL have the same size as the original cached file
+- **GIVEN** the GalleryService is initialized
+- **WHEN** the MethodChannel is created
+- **THEN** the channel name SHALL be `com.leoho.naverBlogImageDownloader/gallery` in Dart, Swift, and Kotlin
 
 
 <!-- @trace
-source: gallery-native-impl
-updated: 2026-03-23
+source: unify-bundle-id
+updated: 2026-03-29
 code:
-  - naver_blog_image_downloader/ios/Podfile.lock
-  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
-  - naver_blog_image_downloader/ios/Runner/AppDelegate.swift
-  - naver_blog_image_downloader/android/app/src/main/kotlin/com/example/naver_blog_image_downloader/MainActivity.kt
-  - naver_blog_image_downloader/pubspec.lock
   - naver_blog_image_downloader/android/app/build.gradle.kts
   - naver_blog_image_downloader/android/app/src/main/kotlin/com/example/naver_blog_image_downloader/GallerySaver.kt
+  - naver_blog_image_downloader/android/app/src/main/kotlin/com/leoho/naverBlogImageDownloader/android/MainActivity.kt
   - naver_blog_image_downloader/ios/Runner.xcodeproj/project.pbxproj
-  - naver_blog_image_downloader/ios/Runner/GallerySaver.swift
-  - naver_blog_image_downloader/android/app/src/main/AndroidManifest.xml
-  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
-  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/android/app/src/main/kotlin/com/leoho/naverBlogImageDownloader/android/GallerySaver.kt
+  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
+  - naver_blog_image_downloader/android/app/src/main/kotlin/com/example/naver_blog_image_downloader/MainActivity.kt
+  - naver_blog_image_downloader/ios/Runner/AppDelegate.swift
 -->
 
 ---

@@ -3,6 +3,12 @@
 /// 包含照片的唯一識別碼、下載網址與檔案名稱。
 class PhotoEntity {
   /// 建立 [PhotoEntity] 實例。
+  ///
+  /// - [id]：照片的唯一識別碼。
+  /// - [url]：照片的下載網址。
+  /// - [filename]：照片的檔案名稱（含副檔名）。
+  /// - [width]：照片寬度（像素），可為 `null`。
+  /// - [height]：照片高度（像素），可為 `null`。
   const PhotoEntity({
     required this.id,
     required this.url,

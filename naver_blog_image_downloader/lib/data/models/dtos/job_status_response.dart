@@ -12,6 +12,11 @@ enum JobStatus {
   failed;
 
   /// 從 API 回傳的字串解析為 [JobStatus]。
+  ///
+  /// - [value]：API 回傳的狀態字串（`processing`、`completed`、`failed`）。
+  ///
+  /// 回傳對應的 [JobStatus] 列舉值。
+  /// 若 [value] 不在已知範圍內，拋出 [FormatException]。
   static JobStatus fromString(String value) => switch (value) {
     'processing' => JobStatus.processing,
     'completed' => JobStatus.completed,
@@ -27,6 +32,10 @@ enum JobStatus {
 /// 失敗時的錯誤訊息在 `result.errors` 中。
 class JobStatusResponse {
   /// 建立 [JobStatusResponse] 實例。
+  ///
+  /// - [jobId]：任務識別碼。
+  /// - [status]：目前的任務狀態。
+  /// - [result]：任務結果，僅在 `completed` 或 `failed` 時有值。
   const JobStatusResponse({
     required this.jobId,
     required this.status,
@@ -44,7 +53,11 @@ class JobStatusResponse {
   /// 失敗時 `result.errors` 包含錯誤訊息。
   final PhotoDownloadResponse? result;
 
-  /// 從 JSON 格式的 [Map] 反序列化。
+  /// 從 JSON 格式的 [Map] 反序列化為 [JobStatusResponse] 實例。
+  ///
+  /// - [json]：API 回傳的 JSON [Map]，須包含 `job_id` 與 `status` 欄位。
+  ///
+  /// 回傳對應的 [JobStatusResponse] 實例。
   factory JobStatusResponse.fromJson(Map<String, dynamic> json) {
     final status = JobStatus.fromString(json['status'] as String);
     PhotoDownloadResponse? result;

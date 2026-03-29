@@ -1,11 +1,11 @@
 import 'dart:io';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:naver_blog_image_downloader/data/models/photo_entity.dart';
 import 'package:naver_blog_image_downloader/data/repositories/cache_repository.dart';
 import 'package:naver_blog_image_downloader/data/repositories/photo_repository.dart';
-import 'package:naver_blog_image_downloader/ui/core/result.dart';
 import 'package:naver_blog_image_downloader/ui/photo_gallery/view_model/photo_gallery_view_model.dart';
 
 class MockPhotoRepository extends Mock implements PhotoRepository {}
@@ -15,7 +15,7 @@ class MockCacheRepository extends Mock implements CacheRepository {}
 void main() {
   late MockPhotoRepository mockPhotoRepository;
   late MockCacheRepository mockCacheRepository;
-  late PhotoGalleryViewModel viewModel;
+  late ProviderContainer container;
 
   const testBlogId = 'blog123';
   const testPhotos = [
@@ -38,23 +38,30 @@ void main() {
   setUp(() {
     mockPhotoRepository = MockPhotoRepository();
     mockCacheRepository = MockCacheRepository();
-    viewModel = PhotoGalleryViewModel(
-      photoRepository: mockPhotoRepository,
-      cacheRepository: mockCacheRepository,
+    container = ProviderContainer(
+      overrides: [
+        photoRepositoryProvider.overrideWithValue(mockPhotoRepository),
+        cacheRepositoryProvider.overrideWithValue(mockCacheRepository),
+      ],
     );
+    container.listen(photoGalleryViewModelProvider, (_, _) {});
+    addTearDown(container.dispose);
   });
 
   group('initial state', () {
     test('cachedFiles 初始為空 map', () {
-      expect(viewModel.cachedFiles, isEmpty);
+      final state = container.read(photoGalleryViewModelProvider);
+      expect(state.cachedFiles, isEmpty);
     });
 
     test('photos 初始為空 list', () {
-      expect(viewModel.photos, isEmpty);
+      final state = container.read(photoGalleryViewModelProvider);
+      expect(state.photos, isEmpty);
     });
 
     test('blogId 初始為空字串', () {
-      expect(viewModel.blogId, '');
+      final state = container.read(photoGalleryViewModelProvider);
+      expect(state.blogId, '');
     });
   });
 
@@ -65,24 +72,29 @@ void main() {
         () => mockCacheRepository.cachedFile(any(), any()),
       ).thenAnswer((_) async => null);
 
-      await viewModel.load(testPhotos, testBlogId);
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      await notifier.load(testPhotos, testBlogId);
 
-      expect(viewModel.photos, testPhotos);
-      expect(viewModel.blogId, testBlogId);
+      final state = container.read(photoGalleryViewModelProvider);
+      expect(state.photos, testPhotos);
+      expect(state.blogId, testBlogId);
     });
 
-    test('load 會通知 listeners', () async {
+    test('load 會觸發狀態變更', () async {
       when(
         () => mockCacheRepository.cachedFile(any(), any()),
       ).thenAnswer((_) async => null);
 
-      int notifyCount = 0;
-      viewModel.addListener(() => notifyCount++);
+      int stateChangeCount = 0;
+      container.listen(photoGalleryViewModelProvider, (prev, next) {
+        stateChangeCount++;
+      });
 
-      await viewModel.load(testPhotos, testBlogId);
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      await notifier.load(testPhotos, testBlogId);
 
       // 第一次：設定 photos/blogId 後通知；第二次：快取解析完成後通知
-      expect(notifyCount, 2);
+      expect(stateChangeCount, 2);
     });
   });
 
@@ -98,11 +110,13 @@ void main() {
         () => mockCacheRepository.cachedFile('photo2.jpg', testBlogId),
       ).thenAnswer((_) async => null);
 
-      await viewModel.load(testPhotos, testBlogId);
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      await notifier.load(testPhotos, testBlogId);
 
-      expect(viewModel.cachedFiles.length, 2);
-      expect(viewModel.cachedFiles['1'], mockFile);
-      expect(viewModel.cachedFiles['2'], isNull);
+      final state = container.read(photoGalleryViewModelProvider);
+      expect(state.cachedFiles.length, 2);
+      expect(state.cachedFiles['1'], mockFile);
+      expect(state.cachedFiles['2'], isNull);
     });
 
     test('所有照片皆有快取時，cachedFiles 全部非 null', () async {
@@ -116,10 +130,12 @@ void main() {
         () => mockCacheRepository.cachedFile('photo2.jpg', testBlogId),
       ).thenAnswer((_) async => mockFile2);
 
-      await viewModel.load(testPhotos, testBlogId);
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      await notifier.load(testPhotos, testBlogId);
 
-      expect(viewModel.cachedFiles['1'], mockFile1);
-      expect(viewModel.cachedFiles['2'], mockFile2);
+      final state = container.read(photoGalleryViewModelProvider);
+      expect(state.cachedFiles['1'], mockFile1);
+      expect(state.cachedFiles['2'], mockFile2);
     });
 
     test('所有照片皆無快取時，cachedFiles 全部為 null', () async {
@@ -127,10 +143,12 @@ void main() {
         () => mockCacheRepository.cachedFile(any(), any()),
       ).thenAnswer((_) async => null);
 
-      await viewModel.load(testPhotos, testBlogId);
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      await notifier.load(testPhotos, testBlogId);
 
-      expect(viewModel.cachedFiles['1'], isNull);
-      expect(viewModel.cachedFiles['2'], isNull);
+      final state = container.read(photoGalleryViewModelProvider);
+      expect(state.cachedFiles['1'], isNull);
+      expect(state.cachedFiles['2'], isNull);
     });
 
     test('重新 load 會清除舊的 cachedFiles', () async {
@@ -144,8 +162,12 @@ void main() {
         () => mockCacheRepository.cachedFile('photo2.jpg', testBlogId),
       ).thenAnswer((_) async => null);
 
-      await viewModel.load(testPhotos, testBlogId);
-      expect(viewModel.cachedFiles['1'], mockFile);
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      await notifier.load(testPhotos, testBlogId);
+      expect(
+        container.read(photoGalleryViewModelProvider).cachedFiles['1'],
+        mockFile,
+      );
 
       // 第二次 load：使用不同的照片清單
       const newPhotos = [
@@ -160,12 +182,13 @@ void main() {
         () => mockCacheRepository.cachedFile('photo3.jpg', 'newBlog'),
       ).thenAnswer((_) async => null);
 
-      await viewModel.load(newPhotos, 'newBlog');
+      await notifier.load(newPhotos, 'newBlog');
 
+      final state = container.read(photoGalleryViewModelProvider);
       // 舊的 key 應該不存在，只有新的 key
-      expect(viewModel.cachedFiles.containsKey('1'), isFalse);
-      expect(viewModel.cachedFiles.containsKey('2'), isFalse);
-      expect(viewModel.cachedFiles.containsKey('3'), isTrue);
+      expect(state.cachedFiles.containsKey('1'), isFalse);
+      expect(state.cachedFiles.containsKey('2'), isFalse);
+      expect(state.cachedFiles.containsKey('3'), isTrue);
     });
 
     test('cachedFile 以 photo.id 作為 key', () async {
@@ -173,26 +196,36 @@ void main() {
         () => mockCacheRepository.cachedFile(any(), any()),
       ).thenAnswer((_) async => null);
 
-      await viewModel.load(testPhotos, testBlogId);
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      await notifier.load(testPhotos, testBlogId);
 
+      final state = container.read(photoGalleryViewModelProvider);
       // 驗證 key 是 photo.id 而非 filename
-      expect(viewModel.cachedFiles.containsKey('1'), isTrue);
-      expect(viewModel.cachedFiles.containsKey('2'), isTrue);
-      expect(viewModel.cachedFiles.containsKey('photo1.jpg'), isFalse);
+      expect(state.cachedFiles.containsKey('1'), isTrue);
+      expect(state.cachedFiles.containsKey('2'), isTrue);
+      expect(state.cachedFiles.containsKey('photo1.jpg'), isFalse);
     });
   });
 
-  group('GalleryMode 狀態管理', () {
-    test('初始 mode 為 GalleryMode.browsing', () {
-      expect(viewModel.mode, GalleryMode.browsing);
+  group('選取模式狀態管理', () {
+    test('初始 isSelectMode 為 false', () {
+      final state = container.read(photoGalleryViewModelProvider);
+      expect(state.isSelectMode, isFalse);
     });
 
     test('toggleSelectMode 在 browsing 與 selecting 間切換', () {
-      viewModel.toggleSelectMode();
-      expect(viewModel.mode, GalleryMode.selecting);
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      notifier.toggleSelectMode();
+      expect(
+        container.read(photoGalleryViewModelProvider).isSelectMode,
+        isTrue,
+      );
 
-      viewModel.toggleSelectMode();
-      expect(viewModel.mode, GalleryMode.browsing);
+      notifier.toggleSelectMode();
+      expect(
+        container.read(photoGalleryViewModelProvider).isSelectMode,
+        isFalse,
+      );
     });
 
     test('toggleSelectMode 切回 browsing 時清空 selectedIds', () async {
@@ -200,98 +233,108 @@ void main() {
         () => mockCacheRepository.cachedFile(any(), any()),
       ).thenAnswer((_) async => null);
 
-      await viewModel.load(testPhotos, testBlogId);
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      await notifier.load(testPhotos, testBlogId);
 
       // 進入選取模式並選取照片
-      viewModel.toggleSelectMode();
-      viewModel.toggleSelection('1');
-      expect(viewModel.selectedIds, {'1'});
+      notifier.toggleSelectMode();
+      notifier.toggleSelection('1');
+      expect(container.read(photoGalleryViewModelProvider).selectedIds, {'1'});
 
       // 切回 browsing 後 selectedIds 被清空
-      viewModel.toggleSelectMode();
-      expect(viewModel.mode, GalleryMode.browsing);
-      expect(viewModel.selectedIds, isEmpty);
+      notifier.toggleSelectMode();
+      final state = container.read(photoGalleryViewModelProvider);
+      expect(state.isSelectMode, isFalse);
+      expect(state.selectedIds, isEmpty);
     });
   });
 
-  group('saveSelectedToGallery Result 處理', () {
+  group('saveSelectedToGallery 處理', () {
     setUp(() async {
       when(
         () => mockCacheRepository.cachedFile(any(), any()),
       ).thenAnswer((_) async => null);
 
-      await viewModel.load(testPhotos, testBlogId);
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      await notifier.load(testPhotos, testBlogId);
 
       // 進入選取模式並選取一張照片
-      viewModel.toggleSelectMode();
-      viewModel.toggleSelection('1');
+      notifier.toggleSelectMode();
+      notifier.toggleSelection('1');
     });
 
-    test('Result.ok 時 mode 回到 browsing 且 selectedIds 被清空', () async {
+    test('成功時 isSelectMode 回到 false 且 selectedIds 被清空', () async {
       when(
         () => mockPhotoRepository.saveToGalleryFromCache(
           photos: any(named: 'photos'),
           blogId: any(named: 'blogId'),
         ),
-      ).thenAnswer((_) async => Result.ok(null));
+      ).thenAnswer((_) async {});
 
-      await viewModel.saveSelectedToGallery();
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      await notifier.saveSelectedToGallery();
 
-      expect(viewModel.mode, GalleryMode.browsing);
-      expect(viewModel.selectedIds, isEmpty);
-      expect(viewModel.errorType, isNull);
+      final state = container.read(photoGalleryViewModelProvider);
+      expect(state.isSelectMode, isFalse);
+      expect(state.selectedIds, isEmpty);
+      expect(state.saveOperation, isA<AsyncData>());
     });
 
-    test('Result.error 時 mode 回到 browsing 且 errorType 被設定', () async {
+    test('拋出例外時 isSelectMode 回到 false 且 saveOperation 為 AsyncError', () async {
       when(
         () => mockPhotoRepository.saveToGalleryFromCache(
           photos: any(named: 'photos'),
           blogId: any(named: 'blogId'),
         ),
-      ).thenAnswer((_) async => Result.error(Exception('fail')));
+      ).thenThrow(Exception('fail'));
 
-      await viewModel.saveSelectedToGallery();
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      await notifier.saveSelectedToGallery();
 
-      expect(viewModel.mode, GalleryMode.browsing);
-      expect(viewModel.errorType, GallerySaveErrorType.saveToGalleryFailed);
+      final state = container.read(photoGalleryViewModelProvider);
+      expect(state.isSelectMode, isFalse);
+      expect(state.saveOperation, isA<AsyncError>());
     });
   });
 
-  group('saveAllToGallery Result 處理', () {
+  group('saveAllToGallery 處理', () {
     setUp(() async {
       when(
         () => mockCacheRepository.cachedFile(any(), any()),
       ).thenAnswer((_) async => null);
 
-      await viewModel.load(testPhotos, testBlogId);
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      await notifier.load(testPhotos, testBlogId);
     });
 
-    test('Result.ok 時 mode 回到 browsing', () async {
+    test('成功時 saveOperation 為 AsyncData', () async {
       when(
         () => mockPhotoRepository.saveToGalleryFromCache(
           photos: any(named: 'photos'),
           blogId: any(named: 'blogId'),
         ),
-      ).thenAnswer((_) async => Result.ok(null));
+      ).thenAnswer((_) async {});
 
-      await viewModel.saveAllToGallery();
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      await notifier.saveAllToGallery();
 
-      expect(viewModel.mode, GalleryMode.browsing);
-      expect(viewModel.errorType, isNull);
+      final state = container.read(photoGalleryViewModelProvider);
+      expect(state.saveOperation, isA<AsyncData>());
     });
 
-    test('Result.error 時 mode 回到 browsing 且 errorType 被設定', () async {
+    test('拋出例外時 saveOperation 為 AsyncError', () async {
       when(
         () => mockPhotoRepository.saveToGalleryFromCache(
           photos: any(named: 'photos'),
           blogId: any(named: 'blogId'),
         ),
-      ).thenAnswer((_) async => Result.error(Exception('fail')));
+      ).thenThrow(Exception('fail'));
 
-      await viewModel.saveAllToGallery();
+      final notifier = container.read(photoGalleryViewModelProvider.notifier);
+      await notifier.saveAllToGallery();
 
-      expect(viewModel.mode, GalleryMode.browsing);
-      expect(viewModel.errorType, GallerySaveErrorType.saveToGalleryFailed);
+      final state = container.read(photoGalleryViewModelProvider);
+      expect(state.saveOperation, isA<AsyncError>());
     });
   });
 }
