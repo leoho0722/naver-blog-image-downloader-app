@@ -8,6 +8,7 @@ import '../../../data/repositories/log_repository.dart';
 import '../../../data/repositories/photo_repository.dart';
 import '../../../data/services/api_service.dart' show ApiServiceException;
 import '../../core/app_error.dart';
+import '../../core/naver_url_validator.dart';
 
 part 'blog_input_view_model.g.dart';
 
@@ -156,9 +157,10 @@ class BlogInputViewModel extends _$BlogInputViewModel {
     );
 
     try {
+      final normalizedUrl = NaverUrlValidator.normalize(state.blogUrl);
       final repo = ref.read(photoRepositoryProvider);
       final result = await repo.fetchPhotos(
-        state.blogUrl,
+        normalizedUrl,
         onStatusChanged: (status) {
           state = state.copyWith(
             loadingPhase: () => switch (status) {

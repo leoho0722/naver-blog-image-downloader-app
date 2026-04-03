@@ -37,6 +37,17 @@ void main() {
 
       expect(id1, isNot(equals(id2)));
     });
+
+    test('不同格式的 URL 產生不同 blogId（呼叫端須先正規化）', () {
+      const mobileUrl = 'https://m.blog.naver.com/edament/224238392216';
+      const desktopUrl = 'https://blog.naver.com/edament/224238392216';
+
+      final mobileId = repository.blogId(mobileUrl);
+      final desktopId = repository.blogId(desktopUrl);
+
+      // blogId 本身不做正規化，不同字串產生不同 hash
+      expect(mobileId, isNot(equals(desktopId)));
+    });
   });
 
   group('快取淘汰功能', () {

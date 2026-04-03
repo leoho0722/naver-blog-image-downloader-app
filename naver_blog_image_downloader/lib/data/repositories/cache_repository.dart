@@ -46,7 +46,10 @@ class CacheRepository {
 
   /// 以 SHA-256 對 Blog URL 進行 hash，回傳前 16 碼十六進制字串作為 blogId。
   ///
-  /// [blogUrl] 為 Naver Blog 的完整網址。
+  /// 呼叫端須確保傳入的 [blogUrl] 已完成正規化（例如將手機版 URL 轉為電腦版），
+  /// 以保證同一篇文章不論原始 URL 格式都能對應到相同的 blogId。
+  ///
+  /// [blogUrl] 為 Naver Blog 的完整網址（已正規化）。
   ///
   /// 回傳 SHA-256 前 16 碼的十六進制字串。
   String blogId(String blogUrl) {

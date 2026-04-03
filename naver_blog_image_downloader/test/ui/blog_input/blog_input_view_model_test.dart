@@ -86,6 +86,76 @@ void main() {
     });
   });
 
+  group('Mobile URL normalization', () {
+    test('手機版 URL 正規化後再傳給 Repository', () async {
+      const mobileUrl = 'https://m.blog.naver.com/edament/224238392216';
+      const normalizedUrl = 'https://blog.naver.com/edament/224238392216';
+
+      const mobileResult = FetchResult(
+        photos: [
+          PhotoEntity(
+            id: 'photo-1',
+            url: 'https://example.com/photo1.jpg',
+            filename: 'photo1.jpg',
+          ),
+        ],
+        blogId: 'mobile-blog-id',
+        blogUrl: normalizedUrl,
+        isFullyCached: false,
+      );
+
+      readNotifier().onUrlChanged(mobileUrl);
+
+      // mock 使用正規化後的電腦版 URL
+      when(
+        () => mockPhotoRepository.fetchPhotos(
+          normalizedUrl,
+          onStatusChanged: any(named: 'onStatusChanged'),
+        ),
+      ).thenAnswer((_) async => mobileResult);
+
+      await readNotifier().fetchPhotos();
+
+      // 驗證 Repository 收到的是正規化後的電腦版 URL
+      verify(
+        () => mockPhotoRepository.fetchPhotos(
+          normalizedUrl,
+          onStatusChanged: any(named: 'onStatusChanged'),
+        ),
+      ).called(1);
+
+      // 驗證不會使用原始手機版 URL 呼叫 Repository
+      verifyNever(
+        () => mockPhotoRepository.fetchPhotos(
+          mobileUrl,
+          onStatusChanged: any(named: 'onStatusChanged'),
+        ),
+      );
+
+      expect(readState().fetchResult.value, mobileResult);
+    });
+
+    test('電腦版 URL 不變，直接傳給 Repository', () async {
+      readNotifier().onUrlChanged(testBlogUrl);
+
+      when(
+        () => mockPhotoRepository.fetchPhotos(
+          testBlogUrl,
+          onStatusChanged: any(named: 'onStatusChanged'),
+        ),
+      ).thenAnswer((_) async => testFetchResult);
+
+      await readNotifier().fetchPhotos();
+
+      verify(
+        () => mockPhotoRepository.fetchPhotos(
+          testBlogUrl,
+          onStatusChanged: any(named: 'onStatusChanged'),
+        ),
+      ).called(1);
+    });
+  });
+
   group('Empty URL validation', () {
     test('blogUrl 為空時設定 FetchException(emptyUrl) 且不呼叫 repository', () async {
       final states = <BlogInputState>[];
