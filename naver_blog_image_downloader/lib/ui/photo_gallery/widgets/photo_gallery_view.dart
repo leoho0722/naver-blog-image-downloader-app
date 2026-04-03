@@ -183,7 +183,12 @@ class _PhotoGalleryViewState extends ConsumerState<PhotoGalleryView> {
     final photo = state.photos[index];
     context.push(
       '/detail/${photo.id}',
-      extra: (photos: state.photos, blogId: state.blogId, initialIndex: index),
+      extra: (
+        photos: state.photos,
+        blogId: state.blogId,
+        initialIndex: index,
+        cachedFiles: state.cachedFiles,
+      ),
     );
   }
 }

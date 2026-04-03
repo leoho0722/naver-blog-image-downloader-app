@@ -1,18 +1,22 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:naver_blog_image_downloader/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/photo_entity.dart';
+import '../../../data/services/photo_viewer_service.dart';
 import '../view_model/photo_detail_view_model.dart';
-import 'photo_detail_capsule_bar.dart';
 
-/// 照片詳細頁面，以全螢幕顯示照片並支援手勢縮放、水平滑動切換與沈浸模式。
+/// 照片詳細頁面（薄殼），僅負責啟動原生全螢幕檢視器與處理回呼。
+///
+/// 不渲染任何照片 UI，所有顯示邏輯由原生端（iOS SwiftUI / Android Compose）處理。
+/// 透過 [PhotoViewerService] 傳送照片路徑、l10n 字串與 theme 色彩至原生端。
 class PhotoDetailView extends ConsumerStatefulWidget {
   /// 建立 [PhotoDetailView]。
   ///
-  /// [photoId] 為要顯示的照片識別碼。
+  /// [photoId] 為要顯示的照片識別碼，由路由參數傳入。
   const PhotoDetailView({super.key, required this.photoId});
 
   /// 要顯示的照片識別碼，由路由參數傳入。
@@ -25,34 +29,15 @@ class PhotoDetailView extends ConsumerStatefulWidget {
   ConsumerState<PhotoDetailView> createState() => _PhotoDetailViewState();
 }
 
-/// [PhotoDetailView] 的狀態管理類，處理照片分頁、手勢縮放與沈浸模式切換。
+/// [PhotoDetailView] 的狀態管理類，負責啟動原生檢視器與處理回呼。
 class _PhotoDetailViewState extends ConsumerState<PhotoDetailView> {
   /// 是否已完成初始載入（防止 [didChangeDependencies] 重複觸發）。
   bool _loaded = false;
 
-  /// 是否處於沈浸模式（隱藏系統 UI 與操作列）。
-  bool _isImmersive = false;
-
-  /// 照片是否正在被放大（縮放比例 > 1.01），放大時停用水平滑動。
-  bool _isZoomed = false;
-
-  /// 照片分頁控制器，控制水平滑動切換照片。
-  late PageController _pageController;
-
-  /// 照片縮放手勢的轉換矩陣控制器。
-  final _transformationController = TransformationController();
-
-  /// 初始化分頁控制器與縮放手勢監聽器。
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
-    _transformationController.addListener(_onTransformChanged);
-  }
-
-  /// 依賴變更時初始化分頁控制器並載入照片資料。
+  /// 依賴變更時初始化並啟動原生圖片檢視器。
   ///
-  /// 首次呼叫時從路由 `extra` 取得照片清單與初始索引，觸發 ViewModel 載入。
+  /// 首次呼叫時從路由 `extra` 取得照片清單、初始索引與快取檔案 Map，
+  /// 觸發 ViewModel 載入後啟動原生檢視器，並註冊回呼處理器。
   /// 透過 [_loaded] 旗標防止重複觸發。
   @override
   void didChangeDependencies() {
@@ -61,244 +46,103 @@ class _PhotoDetailViewState extends ConsumerState<PhotoDetailView> {
       _loaded = true;
       final extra = GoRouterState.of(context).extra;
       if (extra
-          is ({List<PhotoEntity> photos, String blogId, int initialIndex})) {
-        _pageController.dispose();
-        _pageController = PageController(initialPage: extra.initialIndex);
+          is ({
+            List<PhotoEntity> photos,
+            String blogId,
+            int initialIndex,
+            Map<String, File?> cachedFiles,
+          })) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            ref
-                .read(photoDetailViewModelProvider.notifier)
-                .loadAll(extra.photos, extra.blogId, extra.initialIndex);
+            _launchNativeViewer(
+              extra.photos,
+              extra.blogId,
+              extra.initialIndex,
+              extra.cachedFiles,
+            );
           }
         });
       }
     }
   }
 
-  /// 釋放資源，恢復系統 UI 模式並銷毀控制器。
+  /// 釋放資源，移除原生回呼處理器。
   @override
   void dispose() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    _transformationController.removeListener(_onTransformChanged);
-    _transformationController.dispose();
-    _pageController.dispose();
+    ref.read(photoViewerServiceProvider).removeCallbackHandler();
     super.dispose();
   }
 
-  /// 當縮放手勢改變時，更新 [_isZoomed] 狀態以決定是否停用水平滑動。
-  void _onTransformChanged() {
-    final scale = _transformationController.value.getMaxScaleOnAxis();
-    final zoomed = scale > 1.01;
-    if (zoomed != _isZoomed) {
-      setState(() => _isZoomed = zoomed);
-    }
-  }
-
-  /// 切換沈浸模式：隱藏／顯示系統狀態列、導航列與操作列。
-  void _toggleImmersiveMode() {
-    setState(() => _isImmersive = !_isImmersive);
-    SystemChrome.setEnabledSystemUIMode(
-      _isImmersive ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
-    );
-  }
-
-  /// 建構照片詳細頁面的 Widget 樹。
+  /// 建構空白 Scaffold（原生檢視器覆蓋在上層）。
   ///
-  /// [context] 為目前的 [BuildContext]，用於取得本地化資源與安全區域資訊。
+  /// [context] 為目前的 [BuildContext]。
   ///
-  /// 回傳包含全螢幕 PageView、頂部覆蓋列與底部膠囊操作列的 [Scaffold]。
+  /// 回傳空白 [Scaffold]，背景為黑色以避免閃白。
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(photoDetailViewModelProvider);
-    final l10n = AppLocalizations.of(context);
-    final topPadding = MediaQuery.of(context).padding.top;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
-    return Scaffold(
-      backgroundColor: _isImmersive
-          ? Colors.black
-          : Theme.of(context).scaffoldBackgroundColor,
-      body: state.photos.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                // Layer 1: PageView（全螢幕）
-                PageView.builder(
-                  controller: _pageController,
-                  physics: _isZoomed
-                      ? const NeverScrollableScrollPhysics()
-                      : const PageScrollPhysics(),
-                  itemCount: state.totalCount,
-                  onPageChanged: (index) {
-                    ref
-                        .read(photoDetailViewModelProvider.notifier)
-                        .setCurrentIndex(index);
-                    _transformationController.value = Matrix4.identity();
-                  },
-                  itemBuilder: (context, index) {
-                    final file = index == state.currentIndex
-                        ? state.cachedFile
-                        : null;
-
-                    return GestureDetector(
-                      onTap: _toggleImmersiveMode,
-                      child: InteractiveViewer(
-                        transformationController: _transformationController,
-                        child: Center(
-                          child: file != null
-                              ? Image.file(file, fit: BoxFit.contain)
-                              : const CircularProgressIndicator(),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-                // Layer 2: 頂部覆蓋列
-                AnimatedSlide(
-                  offset: _isImmersive ? const Offset(0, -1) : Offset.zero,
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeInOut,
-                  child: Container(
-                    padding: EdgeInsets.only(top: topPadding),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.black54, Colors.transparent],
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        BackButton(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black,
-                        ),
-                        const Spacer(),
-                        Text(
-                          l10n.detailPhotoCounter(
-                            state.currentIndex + 1,
-                            state.totalCount,
-                          ),
-                          style: TextStyle(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const Spacer(),
-                        const SizedBox(width: 48),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Layer 3: 底部膠囊操作列
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: AnimatedSlide(
-                    offset: _isImmersive ? const Offset(0, 1) : Offset.zero,
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeInOut,
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: bottomPadding + 20),
-                      child: Center(
-                        child: PhotoDetailCapsuleBar(
-                          onInfoTap: () => _showInfoSheet(context, state),
-                          onSaveTap: ref
-                              .read(photoDetailViewModelProvider.notifier)
-                              .saveToGallery,
-                          saveOperation: state.saveOperation,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-    );
+    return const Scaffold(backgroundColor: Colors.black);
   }
 
-  /// 以 bottom sheet 顯示當前照片的檔案資訊（大小、尺寸）。
+  /// 組建參數並啟動原生全螢幕圖片檢視器。
   ///
-  /// [context] 為當前的 BuildContext，用於開啟 bottom sheet。
-  /// [state] 為照片詳細頁面的狀態，提供檔案大小與尺寸資訊。
-  void _showInfoSheet(BuildContext context, PhotoDetailState state) {
+  /// - [photos]：照片實體清單。
+  /// - [blogId]：Blog 識別碼。
+  /// - [initialIndex]：初始顯示的照片索引。
+  /// - [cachedFiles]：照片 ID 對應快取檔案的 Map。
+  void _launchNativeViewer(
+    List<PhotoEntity> photos,
+    String blogId,
+    int initialIndex,
+    Map<String, File?> cachedFiles,
+  ) {
+    // 更新 ViewModel 狀態
+    ref
+        .read(photoDetailViewModelProvider.notifier)
+        .loadAll(photos, blogId, initialIndex, cachedFiles);
+
+    // 組建檔案路徑清單
+    final filePaths = photos.map((p) => cachedFiles[p.id]?.path ?? '').toList();
+
+    // 收集 l10n 字串
     final l10n = AppLocalizations.of(context);
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.detailFileInfo,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            _InfoRow(
-              label: l10n.detailFileSize,
-              value: state.formattedFileSize,
-            ),
-            _InfoRow(
-              label: l10n.detailDimensions,
-              value: state.formattedDimensions,
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+    final localizedStrings = {
+      'fileInfo': l10n.detailFileInfo,
+      'fileSize': l10n.detailFileSize,
+      'dimensions': l10n.detailDimensions,
+    };
+
+    // 收集 theme 色彩 ARGB
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final themeColors = {
+      'surfaceContainerHigh': colorScheme.surfaceContainerHigh.toARGB32(),
+      'onSurface': colorScheme.onSurface.toARGB32(),
+      'onSurfaceVariant': colorScheme.onSurfaceVariant.toARGB32(),
+      'primary': colorScheme.primary.toARGB32(),
+      'surface': colorScheme.surface.toARGB32(),
+    };
+
+    // 註冊回呼
+    final service = ref.read(photoViewerServiceProvider);
+    service.setCallbackHandler(
+      onSaveCompleted: (blogId) {
+        ref
+            .read(photoDetailViewModelProvider.notifier)
+            .logSaveToGallery(blogId);
+      },
+      onDismissed: (_) {
+        if (mounted) context.pop();
+      },
     );
-  }
-}
 
-/// 資訊列元件，以「標籤：值」的水平排列顯示單項照片資訊。
-class _InfoRow extends StatelessWidget {
-  /// 建立 [_InfoRow]。
-  ///
-  /// [label] 為左側標籤文字。
-  /// [value] 為右側數值文字。
-  const _InfoRow({required this.label, required this.value});
-
-  /// 左側標籤文字（例如「檔案大小」）。
-  final String label;
-
-  /// 右側數值文字（例如「1.5 MB」）。
-  final String value;
-
-  /// 建構資訊列的 Widget 樹。
-  ///
-  /// [context] 為目前的 [BuildContext]，用於取得主題文字樣式與配色。
-  ///
-  /// 回傳包含標籤與數值的水平排列 [Widget]。
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(value, style: Theme.of(context).textTheme.bodyMedium),
-          ),
-        ],
-      ),
+    // 啟動原生檢視器
+    service.openViewer(
+      filePaths: filePaths,
+      initialIndex: initialIndex,
+      blogId: blogId,
+      localizedStrings: localizedStrings,
+      isDarkMode: isDarkMode,
+      themeColors: themeColors,
     );
   }
 }

@@ -11,7 +11,7 @@ import '../models/fetch_result.dart';
 import '../models/photo_entity.dart';
 import '../services/api_service.dart';
 import '../services/file_download_service.dart';
-import '../services/gallery_service.dart';
+import '../services/photo_service.dart';
 import '../../ui/core/app_error.dart';
 import 'cache_repository.dart';
 
@@ -26,7 +26,7 @@ PhotoRepository photoRepository(Ref ref) {
   return PhotoRepository(
     apiService: ref.watch(apiServiceProvider),
     fileDownloadService: ref.watch(fileDownloadServiceProvider),
-    galleryService: ref.watch(galleryServiceProvider),
+    photoService: ref.watch(photoServiceProvider),
     cacheRepository: ref.watch(cacheRepositoryProvider),
   );
 }
@@ -34,23 +34,23 @@ PhotoRepository photoRepository(Ref ref) {
 /// 照片 Repository，負責協調 API 呼叫、快取與相簿儲存操作。
 ///
 /// 作為 Domain 與 Data 層之間的橋梁，將 [ApiService]、[CacheRepository]、
-/// [FileDownloadService] 與 [GalleryService] 的操作組合為上層可直接使用的用例。
+/// [FileDownloadService] 與 [PhotoService] 的操作組合為上層可直接使用的用例。
 class PhotoRepository {
   /// 建立 [PhotoRepository]，需注入所有依賴的服務與子 Repository。
   ///
   /// - [apiService]：API 通訊服務，負責提交爬蟲任務與查詢狀態。
   /// - [cacheRepository]：快取 Repository，負責本機檔案快取與 metadata 管理。
   /// - [fileDownloadService]：檔案下載服務，負責從遠端 URL 下載圖片。
-  /// - [galleryService]：系統相簿存取服務，負責將照片儲存至使用者相簿。
+  /// - [photoService]：系統相簿存取服務，負責將照片儲存至使用者相簿。
   PhotoRepository({
     required ApiService apiService,
     required CacheRepository cacheRepository,
     required FileDownloadService fileDownloadService,
-    required GalleryService galleryService,
+    required PhotoService photoService,
   }) : _apiService = apiService,
        _cacheRepository = cacheRepository,
        _fileDownloadService = fileDownloadService,
-       _galleryService = galleryService;
+       _photoService = photoService;
 
   /// API 通訊服務，負責提交爬蟲任務與查詢狀態。
   final ApiService _apiService;
@@ -62,7 +62,7 @@ class PhotoRepository {
   final FileDownloadService _fileDownloadService;
 
   /// 系統相簿存取服務，負責將照片儲存至使用者相簿。
-  final GalleryService _galleryService;
+  final PhotoService _photoService;
 
   /// 每次輪詢任務狀態的等待間隔（3 秒）。
   static const _pollInterval = Duration(seconds: 3);
@@ -167,15 +167,15 @@ class PhotoRepository {
   ///
   /// [filePath] 為本機照片檔案的絕對路徑。
   ///
-  /// 先透過 [GalleryService.requestPermission] 確認權限，
-  /// 再呼叫 [GalleryService.saveToGallery] 寫入相簿。
+  /// 先透過 [PhotoService.requestPermission] 確認權限，
+  /// 再呼叫 [PhotoService.saveToGallery] 寫入相簿。
   /// 權限不足時拋出 [AppError]（type: [AppErrorType.gallery]）。
   Future<void> saveOneToGallery(String filePath) async {
-    final hasPermission = await _galleryService.requestPermission();
+    final hasPermission = await _photoService.requestPermission();
     if (!hasPermission) {
       throw const AppError(type: AppErrorType.gallery, message: '相簿權限未授權');
     }
-    await _galleryService.saveToGallery(filePath);
+    await _photoService.saveToGallery(filePath);
   }
 
   /// 從快取讀取照片檔案並逐一儲存至系統相簿，完成後標記 metadata。
@@ -193,7 +193,7 @@ class PhotoRepository {
     for (final photo in photos) {
       final file = await _cacheRepository.cachedFile(photo.filename, blogId);
       if (file == null) continue;
-      await _galleryService.saveToGallery(file.path, totalCount: photos.length);
+      await _photoService.saveToGallery(file.path, totalCount: photos.length);
     }
     await _cacheRepository.markAsSavedToGallery(blogId);
   }

@@ -11,14 +11,14 @@ import 'package:naver_blog_image_downloader/data/repositories/cache_repository.d
 import 'package:naver_blog_image_downloader/data/repositories/photo_repository.dart';
 import 'package:naver_blog_image_downloader/data/services/api_service.dart';
 import 'package:naver_blog_image_downloader/data/services/file_download_service.dart';
-import 'package:naver_blog_image_downloader/data/services/gallery_service.dart';
+import 'package:naver_blog_image_downloader/data/services/photo_service.dart';
 import 'package:naver_blog_image_downloader/ui/core/app_error.dart';
 
 class MockApiService extends Mock implements ApiService {}
 
 class MockFileDownloadService extends Mock implements FileDownloadService {}
 
-class MockGalleryService extends Mock implements GalleryService {}
+class MockPhotoService extends Mock implements PhotoService {}
 
 class MockCacheRepository extends Mock implements CacheRepository {}
 
@@ -47,7 +47,7 @@ class FakeDirectory extends Fake implements Directory {
 void main() {
   late MockApiService mockApiService;
   late MockFileDownloadService mockFileDownloadService;
-  late MockGalleryService mockGalleryService;
+  late MockPhotoService mockPhotoService;
   late MockCacheRepository mockCacheRepository;
   late PhotoRepository repository;
 
@@ -61,12 +61,12 @@ void main() {
   setUp(() {
     mockApiService = MockApiService();
     mockFileDownloadService = MockFileDownloadService();
-    mockGalleryService = MockGalleryService();
+    mockPhotoService = MockPhotoService();
     mockCacheRepository = MockCacheRepository();
     repository = PhotoRepository(
       apiService: mockApiService,
       fileDownloadService: mockFileDownloadService,
-      galleryService: mockGalleryService,
+      photoService: mockPhotoService,
       cacheRepository: mockCacheRepository,
     );
   });
@@ -746,7 +746,7 @@ void main() {
         ).thenAnswer((_) async => mockFile3);
 
         when(
-          () => mockGalleryService.saveToGallery(
+          () => mockPhotoService.saveToGallery(
             any(),
             totalCount: any(named: 'totalCount'),
           ),
@@ -763,7 +763,7 @@ void main() {
 
         // Assert — 完成無例外
         verify(
-          () => mockGalleryService.saveToGallery(
+          () => mockPhotoService.saveToGallery(
             any(),
             totalCount: any(named: 'totalCount'),
           ),
@@ -786,7 +786,7 @@ void main() {
         ).thenAnswer((_) async => mockFile3);
 
         when(
-          () => mockGalleryService.saveToGallery(
+          () => mockPhotoService.saveToGallery(
             any(),
             totalCount: any(named: 'totalCount'),
           ),
@@ -803,7 +803,7 @@ void main() {
 
         // Assert — 完成無例外
         verify(
-          () => mockGalleryService.saveToGallery(
+          () => mockPhotoService.saveToGallery(
             any(),
             totalCount: any(named: 'totalCount'),
           ),
@@ -830,7 +830,7 @@ void main() {
 
         final callOrder = <String>[];
         when(
-          () => mockGalleryService.saveToGallery(
+          () => mockPhotoService.saveToGallery(
             any(),
             totalCount: any(named: 'totalCount'),
           ),
@@ -850,7 +850,7 @@ void main() {
         // Assert
         expect(callOrder.length, 3);
         verify(
-          () => mockGalleryService.saveToGallery(
+          () => mockPhotoService.saveToGallery(
             any(),
             totalCount: any(named: 'totalCount'),
           ),
@@ -874,7 +874,7 @@ void main() {
         ).thenAnswer((_) async => null);
 
         when(
-          () => mockGalleryService.saveToGallery(
+          () => mockPhotoService.saveToGallery(
             any(),
             totalCount: any(named: 'totalCount'),
           ),
@@ -910,7 +910,7 @@ void main() {
           () => mockCacheRepository.cachedFile('photo3.jpg', saveBlogId),
         ).thenAnswer((_) async => null);
         when(
-          () => mockGalleryService.saveToGallery(
+          () => mockPhotoService.saveToGallery(
             any(),
             totalCount: any(named: 'totalCount'),
           ),
@@ -926,14 +926,14 @@ void main() {
         );
       });
 
-      test('GalleryService 例外時拋出例外', () async {
+      test('PhotoService 例外時拋出例外', () async {
         // Arrange
         final mockFile1 = FakeFile('/tmp/cache/photo1.jpg');
         when(
           () => mockCacheRepository.cachedFile('photo1.jpg', saveBlogId),
         ).thenAnswer((_) async => mockFile1);
         when(
-          () => mockGalleryService.saveToGallery(
+          () => mockPhotoService.saveToGallery(
             any(),
             totalCount: any(named: 'totalCount'),
           ),
@@ -966,7 +966,7 @@ void main() {
           () => mockCacheRepository.cachedFile('photo3.jpg', saveBlogId),
         ).thenAnswer((_) async => null);
         when(
-          () => mockGalleryService.saveToGallery(
+          () => mockPhotoService.saveToGallery(
             any(),
             totalCount: any(named: 'totalCount'),
           ),
@@ -994,21 +994,21 @@ void main() {
 
     test('權限授予時成功儲存無例外', () async {
       when(
-        () => mockGalleryService.requestPermission(),
+        () => mockPhotoService.requestPermission(),
       ).thenAnswer((_) async => true);
       when(
-        () => mockGalleryService.saveToGallery(testFilePath),
+        () => mockPhotoService.saveToGallery(testFilePath),
       ).thenAnswer((_) async {});
 
       await repository.saveOneToGallery(testFilePath);
 
-      verify(() => mockGalleryService.requestPermission()).called(1);
-      verify(() => mockGalleryService.saveToGallery(testFilePath)).called(1);
+      verify(() => mockPhotoService.requestPermission()).called(1);
+      verify(() => mockPhotoService.saveToGallery(testFilePath)).called(1);
     });
 
     test('權限拒絕時拋出例外且不呼叫 saveToGallery', () async {
       when(
-        () => mockGalleryService.requestPermission(),
+        () => mockPhotoService.requestPermission(),
       ).thenAnswer((_) async => false);
 
       try {
@@ -1019,19 +1019,19 @@ void main() {
       }
 
       verifyNever(
-        () => mockGalleryService.saveToGallery(
+        () => mockPhotoService.saveToGallery(
           any(),
           totalCount: any(named: 'totalCount'),
         ),
       );
     });
 
-    test('GalleryService 拋出例外時拋出例外', () async {
+    test('PhotoService 拋出例外時拋出例外', () async {
       when(
-        () => mockGalleryService.requestPermission(),
+        () => mockPhotoService.requestPermission(),
       ).thenAnswer((_) async => true);
       when(
-        () => mockGalleryService.saveToGallery(testFilePath),
+        () => mockPhotoService.saveToGallery(testFilePath),
       ).thenThrow(const AppError(type: AppErrorType.gallery, message: '儲存失敗'));
 
       expect(
