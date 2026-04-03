@@ -3,21 +3,21 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../ui/core/app_error.dart';
 
-part 'gallery_service.g.dart';
+part 'photo_service.g.dart';
 
-/// GalleryService 的 Riverpod provider（App 級單例）。
+/// PhotoService 的 Riverpod provider（App 級單例）。
 ///
 /// [ref] 為 Riverpod 的依賴參照。
-/// 回傳 [GalleryService] 實例。
+/// 回傳 [PhotoService] 實例。
 @Riverpod(keepAlive: true)
-GalleryService galleryService(Ref ref) => GalleryService();
+PhotoService photoService(Ref ref) => PhotoService();
 
 /// 系統相簿存取服務，透過 MethodChannel 呼叫原生 API 儲存照片。
 ///
 /// iOS 使用 PhotoKit `PHAssetCreationRequest.addResource(fileURL:)` 直接寫入，
 /// Android 使用 MediaStore + FileInputStream 直接複製，
 /// 兩者皆不轉碼，保留原始編碼與檔案大小。
-class GalleryService {
+class PhotoService {
   /// 與原生平台（iOS / Android）溝通的 MethodChannel 通道名稱。
   static const _channel = MethodChannel(
     'com.leoho.naverBlogImageDownloader/gallery',

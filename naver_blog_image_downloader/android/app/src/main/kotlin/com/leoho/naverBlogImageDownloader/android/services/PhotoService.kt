@@ -1,4 +1,4 @@
-package com.leoho.naverBlogImageDownloader.android
+package com.leoho.naverBlogImageDownloader.android.services
 
 import android.content.ContentValues
 import android.content.Context
@@ -19,8 +19,16 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * @param context Android Context，用於存取 ContentResolver。
  */
-class GallerySaver(private val context: Context) {
+class PhotoService(private val context: Context) {
+
+    // region Properties
+
+    /** 檔名序號計數器，確保批次儲存時檔名唯一。 */
     private val sequenceCounter = AtomicInteger(0)
+
+    // endregion
+
+    // region Public Methods
 
     /**
      * 將指定路徑的圖片檔案儲存至系統相簿。
@@ -67,6 +75,10 @@ class GallerySaver(private val context: Context) {
         return true
     }
 
+    // endregion
+
+    // region Private Methods
+
     /**
      * 產生系統風格的檔名，使用時間戳 + 動態補零遞增序號確保唯一性與排序一致。
      *
@@ -95,4 +107,6 @@ class GallerySaver(private val context: Context) {
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
             ?: "image/jpeg"
     }
+
+    // endregion
 }

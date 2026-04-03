@@ -1,7 +1,11 @@
 import Photos
 
-/// 原生相簿儲存服務，使用 PhotoKit 直接寫入檔案不轉碼。
-final class GallerySaver {
+/// 原生相簿存取服務，使用 PhotoKit 直接寫入檔案不轉碼。
+final class PhotoService {}
+
+// MARK: - Internal Methods
+
+extension PhotoService {
 
     /// 將指定路徑的圖片檔案儲存至系統相簿。
     ///

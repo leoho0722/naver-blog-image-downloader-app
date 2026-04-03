@@ -1,21 +1,16 @@
-package com.leoho.naverBlogImageDownloader.android
+package com.leoho.naverBlogImageDownloader.android.applications.channels.features
 
-import io.flutter.embedding.android.FlutterActivity
+import com.leoho.naverBlogImageDownloader.android.applications.MainActivity
+import com.leoho.naverBlogImageDownloader.android.services.PhotoService
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
-class MainActivity : FlutterActivity() {
-    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        super.configureFlutterEngine(flutterEngine)
-        setupGalleryChannel(flutterEngine)
-    }
-}
+// region Channel Setup
 
-// region Gallery Channel Extension
-
+/** Gallery MethodChannel 通道名稱。 */
 private const val GALLERY_CHANNEL_NAME = "com.leoho.naverBlogImageDownloader/gallery"
 
 /**
@@ -23,31 +18,35 @@ private const val GALLERY_CHANNEL_NAME = "com.leoho.naverBlogImageDownloader/gal
  *
  * @param flutterEngine Flutter 引擎實例，用於取得 BinaryMessenger。
  */
-private fun MainActivity.setupGalleryChannel(flutterEngine: FlutterEngine) {
-    val gallerySaver = GallerySaver(this)
+fun MainActivity.setupGalleryChannel(flutterEngine: FlutterEngine) {
+    val photoService = PhotoService(this)
 
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, GALLERY_CHANNEL_NAME)
         .setMethodCallHandler { call, result ->
-            handleGalleryMethodCall(call, result, gallerySaver)
+            handleGalleryMethodCall(call, result, photoService)
         }
 }
+
+// endregion
+
+// region Private Methods
 
 /**
  * 分派 Gallery MethodChannel 的方法呼叫。
  *
  * @param call Flutter 端傳入的方法呼叫，包含方法名稱與參數。
  * @param result 回傳結果給 Flutter 端的 callback。
- * @param gallerySaver 相簿儲存服務實例。
+ * @param photoService 相簿儲存服務實例。
  */
 private fun MainActivity.handleGalleryMethodCall(
     call: MethodCall,
     result: MethodChannel.Result,
-    gallerySaver: GallerySaver
+    photoService: PhotoService
 ) {
     lifecycleScope.launch {
         when (call.method) {
-            "saveToGallery" -> handleSaveToGallery(call, result, gallerySaver)
-            "requestPermission" -> handleRequestPermission(result, gallerySaver)
+            "saveToGallery" -> handleSaveToGallery(call, result, photoService)
+            "requestPermission" -> handleRequestPermission(result, photoService)
             else -> result.notImplemented()
         }
     }
@@ -58,12 +57,12 @@ private fun MainActivity.handleGalleryMethodCall(
  *
  * @param call 需包含 `Map` 類型的參數，含 `filePath`（String）與 `totalCount`（Int）。
  * @param result 成功回傳 `true`，失敗回傳錯誤。
- * @param gallerySaver 相簿儲存服務實例。
+ * @param photoService 相簿儲存服務實例。
  */
 private suspend fun MainActivity.handleSaveToGallery(
     call: MethodCall,
     result: MethodChannel.Result,
-    gallerySaver: GallerySaver
+    photoService: PhotoService
 ) {
     val args = call.arguments as? Map<*, *>
     val filePath = args?.get("filePath") as? String
@@ -73,7 +72,7 @@ private suspend fun MainActivity.handleSaveToGallery(
         return
     }
     try {
-        val success = gallerySaver.saveToGallery(filePath, totalCount)
+        val success = photoService.saveToGallery(filePath, totalCount)
         result.success(success)
     } catch (e: Exception) {
         result.error("SAVE_FAILED", e.message, null)
@@ -84,13 +83,13 @@ private suspend fun MainActivity.handleSaveToGallery(
  * 處理 `requestPermission` 方法呼叫。
  *
  * @param result 授權成功回傳 `true`，否則回傳 `false`。
- * @param gallerySaver 相簿儲存服務實例。
+ * @param photoService 相簿儲存服務實例。
  */
 private fun MainActivity.handleRequestPermission(
     result: MethodChannel.Result,
-    gallerySaver: GallerySaver
+    photoService: PhotoService
 ) {
-    result.success(gallerySaver.requestPermission())
+    result.success(photoService.requestPermission())
 }
 
 // endregion

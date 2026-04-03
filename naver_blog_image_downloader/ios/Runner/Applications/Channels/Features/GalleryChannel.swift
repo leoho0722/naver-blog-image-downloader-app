@@ -1,29 +1,8 @@
 import Flutter
-import UIKit
-
-@main
-@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
-    private let gallerySaver = GallerySaver()
-
-    override func application(
-        _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-    ) -> Bool {
-        return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-    }
-
-    func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
-        GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
-        guard let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "GallerySaver") else { 
-            return
-        }
-        setupGalleryChannel(messenger: registrar.messenger())
-    }
-}
 
 // MARK: - Gallery Channel
 
-private extension AppDelegate {
+extension AppDelegate {
 
     /// 註冊 Gallery MethodChannel，處理 `saveToGallery` 與 `requestPermission` 呼叫。
     ///
@@ -36,12 +15,21 @@ private extension AppDelegate {
 
         channel.setMethodCallHandler { [weak self] call, result in
             guard let self else {
-                result(FlutterError(code: "UNAVAILABLE", message: "AppDelegate deallocated", details: nil))
+                result(FlutterError(
+                    code: "UNAVAILABLE",
+                    message: "AppDelegate deallocated",
+                    details: nil
+                ))
                 return
             }
             self.handleGalleryMethodCall(call, result: result)
         }
     }
+}
+
+// MARK: - Private Methods
+
+private extension AppDelegate {
 
     /// 分派 Gallery MethodChannel 的方法呼叫。
     ///
@@ -73,7 +61,7 @@ private extension AppDelegate {
             return
         }
         do {
-            let success = try await gallerySaver.saveToGallery(filePath: filePath)
+            let success = try await photoService.saveToGallery(filePath: filePath)
             result(success)
         } catch {
             result(FlutterError(code: "SAVE_FAILED", message: error.localizedDescription, details: nil))
@@ -84,7 +72,7 @@ private extension AppDelegate {
     ///
     /// - Parameter result: 授權成功回傳 `true`，否則回傳 `false`。
     func handleRequestPermission(result: @escaping FlutterResult) async {
-        let granted = await gallerySaver.requestPermission()
+        let granted = await photoService.requestPermission()
         result(granted)
     }
 }
