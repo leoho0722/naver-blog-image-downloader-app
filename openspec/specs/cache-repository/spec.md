@@ -8,7 +8,7 @@ TBD - created by archiving change 's014-cache-repository'. Update Purpose after 
 
 ### Requirement: SHA-256 blogId generation
 
-The `CacheRepository.blogId(String blogUrl)` method SHALL compute a SHA-256 hash of the given blog URL and return the first 16 hexadecimal characters as the blog identifier.
+The `CacheRepository.blogId(String blogUrl)` method SHALL first normalize the given blog URL using `NaverUrlValidator.normalize()`, then compute a SHA-256 hash of the normalized URL and return the first 16 hexadecimal characters as the blog identifier. This ensures that mobile (`https://m.blog.naver.com/...`) and desktop (`https://blog.naver.com/...`) URLs for the same blog post produce identical blog identifiers.
 
 #### Scenario: Consistent blogId for same URL
 
@@ -17,66 +17,45 @@ The `CacheRepository.blogId(String blogUrl)` method SHALL compute a SHA-256 hash
 
 #### Scenario: Different blogId for different URLs
 
-- **WHEN** `blogId` is called with two distinct URLs
+- **WHEN** `blogId` is called with two distinct blog post URLs (different blog posts)
 - **THEN** it SHALL return different identifiers
+
+#### Scenario: Same blogId for mobile and desktop URLs of same post
+
+- **WHEN** `blogId` is called with `https://m.blog.naver.com/edament/224238392216`
+- **AND** `blogId` is called with `https://blog.naver.com/edament/224238392216`
+- **THEN** both calls SHALL return the same 16-character hexadecimal string
 
 
 <!-- @trace
-source: s014-cache-repository
-updated: 2026-03-21
+source: fix-cache-key-url-normalization
+updated: 2026-04-04
 code:
-  - naver_blog_image_downloader/lib/data/repositories/cache_repository.dart
-  - naver_blog_image_downloader/devtools_options.yaml
-  - naver_blog_image_downloader/lib/utils/extensions.dart
-  - naver_blog_image_downloader/pubspec.yaml
-  - naver_blog_image_downloader/ios/Runner.xcworkspace/contents.xcworkspacedata
-  - naver_blog_image_downloader/lib/app.dart
-  - naver_blog_image_downloader/lib/ui/settings/widgets/settings_view.dart
-  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_gallery_view.dart
-  - naver_blog_image_downloader/lib/routing/app_router.dart
-  - naver_blog_image_downloader/lib/ui/download/widgets/download_view.dart
-  - naver_blog_image_downloader/lib/ui/photo_detail/view_model/photo_detail_view_model.dart
-  - naver_blog_image_downloader/lib/data/models/dtos/job_status_response.dart
-  - naver_blog_image_downloader/lib/utils/constants.dart
+  - naver_blog_image_downloader/android/app/src/main/kotlin/com/leoho/naverBlogImageDownloader/android/features/photoviewer/view/FileInfoContent.kt
+  - naver_blog_image_downloader/android/app/src/main/kotlin/com/leoho/naverBlogImageDownloader/android/applications/channels/features/PhotoViewerChannel.kt
+  - naver_blog_image_downloader/android/app/src/main/kotlin/com/leoho/naverBlogImageDownloader/android/features/photoviewer/view/PhotoViewerScreen.kt
+  - naver_blog_image_downloader/android/app/src/main/kotlin/com/leoho/naverBlogImageDownloader/android/features/photoviewer/view/CapsuleBottomBar.kt
+  - naver_blog_image_downloader/ios/Runner/Features/PhotoViewer/View/ZoomableImageView.swift
+  - naver_blog_image_downloader/ios/Runner/GeneratedPlugin/GeneratedPluginRegistrant.h
+  - naver_blog_image_downloader/ios/Runner/GoogleService-Info.plist
+  - naver_blog_image_downloader/ios/Runner/Features/PhotoViewer/View/PhotoViewerView.swift
+  - naver_blog_image_downloader/ios/Runner/Features/PhotoViewer/View/ZoomableScrollView.swift
+  - naver_blog_image_downloader/ios/Runner/Configurations/GoogleService-Info.plist
+  - naver_blog_image_downloader/android/app/src/main/AndroidManifest.xml
+  - naver_blog_image_downloader/ios/Runner/Features/PhotoViewer/View/PhotoViewerNavigationBar.swift
+  - naver_blog_image_downloader/android/app/build.gradle.kts
+  - naver_blog_image_downloader/ios/Runner/GeneratedPlugin/GeneratedPluginRegistrant.m
+  - naver_blog_image_downloader/android/app/src/main/kotlin/com/leoho/naverBlogImageDownloader/android/features/photoviewer/view/PhotoViewerActivity.kt
   - naver_blog_image_downloader/ios/Runner.xcodeproj/project.pbxproj
-  - naver_blog_image_downloader/lib/data/services/gallery_service.dart
-  - naver_blog_image_downloader/ios/Podfile.lock
-  - naver_blog_image_downloader/lib/data/models/photo_entity.dart
-  - naver_blog_image_downloader/lib/data/services/api_service.dart
-  - naver_blog_image_downloader/lib/data/services/file_download_service.dart
-  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_request.dart
-  - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
-  - naver_blog_image_downloader/lib/data/models/dtos/photo_download_response.dart
-  - naver_blog_image_downloader/lib/config/app_config.dart
-  - naver_blog_image_downloader/lib/data/models/download_batch_result.dart
-  - naver_blog_image_downloader/lib/ui/download/view_model/download_view_model.dart
+  - naver_blog_image_downloader/ios/Runner/Applications/Channels/Features/PhotoViewerChannel.swift
+  - naver_blog_image_downloader/android/app/src/main/kotlin/com/leoho/naverBlogImageDownloader/android/features/photoviewer/view/ZoomableImage.kt
+  - naver_blog_image_downloader/ios/Runner/Features/PhotoViewer/View/CapsuleBottomBar.swift
+  - naver_blog_image_downloader/ios/Runner/Features/PhotoViewer/View/PhotoViewerController.swift
   - naver_blog_image_downloader/lib/ui/photo_detail/widgets/photo_detail_view.dart
-  - naver_blog_image_downloader/lib/ui/settings/view_model/settings_view_model.dart
-  - naver_blog_image_downloader/lib/ui/photo_gallery/widgets/photo_card.dart
-  - naver_blog_image_downloader/ios/Runner/Info.plist
-  - naver_blog_image_downloader/ios/Flutter/Release.xcconfig
-  - naver_blog_image_downloader/ios/Flutter/Debug.xcconfig
-  - naver_blog_image_downloader/lib/data/models/fetch_result.dart
-  - naver_blog_image_downloader/pubspec.lock
-  - naver_blog_image_downloader/lib/ui/core/app_error.dart
-  - naver_blog_image_downloader/lib/ui/core/result.dart
-  - naver_blog_image_downloader/lib/ui/photo_gallery/view_model/photo_gallery_view_model.dart
-  - Naver Blog 照片下載器-Flutter-系統架構設計書-完整版.md
-  - naver_blog_image_downloader/lib/data/models/blog_cache_metadata.dart
-  - naver_blog_image_downloader/lib/amplifyconfiguration.dart
-  - naver_blog_image_downloader/ios/Podfile
-  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
-  - naver_blog_image_downloader/lib/config/theme.dart
-  - naver_blog_image_downloader/lib/main.dart
-  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
-  - naver_blog_image_downloader/lib/ui/blog_input/view_model/blog_input_view_model.dart
-tests:
-  - naver_blog_image_downloader/test/data/services/api_service_test.dart
-  - naver_blog_image_downloader/test/data/repositories/cache_repository_test.dart
-  - naver_blog_image_downloader/test/widget_test.dart
-  - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
-  - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
-  - naver_blog_image_downloader/test/ui/download/download_view_model_test.dart
+  - naver_blog_image_downloader/android/app/src/main/kotlin/com/leoho/naverBlogImageDownloader/android/features/photoviewer/viewmodel/PhotoViewerViewModel.kt
+  - CLAUDE.md
+  - naver_blog_image_downloader/android/settings.gradle.kts
+  - naver_blog_image_downloader/ios/Runner/Features/PhotoViewer/View/FileInfoSheet.swift
 -->
 
 ---
