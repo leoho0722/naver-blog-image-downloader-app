@@ -28,7 +28,6 @@ final class PhotoViewerController: UIHostingController<PhotoViewerView> {
         self.viewModel = viewModel
         let view = PhotoViewerView(viewModel: viewModel)
         super.init(rootView: view)
-        modalPresentationStyle = .fullScreen
     }
 
     @available(*, unavailable)

@@ -72,6 +72,9 @@ private fun MainActivity.handleOpenViewer(
     val themeColors = (args?.get("themeColors") as? Map<*, *>)
         ?.entries?.associate { (it.key as String) to ((it.value as? Int) ?: 0) }
 
+    android.util.Log.d("PhotoViewer", "openViewer filePaths[0]=${filePaths?.firstOrNull()}")
+    android.util.Log.d("PhotoViewer", "openViewer filePaths.size=${filePaths?.size}")
+
     if (filePaths == null || blogId == null) {
         result.error("INVALID_ARG", "Missing required parameters", null)
         return

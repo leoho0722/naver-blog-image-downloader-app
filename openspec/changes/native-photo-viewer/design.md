@@ -105,7 +105,7 @@ ios/Runner/
 │   ├── AppDelegate.swift                    — 精簡本體（Properties + Lifecycle）
 │   └── Channels/Features/
 │       ├── GalleryChannel.swift             — AppDelegate extension（從本體拆出）
-│       └── PhotoViewerChannel.swift         — AppDelegate extension
+│       └── PhotoViewerChannel.swift         — AppDelegate extension（CATransition push/pop 動畫）
 ├── Features/PhotoViewer/
 │   ├── Model/
 │   │   ├── PhotoFileInfo.swift              — 檔案元資料 struct
@@ -114,8 +114,10 @@ ios/Runner/
 │   │   └── PhotoViewerViewModel.swift       — @Observable + ViewState nested enum
 │   └── View/
 │       ├── PhotoViewerController.swift      — UIHostingController
-│       ├── PhotoViewerView.swift            — NavigationStack + TabView(.page)
-│       ├── ZoomableImageView.swift          — UIViewRepresentable + UIScrollView
+│       ├── PhotoViewerView.swift            — 純 ZStack + TabView(.page)（不使用 NavigationStack）
+│       ├── PhotoViewerNavigationBar.swift   — 自定義導航列（漸層背景 + 置中標題）
+│       ├── ZoomableImageView.swift          — UIViewRepresentable 橋接
+│       ├── ZoomableScrollView.swift         — UIScrollView 子類（layoutSubviews aspect fit）
 │       ├── CapsuleBottomBar.swift           — 膠囊操作列
 │       ├── FileInfoSheet.swift              — 檔案資訊 Sheet
 │       └── AsyncButton.swift                — async → Button 橋接元件
@@ -123,7 +125,9 @@ ios/Runner/
     └── PhotoService.swift                   — PhotoKit 相簿存取（原 GallerySaver）
 ```
 
-- **NavigationStack**：原生 swipe-back 手勢 + 自動 safe area 處理
+- **純 ZStack 架構**：不使用 NavigationStack（避免 safe area 影響圖片置中），TabView 以 `.ignoresSafeArea()` 填滿螢幕
+- **自定義導航列**：`PhotoViewerNavigationBar` 以漸層背景 overlay 在頂部
+- **CATransition push/pop 動畫**：present 時模擬從右到左的 push 效果（0.35s）
 - **TabView + `.page`**：原生流暢分頁
 - **UIScrollView 縮放**：`minimumZoomScale: 1.0`、`maximumZoomScale: 5.0`、雙擊切換 1x/2x
 - **`save()` 為 `async` 方法**：搭配 `AsyncButton` 橋接，`viewState` 為 `private(set)`
@@ -150,7 +154,7 @@ android/.../android/
 │   │   └── PhotoViewerViewModel.kt          — Compose State + ViewState nested enum
 │   └── view/
 │       ├── PhotoViewerActivity.kt           — ComponentActivity + MaterialTheme
-│       ├── PhotoViewerScreen.kt             — Scaffold + TopAppBar + HorizontalPager
+│       ├── PhotoViewerScreen.kt             — 純 Box + 自定義導航列 + HorizontalPager
 │       ├── ZoomableImage.kt                 — BitmapFactory + LRU 快取 + 手勢縮放
 │       ├── CapsuleBottomBar.kt              — 膠囊操作列
 │       └── FileInfoContent.kt              — 檔案資訊 Bottom Sheet
@@ -158,7 +162,8 @@ android/.../android/
     └── PhotoService.kt                      — MediaStore 相簿存取（原 GallerySaver）
 ```
 
-- **Scaffold + TopAppBar**：標準 Material 3 導航列，系統返回自動處理
+- **純 Box 架構**：不使用 Scaffold（避免 TopAppBar padding 影響圖片置中），自定義導航列以漸層背景 overlay 在頂部
+- **OnBackPressedCallback**：攔截系統返回手勢，統一走 `viewModel.dismiss()`
 - **HorizontalPager**：Compose 原生流暢分頁
 - **ZoomableImage**：`BitmapFactory.decodeFile` + LRU 快取（max 7, `removeEldestEntry`），`Image(bitmap.asImageBitmap())` 已 memoize
 - **`viewState` 為 `private set`**，透過 `onPageChanged()` 封裝頁面切換邏輯

@@ -68,21 +68,22 @@
 - **WHEN** `PhotoViewerActivity.onCreate` is called
 - **THEN** it SHALL create a `PhotoViewerViewModel` with all parameters
 
-### Requirement: PhotoViewerScreen with Scaffold and HorizontalPager
+### Requirement: PhotoViewerScreen with Box layout and HorizontalPager
 
-`PhotoViewerScreen` SHALL use a `Scaffold` with a `TopAppBar` containing a back button and page indicator (`"N / M"`). The body SHALL contain a `HorizontalPager` wrapping `ZoomableImage` composables. A bottom capsule bar SHALL be overlaid. The top bar and capsule bar SHALL be hidden with `AnimatedVisibility` when `viewModel.isImmersive` is true. System bars SHALL be controlled via `WindowInsetsControllerCompat`.
+`PhotoViewerScreen` SHALL use a pure `Box` layout (NOT `Scaffold`) with a `HorizontalPager` filling the entire screen. A custom navigation bar (gradient background, centered title, back button) SHALL be overlaid at the top. A `CapsuleBottomBar` SHALL be overlaid at the bottom. Both overlays SHALL be hidden with `AnimatedVisibility` using `fadeIn`/`fadeOut` when `viewModel.isImmersive` is true. System bars SHALL be controlled via `WindowInsetsControllerCompat`. The `PhotoViewerActivity` SHALL use `OnBackPressedCallback` to intercept the system back gesture and delegate to `viewModel.dismiss()`.
 
 #### Scenario: Page indicator displays correct count
 
 - **GIVEN** the viewer has 12 photos at settled page 2
-- **WHEN** the top bar is visible
-- **THEN** the page indicator SHALL display "3 / 12"
+- **WHEN** the navigation bar is visible
+- **THEN** the centered title SHALL display "3 / 12"
 
-#### Scenario: Immersive mode hides system bars
+#### Scenario: Immersive mode hides system bars and overlays
 
 - **GIVEN** `viewModel.isImmersive` is true
 - **WHEN** the immersive effect runs
 - **THEN** `WindowInsetsControllerCompat.hide(systemBars)` SHALL be called
+- **AND** the navigation bar and capsule bar SHALL fade out
 
 ### Requirement: ZoomableImage with bitmap caching
 

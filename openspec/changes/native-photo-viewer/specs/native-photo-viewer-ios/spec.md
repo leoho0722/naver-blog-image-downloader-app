@@ -68,21 +68,21 @@
 - **WHEN** `prefersStatusBarHidden` is queried
 - **THEN** it SHALL return `true`
 
-### Requirement: PhotoViewerView with NavigationStack
+### Requirement: PhotoViewerView with ZStack layout
 
-`PhotoViewerView` SHALL use a `NavigationStack` containing a `TabView` with `.tabViewStyle(.page(indexDisplayMode: .never))`. The toolbar SHALL contain a back button (leading), page indicator as principal text (`"N / M"`), and the toolbar SHALL be hidden when `viewModel.isImmersive` is true. A bottom capsule bar overlay SHALL be shown when not immersive.
+`PhotoViewerView` SHALL use a pure `ZStack` layout (NOT `NavigationStack`) with a `TabView` using `.tabViewStyle(.page(indexDisplayMode: .never))` and `.ignoresSafeArea()`. A `PhotoViewerNavigationBar` (custom navigation bar with gradient background and centered title) SHALL be overlaid at the top. A `CapsuleBottomBar` SHALL be overlaid at the bottom. Both overlays SHALL be hidden with `.transition(.opacity)` animation when `viewModel.isImmersive` is true. The `PhotoViewerChannel` SHALL present the controller using `CATransition` with push/pop style animation (0.35s duration).
 
 #### Scenario: Page indicator displays correct count
 
 - **GIVEN** the viewer has 12 photos at index 2
-- **WHEN** the toolbar is visible
-- **THEN** the principal text SHALL display "3 / 12"
+- **WHEN** the navigation bar is visible
+- **THEN** the centered title SHALL display "3 / 12"
 
-#### Scenario: Toolbar hidden in immersive mode
+#### Scenario: Overlays hidden in immersive mode
 
 - **GIVEN** `viewModel.isImmersive` is true
 - **WHEN** the view renders
-- **THEN** the toolbar and bottom capsule bar SHALL be hidden with animation
+- **THEN** the navigation bar and bottom capsule bar SHALL be hidden with opacity transition
 
 ### Requirement: ZoomableImageView with UIScrollView
 

@@ -34,6 +34,9 @@ class _PhotoDetailViewState extends ConsumerState<PhotoDetailView> {
   /// 是否已完成初始載入（防止 [didChangeDependencies] 重複觸發）。
   bool _loaded = false;
 
+  /// 快取的 [PhotoViewerService] 引用，供 [dispose] 安全使用。
+  PhotoViewerService? _photoViewerService;
+
   /// 依賴變更時初始化並啟動原生圖片檢視器。
   ///
   /// 首次呼叫時從路由 `extra` 取得照片清單、初始索引與快取檔案 Map，
@@ -69,7 +72,7 @@ class _PhotoDetailViewState extends ConsumerState<PhotoDetailView> {
   /// 釋放資源，移除原生回呼處理器。
   @override
   void dispose() {
-    ref.read(photoViewerServiceProvider).removeCallbackHandler();
+    _photoViewerService?.removeCallbackHandler();
     super.dispose();
   }
 
@@ -124,6 +127,7 @@ class _PhotoDetailViewState extends ConsumerState<PhotoDetailView> {
 
     // 註冊回呼
     final service = ref.read(photoViewerServiceProvider);
+    _photoViewerService = service;
     service.setCallbackHandler(
       onSaveCompleted: (blogId) {
         ref

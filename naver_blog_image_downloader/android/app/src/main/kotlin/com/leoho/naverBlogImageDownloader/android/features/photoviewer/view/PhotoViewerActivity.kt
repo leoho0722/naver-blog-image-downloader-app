@@ -2,6 +2,7 @@ package com.leoho.naverBlogImageDownloader.android.features.photoviewer.view
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
@@ -21,8 +22,8 @@ class PhotoViewerActivity : ComponentActivity() {
 
     // region Properties
 
-    /** 檢視器的 ViewModel，供 onBackPressed 存取當前索引。 */
-    private lateinit var viewModel: PhotoViewerViewModel
+    /** 檢視器的 ViewModel，供 onBackPressed 與 file-level extension 存取。 */
+    internal lateinit var viewModel: PhotoViewerViewModel
 
     // endregion
 
@@ -33,13 +34,15 @@ class PhotoViewerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         viewModel = buildViewModel()
-        setContent { buildContent() }
-    }
 
-    @Deprecated("Use OnBackPressedCallback instead")
-    override fun onBackPressed() {
-        viewModel.dismiss()
-        super.onBackPressed()
+        // 攔截系統返回手勢，透過 ViewModel 通知 Flutter 後再 finish
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                viewModel.dismiss()
+            }
+        })
+
+        setContent { buildContent() }
     }
 
     // endregion

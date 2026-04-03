@@ -2,8 +2,8 @@ import SwiftUI
 
 /// 原生全螢幕圖片檢視器的 SwiftUI 主畫面。
 ///
-/// 使用 `NavigationStack` 搭配 `TabView(.page)` 實現水平翻頁，
-/// 並透過 toolbar 與 overlay 提供覆蓋列、膠囊列與檔案資訊 Sheet。
+/// 不使用 `NavigationStack` 管理 layout，改為純 `ZStack` 疊加
+/// 自訂頂部列與底部膠囊列，避免 safe area 與 toolbar 造成的位移問題。
 struct PhotoViewerView: View {
 
     // MARK: - Properties
@@ -27,52 +27,50 @@ struct PhotoViewerView: View {
     // MARK: - Body
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.black.ignoresSafeArea()
+        ZStack {
+            // 全螢幕黑色背景
+            Color.black.ignoresSafeArea()
 
-                TabView(selection: $selectedTab) {
-                    ForEach(viewModel.filePaths.enumerated().map { $0 }, id: \.offset) { _, filePath in
-                        ZoomableImageView(filePath: filePath)
-                    }
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .onChange(of: selectedTab) { _, newValue in
-                    viewModel.onPageChanged(newValue)
-                }
-                .onTapGesture {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        viewModel.isImmersive.toggle()
-                    }
+            // 照片翻頁 — 填滿整個螢幕
+            TabView(selection: $selectedTab) {
+                ForEach(viewModel.filePaths.enumerated().map { $0 }, id: \.offset) { _, filePath in
+                    ZoomableImageView(filePath: filePath)
                 }
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Back", systemImage: "chevron.left", action: viewModel.dismiss)
-                        .labelStyle(.iconOnly)
-                        .foregroundStyle(.white)
-                        .fontWeight(.semibold)
-                }
-                ToolbarItem(placement: .principal) {
-                    Text("\(viewModel.currentIndex + 1) / \(viewModel.totalCount)")
-                        .foregroundStyle(.white)
-                        .font(.subheadline.weight(.medium))
-                }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .ignoresSafeArea()
+            .onChange(of: selectedTab) { _, newValue in
+                viewModel.onPageChanged(newValue)
             }
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbar(viewModel.isImmersive ? .hidden : .visible, for: .navigationBar)
-            .overlay(alignment: .bottom) {
-                if !viewModel.isImmersive {
+            .onTapGesture {
+                viewModel.isImmersive.toggle()
+            }
+
+            // 頂部列
+            if !viewModel.isImmersive {
+                VStack {
+                    PhotoViewerNavigationBar(viewModel: viewModel)
+                    Spacer()
+                }
+                .transition(.opacity)
+            }
+
+            // 底部膠囊列
+            if !viewModel.isImmersive {
+                VStack {
+                    Spacer()
                     CapsuleBottomBar(viewModel: viewModel)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
                         .padding(.bottom, 16)
                 }
+                .transition(.opacity)
             }
-            .animation(.easeInOut(duration: 0.25), value: viewModel.isImmersive)
         }
+        .animation(.easeInOut(duration: 0.25), value: viewModel.isImmersive)
         .sheet(isPresented: $viewModel.showFileInfo) {
             FileInfoSheet(viewModel: viewModel)
-                .presentationDetents([.medium])
+                .presentationDetents([.height(180)])
+                .presentationDragIndicator(.hidden)
+                .presentationBackground(Color(.systemBackground))
         }
     }
 }

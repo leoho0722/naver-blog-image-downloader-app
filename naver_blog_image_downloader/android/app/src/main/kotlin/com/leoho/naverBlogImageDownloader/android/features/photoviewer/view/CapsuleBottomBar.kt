@@ -12,7 +12,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.SaveAlt
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -34,7 +34,7 @@ fun CapsuleBottomBar(viewModel: PhotoViewerViewModel) {
     Row(
         modifier = Modifier
             .background(
-                color = viewModel.themeColors.surfaceContainerHigh.copy(alpha = 0.85f),
+                color = Color.DarkGray.copy(alpha = 0.85f),
                 shape = RoundedCornerShape(28.dp),
             )
             .padding(horizontal = 4.dp),
@@ -48,10 +48,9 @@ fun CapsuleBottomBar(viewModel: PhotoViewerViewModel) {
             )
         }
 
-        HorizontalDivider(
-            modifier = Modifier
-                .height(24.dp)
-                .width(1.dp),
+        VerticalDivider(
+            modifier = Modifier.height(24.dp),
+            thickness = 1.dp,
             color = Color.White.copy(alpha = 0.3f),
         )
 

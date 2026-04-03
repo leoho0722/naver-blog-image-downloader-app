@@ -31,6 +31,7 @@ struct FileInfoSheet: View {
                     }
                 }
             }
+            .contentMargins(.top, 8)
             .navigationTitle(viewModel.localizedStrings["fileInfo"] ?? "File Info")
             .navigationBarTitleDisplayMode(.inline)
         }

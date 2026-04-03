@@ -32,6 +32,8 @@ struct CapsuleBottomBar: View {
                     switch viewModel.viewState {
                     case .idle:
                         Image(systemName: "square.and.arrow.down")
+                            .imageScale(.medium)
+                            .offset(y: -2)
 
                     case .saving:
                         ProgressView()

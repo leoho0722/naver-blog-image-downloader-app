@@ -59,31 +59,42 @@ fun ZoomableImage(
         offset = Offset.Zero
     }
 
+    android.util.Log.d("PhotoViewer", "ZoomableImage filePath=$filePath")
     val bitmap = remember(filePath) {
-        bitmapCache.getOrPut(filePath) {
-            BitmapFactory.decodeFile(filePath)
+        bitmapCache[filePath] ?: BitmapFactory.decodeFile(filePath)?.also {
+            bitmapCache[filePath] = it
         }
     }
     val imageBitmap = remember(bitmap) { bitmap?.asImageBitmap() }
+
+    val isZoomed = scale > 1.01f
 
     if (bitmap != null && imageBitmap != null) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        val newScale = (scale * zoom).coerceIn(1f, 5f)
-                        scale = newScale
-                        if (newScale > 1f) {
-                            offset = Offset(
-                                x = offset.x + pan.x,
-                                y = offset.y + pan.y,
-                            )
-                        } else {
-                            offset = Offset.Zero
+                .then(
+                    if (isZoomed) {
+                        // 縮放中：攔截拖曳做平移，HorizontalPager 無法滑動
+                        Modifier.pointerInput(Unit) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                val newScale = (scale * zoom).coerceIn(1f, 5f)
+                                scale = newScale
+                                if (newScale > 1f) {
+                                    offset = Offset(
+                                        x = offset.x + pan.x,
+                                        y = offset.y + pan.y,
+                                    )
+                                } else {
+                                    offset = Offset.Zero
+                                }
+                            }
                         }
+                    } else {
+                        // 未縮放：不攔截拖曳，讓 HorizontalPager 處理滑動
+                        Modifier
                     }
-                }
+                )
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onDoubleTap = {

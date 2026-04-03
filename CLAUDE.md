@@ -67,15 +67,16 @@ ViewModel（Notifier<State> / AsyncNotifier<State>，@riverpod 註解）
   ↓ ref.read
 Repository（PhotoRepository / CacheRepository / LogRepository）— SSOT
   ↓
-Service（ApiService / FileDownloadService / GalleryService / AuthService / LogService / CrashlyticsService）— 無狀態
+Service（ApiService / FileDownloadService / PhotoService / PhotoViewerService / AuthService / LogService / CrashlyticsService）— 無狀態
   ↓
-Native（Swift / Kotlin via MethodChannel）— GalleryService 橋接原生 API
+Native（Swift / Kotlin via MethodChannel）— PhotoService 橋接原生相簿 API、PhotoViewerService 橋接原生圖片檢視器
 Firebase（Auth + Firestore + Crashlytics）— AuthService / LogService / CrashlyticsService 橋接
 ```
 
 - ViewModel 不得直接存取 Service，必須透過 Repository
 - Repository 方法失敗時直接 throw Exception，ViewModel 以 `AsyncValue` 處理 loading / error / data 狀態
-- GalleryService 透過 MethodChannel 呼叫原生 API（iOS: PhotoKit / Android: MediaStore）
+- PhotoService 透過 MethodChannel 呼叫原生 API（iOS: PhotoKit / Android: MediaStore）
+- PhotoViewerService 透過 MethodChannel 啟動原生全螢幕圖片檢視器（iOS: SwiftUI / Android: Jetpack Compose）
 - ViewModel 使用不可變 State class + `copyWith`，非同步操作以 `AsyncValue<T>` 欄位表達
 - Service / Repository 使用 `@Riverpod(keepAlive: true)`（App 級單例）
 - `AppSettingsViewModel` 使用 `@Riverpod(keepAlive: true)`（提供 theme/locale 給 MaterialApp）

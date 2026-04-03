@@ -129,6 +129,7 @@ class PhotoViewerViewModel(
     fun fileInfo(index: Int): PhotoFileInfo? {
         val path = filePaths.getOrNull(index) ?: return null
         val file = File(path)
+        android.util.Log.d("PhotoViewer", "fileInfo index=$index path=$path exists=${file.exists()}")
         if (!file.exists()) return null
 
         val size = file.length()
