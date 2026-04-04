@@ -1,6 +1,5 @@
 package com.leoho.naverBlogImageDownloader.android.features.photoviewer.viewmodel
 
-import android.app.Activity
 import android.graphics.BitmapFactory
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -9,7 +8,7 @@ import androidx.compose.runtime.setValue
 import com.leoho.naverBlogImageDownloader.android.applications.channels.features.getPhotoViewerChannel
 import com.leoho.naverBlogImageDownloader.android.features.photoviewer.model.PhotoFileInfo
 import com.leoho.naverBlogImageDownloader.android.features.photoviewer.model.ThemeColors
-import com.leoho.naverBlogImageDownloader.android.services.PhotoService
+import com.leoho.naverBlogImageDownloader.android.services.PhotoSaveable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,8 +28,9 @@ import java.io.File
  * @param localizedStrings Flutter 傳入的已翻譯 UI 字串。
  * @param isDarkMode 是否為深色模式。
  * @param themeColors Flutter 傳入的主題色彩。
- * @param activity 承載的 Activity，用於 finish() 與取得 Context。
+ * @param photoService 照片儲存服務，透過 [PhotoSaveable] 介面注入，解耦具體實作。
  * @param scope 生命週期感知的協程作用域，用於背景儲存操作。
+ * @param dismissAction 關閉檢視器的回呼，由 Activity 注入。
  */
 class PhotoViewerViewModel(
     val filePaths: List<String>,
@@ -39,8 +39,9 @@ class PhotoViewerViewModel(
     val localizedStrings: Map<String, String>,
     val isDarkMode: Boolean,
     val themeColors: ThemeColors,
-    private val activity: Activity,
+    private val photoService: PhotoSaveable,
     private val scope: CoroutineScope,
+    private val dismissAction: (() -> Unit)? = null,
 ) {
 
     // region Properties
@@ -65,9 +66,6 @@ class PhotoViewerViewModel(
     val currentFilePath: String
         get() = filePaths.getOrElse(currentIndex) { "" }
 
-    /** 相簿儲存服務實例，避免每次儲存時重複建立。 */
-    private val photoService = PhotoService(activity)
-
     // endregion
 
     // region Actions
@@ -85,7 +83,7 @@ class PhotoViewerViewModel(
     /**
      * 儲存目前照片至相簿。
      *
-     * 在 IO 執行緒呼叫 [PhotoService.saveToGallery]，
+     * 在 IO 執行緒呼叫 [PhotoSaveable.saveToGallery]，
      * 成功後透過 MethodChannel 通知 Flutter 記錄操作 log。
      */
     fun save() {
@@ -117,7 +115,7 @@ class PhotoViewerViewModel(
             "onDismissed",
             mapOf("lastIndex" to currentIndex)
         )
-        activity.finish()
+        dismissAction?.invoke()
     }
 
     /**

@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * @param context Android Context，用於存取 ContentResolver。
  */
-class PhotoService(private val context: Context) {
+class PhotoService(private val context: Context) : PhotoSaveable {
 
     // region Properties
 
@@ -41,7 +41,7 @@ class PhotoService(private val context: Context) {
      * @return 儲存成功回傳 `true`。
      * @throws Exception 建立 MediaStore entry 或開啟輸出流失敗時拋出。
      */
-    suspend fun saveToGallery(filePath: String, totalCount: Int = 1): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun saveToGallery(filePath: String, totalCount: Int): Boolean = withContext(Dispatchers.IO) {
         val file = File(filePath)
         val mimeType = getMimeType(file)
 
@@ -71,7 +71,7 @@ class PhotoService(private val context: Context) {
      *
      * @return 固定回傳 `true`。
      */
-    fun requestPermission(): Boolean {
+    override fun requestPermission(): Boolean {
         return true
     }
 

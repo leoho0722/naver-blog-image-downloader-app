@@ -69,7 +69,8 @@ private extension AppDelegate {
             localizedStrings: localizedStrings,
             isDarkMode: isDarkMode,
             themeColors: themeColors,
-            channel: channel
+            channel: channel,
+            photoService: PhotoService()
         )
 
         let controller = PhotoViewerController(viewModel: viewModel)

@@ -1,7 +1,7 @@
 import Photos
 
 /// 原生相簿存取服務，使用 PhotoKit 直接寫入檔案不轉碼。
-final class PhotoService {}
+final class PhotoService: PhotoSaveable {}
 
 // MARK: - Internal Methods
 

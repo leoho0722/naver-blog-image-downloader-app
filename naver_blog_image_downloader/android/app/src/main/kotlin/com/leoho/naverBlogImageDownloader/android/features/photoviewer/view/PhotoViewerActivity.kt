@@ -11,6 +11,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.lifecycle.lifecycleScope
 import com.leoho.naverBlogImageDownloader.android.features.photoviewer.model.ThemeColors
 import com.leoho.naverBlogImageDownloader.android.features.photoviewer.viewmodel.PhotoViewerViewModel
+import com.leoho.naverBlogImageDownloader.android.services.PhotoService
 
 /**
  * 原生全螢幕圖片檢視器 Activity，使用 Jetpack Compose 實作。
@@ -82,8 +83,9 @@ private fun PhotoViewerActivity.buildViewModel(): PhotoViewerViewModel {
         localizedStrings = localizedStrings,
         isDarkMode = isDarkMode,
         themeColors = themeColors,
-        activity = this,
+        photoService = PhotoService(this),
         scope = lifecycleScope,
+        dismissAction = { finish() },
     )
 }
 

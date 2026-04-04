@@ -47,9 +47,9 @@ final class PhotoViewerViewModel {
     @ObservationIgnored
     private let channel: FlutterMethodChannel
 
-    /// 相簿儲存服務實例，避免每次儲存時重複建立。
+    /// 照片儲存服務，透過 ``PhotoSaveable`` 協議注入，解耦具體實作。
     @ObservationIgnored
-    private let photoService = PhotoService()
+    private let photoService: PhotoSaveable
 
     // MARK: - Computed Properties
 
@@ -78,6 +78,7 @@ final class PhotoViewerViewModel {
     ///   - isDarkMode: 是否為深色模式。
     ///   - themeColors: Flutter 傳入的主題色彩。
     ///   - channel: Flutter MethodChannel。
+    ///   - photoSaveable: 照片儲存服務，透過 ``PhotoSaveable`` 協議注入。
     init(
         filePaths: [String],
         blogId: String,
@@ -85,7 +86,8 @@ final class PhotoViewerViewModel {
         localizedStrings: [String: String],
         isDarkMode: Bool,
         themeColors: ThemeColors,
-        channel: FlutterMethodChannel
+        channel: FlutterMethodChannel,
+        photoService: PhotoSaveable
     ) {
         self.filePaths = filePaths
         self.blogId = blogId
@@ -94,6 +96,7 @@ final class PhotoViewerViewModel {
         self.isDarkMode = isDarkMode
         self.themeColors = themeColors
         self.channel = channel
+        self.photoService = photoService
     }
 }
 
@@ -111,7 +114,7 @@ extension PhotoViewerViewModel {
 
     /// 儲存目前照片至相簿。
     ///
-    /// 直接呼叫 ``PhotoService`` 執行儲存，成功後透過 channel 通知 Flutter 記錄 log。
+    /// 透過注入的 ``PhotoSaveable`` 執行儲存，成功後透過 channel 通知 Flutter 記錄 log。
     /// 儲存失敗時 ``viewState`` 會回到 `.idle`。
     func save() async {
         guard viewState == .idle else {

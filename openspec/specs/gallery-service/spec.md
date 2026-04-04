@@ -90,3 +90,52 @@ code:
   - naver_blog_image_downloader/lib/data/repositories/photo_repository.dart
   - naver_blog_image_downloader/pubspec.yaml
 -->
+
+---
+### Requirement: PhotoSaveable protocol and interface
+
+The iOS codebase SHALL define a `PhotoSaveable` protocol in `ios/Runner/Services/PhotoSaveable.swift` with the method `func saveToGallery(filePath: String) async throws -> Bool`. The Android codebase SHALL define a `PhotoSaveable` interface in `android/app/src/main/kotlin/.../services/PhotoSaveable.kt` with the method `suspend fun saveToGallery(filePath: String, totalCount: Int = 1): Boolean`. Both `PhotoService` implementations SHALL conform to / implement `PhotoSaveable`.
+
+#### Scenario: iOS PhotoService conforms to PhotoSaveable
+
+- **GIVEN** the iOS `PhotoService` class
+- **WHEN** it is inspected
+- **THEN** it SHALL conform to the `PhotoSaveable` protocol
+
+#### Scenario: Android PhotoService implements PhotoSaveable
+
+- **GIVEN** the Android `PhotoService` class
+- **WHEN** it is inspected
+- **THEN** it SHALL implement the `PhotoSaveable` interface
+
+#### Scenario: PhotoSaveable used for dependency injection in ViewModels
+
+- **GIVEN** a `PhotoViewerViewModel` on either platform
+- **WHEN** it is constructed
+- **THEN** it SHALL accept a `PhotoSaveable` parameter instead of creating `PhotoService` directly
+
+<!-- @trace
+source: native-tests-ci
+updated: 2026-04-04
+code:
+  - naver_blog_image_downloader/ios/Runner/Applications/Channels/Features/PhotoViewerChannel.swift
+  - naver_blog_image_downloader/android/app/build.gradle.kts
+  - naver_blog_image_downloader/ios/Runner/Services/PhotoSaveable.swift
+  - naver_blog_image_downloader/ios/RunnerTests/ThemeColorsTests.swift
+  - naver_blog_image_downloader/ios/Runner.xcodeproj/project.pbxproj
+  - naver_blog_image_downloader/ios/RunnerTests/PhotoViewerViewModelTests.swift
+  - naver_blog_image_downloader/ios/RunnerTests/RunnerTests.swift
+  - naver_blog_image_downloader/android/app/src/main/kotlin/com/leoho/naverBlogImageDownloader/android/features/photoviewer/view/PhotoViewerActivity.kt
+  - naver_blog_image_downloader/android/app/src/main/kotlin/com/leoho/naverBlogImageDownloader/android/features/photoviewer/viewmodel/PhotoViewerViewModel.kt
+  - naver_blog_image_downloader/android/app/src/main/kotlin/com/leoho/naverBlogImageDownloader/android/services/PhotoService.kt
+  - naver_blog_image_downloader/android/app/src/main/kotlin/com/leoho/naverBlogImageDownloader/android/services/PhotoSaveable.kt
+  - naver_blog_image_downloader/ios/RunnerTests/PhotoFileInfoTests.swift
+  - .github/workflows/ci.yml
+  - naver_blog_image_downloader/ios/Runner/Services/PhotoService.swift
+  - naver_blog_image_downloader/ios/Runner/Features/PhotoViewer/ViewModel/PhotoViewerViewModel.swift
+  - naver_blog_image_downloader/android/settings.gradle.kts
+tests:
+  - naver_blog_image_downloader/android/app/src/test/kotlin/com/leoho/naverBlogImageDownloader/android/features/photoviewer/model/ThemeColorsTest.kt
+  - naver_blog_image_downloader/android/app/src/test/kotlin/com/leoho/naverBlogImageDownloader/android/features/photoviewer/model/PhotoFileInfoTest.kt
+  - naver_blog_image_downloader/android/app/src/test/kotlin/com/leoho/naverBlogImageDownloader/android/features/photoviewer/viewmodel/PhotoViewerViewModelTest.kt
+-->
