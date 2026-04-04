@@ -90,9 +90,19 @@ jobs:
       - name: Pod install
         run: cd ios && pod install
 
+      - name: Cache Pods build
+        uses: actions/cache@v5
+        with:
+          path: naver_blog_image_downloader/ios/Pods
+          key: pods-${{ runner.os }}-${{ hashFiles('naver_blog_image_downloader/ios/Podfile.lock') }}
+
+      - name: Code Generation (Riverpod)
+        run: dart run build_runner build --delete-conflicting-outputs
+
       - name: Run iOS native tests
         run: |
           cd ios
+          set -o pipefail
           xcodebuild test \
             -workspace Runner.xcworkspace \
             -scheme Runner \
