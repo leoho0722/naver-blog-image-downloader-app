@@ -122,5 +122,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Generate Gradle wrapper
+        run: flutter build apk --config-only
+
       - name: Run Android native tests
         run: cd android && ./gradlew :app:testDebugUnitTest
