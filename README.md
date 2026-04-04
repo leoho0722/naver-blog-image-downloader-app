@@ -10,9 +10,11 @@
 - **API 通訊**：AWS Amplify Flutter SDK（REST）
 - **檔案下載**：Dio（串流 + 指數退避重試）
 - **相簿存取**：原生 MethodChannel（iOS: PhotoKit / Android: MediaStore）
+- **照片檢視器**：原生實作（iOS: SwiftUI / Android: Jetpack Compose），透過 MethodChannel 橋接
 - **快取**：磁碟快取 + SharedPreferences metadata
 - **Firebase**：Firebase Auth（匿名登入）+ Cloud Firestore（操作 Log）+ Crashlytics（crash 回報）
 - **裝置資訊**：device_info_plus（記錄 log 時附帶平台/系統版本/機型）
+- **iOS 依賴管理**：Swift Package Manager（主要）+ CocoaPods（fallback）
 
 ## 初始設定（新 clone）
 
