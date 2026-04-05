@@ -207,6 +207,48 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get detailDimensions => '照片尺寸';
+
+  @override
+  String whatsNewTitle(String version) {
+    return 'v$version 新功能';
+  }
+
+  @override
+  String get whatsNewOnboardingTitle => '歡迎使用';
+
+  @override
+  String get whatsNewDismissButton => '知道了';
+
+  @override
+  String get onboardingStep1Title => '貼上 Blog 網址';
+
+  @override
+  String get onboardingStep1Desc =>
+      '複製 Naver Blog 網址並貼上（從 Naver Blog 小飛機分享按鈕取得）';
+
+  @override
+  String get onboardingStep2Title => '取得所有照片';
+
+  @override
+  String get onboardingStep2Desc => '點擊按鈕進行下載';
+
+  @override
+  String get onboardingStep3Title => '下載儲存';
+
+  @override
+  String get onboardingStep3Desc => '選擇單張/全部照片儲存至手機相簿內';
+
+  @override
+  String get onboardingStep4Title => '照片瀏覽';
+
+  @override
+  String get onboardingStep4Desc => '滑動照片，沈浸式瀏覽';
+
+  @override
+  String get whatsNew140Feature1Title => '新功能介紹頁';
+
+  @override
+  String get whatsNew140Feature1Desc => '更新版本後自動顯示新功能介紹，首次安裝顯示操作引導。';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -412,4 +454,46 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get detailDimensions => '照片尺寸';
+
+  @override
+  String whatsNewTitle(String version) {
+    return 'v$version 新功能';
+  }
+
+  @override
+  String get whatsNewOnboardingTitle => '歡迎使用';
+
+  @override
+  String get whatsNewDismissButton => '知道了';
+
+  @override
+  String get onboardingStep1Title => '貼上 Blog 網址';
+
+  @override
+  String get onboardingStep1Desc =>
+      '複製 Naver Blog 網址並貼上（從 Naver Blog 小飛機分享按鈕取得）';
+
+  @override
+  String get onboardingStep2Title => '取得所有照片';
+
+  @override
+  String get onboardingStep2Desc => '點擊按鈕進行下載';
+
+  @override
+  String get onboardingStep3Title => '下載儲存';
+
+  @override
+  String get onboardingStep3Desc => '選擇單張/全部照片儲存至手機相簿內';
+
+  @override
+  String get onboardingStep4Title => '照片瀏覽';
+
+  @override
+  String get onboardingStep4Desc => '滑動照片，沈浸式瀏覽';
+
+  @override
+  String get whatsNew140Feature1Title => '新功能介紹頁';
+
+  @override
+  String get whatsNew140Feature1Desc => '更新版本後自動顯示新功能介紹，首次安裝顯示操作引導。';
 }

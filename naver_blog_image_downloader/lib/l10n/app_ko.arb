@@ -69,5 +69,19 @@
   "detailPhotoCounter": "{current} / {total}",
   "detailFileInfo": "파일 정보",
   "detailFileSize": "파일 크기",
-  "detailDimensions": "사진 크기"
+  "detailDimensions": "사진 크기",
+
+  "whatsNewTitle": "v{version} 새로운 기능",
+  "whatsNewOnboardingTitle": "환영합니다",
+  "whatsNewDismissButton": "확인",
+  "onboardingStep1Title": "블로그 URL 붙여넣기",
+  "onboardingStep1Desc": "네이버 블로그 URL을 복사하여 붙여넣기 (네이버 블로그의 공유 버튼에서 가져오기)",
+  "onboardingStep2Title": "모든 사진 가져오기",
+  "onboardingStep2Desc": "버튼을 탭하여 다운로드 시작",
+  "onboardingStep3Title": "다운로드 및 저장",
+  "onboardingStep3Desc": "개별 또는 모든 사진을 기기 갤러리에 저장",
+  "onboardingStep4Title": "사진 탐색",
+  "onboardingStep4Desc": "사진을 스와이프하여 몰입 모드로 탐색",
+  "whatsNew140Feature1Title": "새로운 기능 소개 페이지",
+  "whatsNew140Feature1Desc": "업데이트 후 새로운 기능을 자동으로 표시하고, 첫 설치 시 사용 가이드를 표시합니다."
 }

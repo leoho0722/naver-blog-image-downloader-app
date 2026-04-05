@@ -58,6 +58,11 @@ class LocalStorageService {
   /// - 回傳：寫入成功時回傳 `true`，否則回傳 `false`。
   Future<bool> setBool(String key, bool value) => _prefs.setBool(key, value);
 
+  /// 取得所有已儲存的 key 集合。
+  ///
+  /// 回傳 [SharedPreferences] 中所有已存在的 key。
+  Set<String> getKeys() => _prefs.getKeys();
+
   /// 移除指定 key 的資料。
   ///
   /// - [key]：要移除的鍵名。

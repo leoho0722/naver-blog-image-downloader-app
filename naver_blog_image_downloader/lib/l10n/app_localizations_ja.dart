@@ -208,4 +208,47 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get detailDimensions => '写真サイズ';
+
+  @override
+  String whatsNewTitle(String version) {
+    return 'v$version の新機能';
+  }
+
+  @override
+  String get whatsNewOnboardingTitle => 'ようこそ';
+
+  @override
+  String get whatsNewDismissButton => '了解';
+
+  @override
+  String get onboardingStep1Title => 'ブログURLを貼り付け';
+
+  @override
+  String get onboardingStep1Desc =>
+      'NaverブログのURLをコピーして貼り付けます（Naverブログの共有ボタンから取得）';
+
+  @override
+  String get onboardingStep2Title => 'すべての写真を取得';
+
+  @override
+  String get onboardingStep2Desc => 'ボタンをタップしてダウンロードを開始';
+
+  @override
+  String get onboardingStep3Title => 'ダウンロードして保存';
+
+  @override
+  String get onboardingStep3Desc => '個別またはすべての写真をデバイスのギャラリーに保存';
+
+  @override
+  String get onboardingStep4Title => '写真を閲覧';
+
+  @override
+  String get onboardingStep4Desc => '写真をスワイプして没入モードで閲覧';
+
+  @override
+  String get whatsNew140Feature1Title => '新機能紹介ページ';
+
+  @override
+  String get whatsNew140Feature1Desc =>
+      'アップデート後に新機能を自動表示、初回インストール時に操作ガイドを表示します。';
 }

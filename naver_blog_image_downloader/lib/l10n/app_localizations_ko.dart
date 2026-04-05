@@ -208,4 +208,47 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get detailDimensions => '사진 크기';
+
+  @override
+  String whatsNewTitle(String version) {
+    return 'v$version 새로운 기능';
+  }
+
+  @override
+  String get whatsNewOnboardingTitle => '환영합니다';
+
+  @override
+  String get whatsNewDismissButton => '확인';
+
+  @override
+  String get onboardingStep1Title => '블로그 URL 붙여넣기';
+
+  @override
+  String get onboardingStep1Desc =>
+      '네이버 블로그 URL을 복사하여 붙여넣기 (네이버 블로그의 공유 버튼에서 가져오기)';
+
+  @override
+  String get onboardingStep2Title => '모든 사진 가져오기';
+
+  @override
+  String get onboardingStep2Desc => '버튼을 탭하여 다운로드 시작';
+
+  @override
+  String get onboardingStep3Title => '다운로드 및 저장';
+
+  @override
+  String get onboardingStep3Desc => '개별 또는 모든 사진을 기기 갤러리에 저장';
+
+  @override
+  String get onboardingStep4Title => '사진 탐색';
+
+  @override
+  String get onboardingStep4Desc => '사진을 스와이프하여 몰입 모드로 탐색';
+
+  @override
+  String get whatsNew140Feature1Title => '새로운 기능 소개 페이지';
+
+  @override
+  String get whatsNew140Feature1Desc =>
+      '업데이트 후 새로운 기능을 자동으로 표시하고, 첫 설치 시 사용 가이드를 표시합니다.';
 }

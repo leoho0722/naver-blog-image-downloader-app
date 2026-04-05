@@ -597,3 +597,52 @@ tests:
   - naver_blog_image_downloader/test/ui/photo_gallery/photo_gallery_view_model_test.dart
   - naver_blog_image_downloader/test/ui/blog_input/blog_input_view_model_test.dart
 -->
+
+---
+### Requirement: What's New check on first frame
+
+`BlogInputView` SHALL add a `WidgetsBinding.instance.addPostFrameCallback` in `initState()` that reads the `WhatsNewViewModel` state. If the resolved state is `WhatsNewOnboarding` or `WhatsNewUpdate`, the view SHALL call `showWhatsNewDialog()` to display the fullscreen dialog, then call `WhatsNewViewModel.dismiss()` after the dialog closes. If the state is `WhatsNewHidden`, no dialog SHALL be shown.
+
+#### Scenario: Onboarding shown on first install
+
+- **GIVEN** a fresh install with no stored `lastSeenVersion`
+- **WHEN** `BlogInputView` mounts and the first frame completes
+- **THEN** the onboarding fullscreen dialog SHALL be displayed
+
+#### Scenario: What's New shown after update
+
+- **GIVEN** the stored `lastSeenVersion` differs from the current version
+- **AND** the current version has a registry entry
+- **WHEN** `BlogInputView` mounts and the first frame completes
+- **THEN** the What's New fullscreen dialog SHALL be displayed
+
+#### Scenario: No dialog on repeat launch
+
+- **GIVEN** the stored `lastSeenVersion` equals the current version
+- **WHEN** `BlogInputView` mounts and the first frame completes
+- **THEN** no dialog SHALL be shown
+
+<!-- @trace
+source: whats-new-onboarding
+updated: 2026-04-05
+code:
+  - naver_blog_image_downloader/lib/l10n/app_zh_TW.arb
+  - naver_blog_image_downloader/lib/ui/whats_new/view_model/whats_new_view_model.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_en.dart
+  - naver_blog_image_downloader/lib/config/app_settings_keys.dart
+  - naver_blog_image_downloader/lib/l10n/app_zh.arb
+  - naver_blog_image_downloader/lib/config/whats_new_registry.dart
+  - naver_blog_image_downloader/lib/l10n/app_ko.arb
+  - naver_blog_image_downloader/lib/l10n/app_localizations.dart
+  - naver_blog_image_downloader/lib/l10n/app_en.arb
+  - naver_blog_image_downloader/lib/ui/whats_new/widgets/whats_new_dialog.dart
+  - naver_blog_image_downloader/lib/l10n/app_ja.arb
+  - naver_blog_image_downloader/lib/l10n/app_localizations_ko.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_ja.dart
+  - naver_blog_image_downloader/lib/ui/whats_new/widgets/whats_new_view.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/l10n/app_localizations_zh.dart
+-->

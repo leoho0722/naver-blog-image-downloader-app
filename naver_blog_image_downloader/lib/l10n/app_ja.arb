@@ -69,5 +69,19 @@
   "detailPhotoCounter": "{current} / {total}",
   "detailFileInfo": "ファイル情報",
   "detailFileSize": "ファイルサイズ",
-  "detailDimensions": "写真サイズ"
+  "detailDimensions": "写真サイズ",
+
+  "whatsNewTitle": "v{version} の新機能",
+  "whatsNewOnboardingTitle": "ようこそ",
+  "whatsNewDismissButton": "了解",
+  "onboardingStep1Title": "ブログURLを貼り付け",
+  "onboardingStep1Desc": "NaverブログのURLをコピーして貼り付けます（Naverブログの共有ボタンから取得）",
+  "onboardingStep2Title": "すべての写真を取得",
+  "onboardingStep2Desc": "ボタンをタップしてダウンロードを開始",
+  "onboardingStep3Title": "ダウンロードして保存",
+  "onboardingStep3Desc": "個別またはすべての写真をデバイスのギャラリーに保存",
+  "onboardingStep4Title": "写真を閲覧",
+  "onboardingStep4Desc": "写真をスワイプして没入モードで閲覧",
+  "whatsNew140Feature1Title": "新機能紹介ページ",
+  "whatsNew140Feature1Desc": "アップデート後に新機能を自動表示、初回インストール時に操作ガイドを表示します。"
 }

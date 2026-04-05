@@ -13,6 +13,8 @@ import '../../../data/models/fetch_result.dart';
 import '../../core/naver_url_validator.dart';
 import '../../download/widgets/download_view.dart';
 import '../../settings/widgets/settings_view.dart';
+import '../../whats_new/view_model/whats_new_view_model.dart';
+import '../../whats_new/widgets/whats_new_view.dart';
 import '../view_model/blog_input_view_model.dart';
 
 /// Blog 網址輸入頁面，提供文字輸入欄位讓使用者貼上 Naver Blog 網址並取得照片列表。
@@ -39,7 +41,8 @@ class _BlogInputViewState extends ConsumerState<BlogInputView>
   /// 初始化頁面狀態。
   ///
   /// 加入 [WidgetsBindingObserver] 以監聽 App 生命週期事件，
-  /// 並建立設定頁面 bottom sheet 的動畫控制器。
+  /// 建立設定頁面 bottom sheet 的動畫控制器，
+  /// 並在第一幀完成後檢查是否需要顯示新功能介紹或首次安裝引導。
   @override
   void initState() {
     super.initState();
@@ -48,6 +51,21 @@ class _BlogInputViewState extends ConsumerState<BlogInputView>
       vsync: this,
       platform: defaultTargetPlatform,
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkWhatsNew());
+  }
+
+  /// 檢查是否需要顯示「新功能介紹」或「首次安裝引導」Dialog。
+  ///
+  /// 等待 [WhatsNewViewModel] 非同步初始化完成後，
+  /// 若狀態為 [WhatsNewOnboarding] 或 [WhatsNewUpdate] 則顯示全螢幕 Dialog，
+  /// Dialog 關閉後呼叫 [WhatsNewViewModel.dismiss] 寫入版本號。
+  Future<void> _checkWhatsNew() async {
+    final whatsNewState = await ref.read(whatsNewViewModelProvider.future);
+    if (whatsNewState is WhatsNewHidden || !mounted) return;
+    await showWhatsNewDialog(context, whatsNewState);
+    if (mounted) {
+      await ref.read(whatsNewViewModelProvider.notifier).dismiss();
+    }
   }
 
   /// 釋放頁面資源。

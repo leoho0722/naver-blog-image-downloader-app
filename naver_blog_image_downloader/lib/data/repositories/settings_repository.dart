@@ -65,4 +65,31 @@ class SettingsRepository {
   Future<void> saveLocale(SupportedLocale locale) async {
     await _storage.setString(AppSettingsKeys.locale, locale.name);
   }
+
+  /// 檢查 SharedPreferences 中是否有任何既有資料（排除 `lastSeenVersion` 自身）。
+  ///
+  /// 用於區分「從舊版升級」與「真正首次安裝」：
+  /// 舊版使用者即使沒有 `lastSeenVersion`，也可能有 `cache_metadata`、
+  /// `app_theme_mode`、`app_locale` 或其他 Flutter plugin 寫入的 key。
+  ///
+  /// 回傳 `true` 表示至少有一項既有資料，代表非首次安裝。
+  bool hasExistingData() {
+    final keys = _storage.getKeys();
+    final otherKeys = keys.where((k) => k != AppSettingsKeys.lastSeenVersion);
+    return otherKeys.isNotEmpty;
+  }
+
+  /// 從持久化儲存載入使用者上次確認過新功能頁面時的版本號。
+  ///
+  /// 回傳先前儲存的版本字串，首次安裝時回傳 `null`（表示從未確認過任何版本）。
+  String? loadLastSeenVersion() {
+    return _storage.getString(AppSettingsKeys.lastSeenVersion);
+  }
+
+  /// 將使用者已確認的版本號持久化至儲存。
+  ///
+  /// [version] 為當前 App 版本號，儲存後同版本不再重複顯示新功能頁面。
+  Future<void> saveLastSeenVersion(String version) async {
+    await _storage.setString(AppSettingsKeys.lastSeenVersion, version);
+  }
 }

@@ -328,3 +328,82 @@ tests:
   - naver_blog_image_downloader/test/data/repositories/photo_repository_test.dart
   - naver_blog_image_downloader/test/ui/photo_detail/photo_detail_view_model_test.dart
 -->
+
+---
+### Requirement: Load last seen version
+
+`SettingsRepository` SHALL provide a `loadLastSeenVersion()` method that reads the `app_last_seen_version` key from `LocalStorageService` and returns a `String?`. A `null` return value SHALL indicate a fresh install (no version has been seen before).
+
+#### Scenario: Fresh install returns null
+
+- **GIVEN** no value is stored for key `app_last_seen_version`
+- **WHEN** `loadLastSeenVersion()` is called
+- **THEN** it SHALL return `null`
+
+#### Scenario: Previously stored version returned
+
+- **GIVEN** the value `'1.3.0'` is stored for key `app_last_seen_version`
+- **WHEN** `loadLastSeenVersion()` is called
+- **THEN** it SHALL return `'1.3.0'`
+
+
+<!-- @trace
+source: whats-new-onboarding
+updated: 2026-04-05
+code:
+  - naver_blog_image_downloader/lib/l10n/app_zh_TW.arb
+  - naver_blog_image_downloader/lib/ui/whats_new/view_model/whats_new_view_model.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_en.dart
+  - naver_blog_image_downloader/lib/config/app_settings_keys.dart
+  - naver_blog_image_downloader/lib/l10n/app_zh.arb
+  - naver_blog_image_downloader/lib/config/whats_new_registry.dart
+  - naver_blog_image_downloader/lib/l10n/app_ko.arb
+  - naver_blog_image_downloader/lib/l10n/app_localizations.dart
+  - naver_blog_image_downloader/lib/l10n/app_en.arb
+  - naver_blog_image_downloader/lib/ui/whats_new/widgets/whats_new_dialog.dart
+  - naver_blog_image_downloader/lib/l10n/app_ja.arb
+  - naver_blog_image_downloader/lib/l10n/app_localizations_ko.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_ja.dart
+  - naver_blog_image_downloader/lib/ui/whats_new/widgets/whats_new_view.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/l10n/app_localizations_zh.dart
+-->
+
+---
+### Requirement: Save last seen version
+
+`SettingsRepository` SHALL provide a `saveLastSeenVersion(String version)` method that persists the given version string to `LocalStorageService` under the key `app_last_seen_version`.
+
+#### Scenario: Version persisted successfully
+
+- **GIVEN** the version string `'1.4.0'`
+- **WHEN** `saveLastSeenVersion('1.4.0')` is called
+- **THEN** the value `'1.4.0'` SHALL be stored under key `app_last_seen_version` in `LocalStorageService`
+
+<!-- @trace
+source: whats-new-onboarding
+updated: 2026-04-05
+code:
+  - naver_blog_image_downloader/lib/l10n/app_zh_TW.arb
+  - naver_blog_image_downloader/lib/ui/whats_new/view_model/whats_new_view_model.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_en.dart
+  - naver_blog_image_downloader/lib/config/app_settings_keys.dart
+  - naver_blog_image_downloader/lib/l10n/app_zh.arb
+  - naver_blog_image_downloader/lib/config/whats_new_registry.dart
+  - naver_blog_image_downloader/lib/l10n/app_ko.arb
+  - naver_blog_image_downloader/lib/l10n/app_localizations.dart
+  - naver_blog_image_downloader/lib/l10n/app_en.arb
+  - naver_blog_image_downloader/lib/ui/whats_new/widgets/whats_new_dialog.dart
+  - naver_blog_image_downloader/lib/l10n/app_ja.arb
+  - naver_blog_image_downloader/lib/l10n/app_localizations_ko.dart
+  - naver_blog_image_downloader/lib/data/repositories/settings_repository.dart
+  - naver_blog_image_downloader/lib/data/services/local_storage_service.dart
+  - naver_blog_image_downloader/lib/ui/blog_input/widgets/blog_input_view.dart
+  - naver_blog_image_downloader/lib/l10n/app_localizations_ja.dart
+  - naver_blog_image_downloader/lib/ui/whats_new/widgets/whats_new_view.dart
+  - naver_blog_image_downloader/pubspec.yaml
+  - naver_blog_image_downloader/lib/l10n/app_localizations_zh.dart
+-->
