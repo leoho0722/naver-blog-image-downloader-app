@@ -224,35 +224,5 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whatsNewDismissButton => 'Got it';
 
   @override
-  String get onboardingStep1Title => 'Paste Blog URL';
-
-  @override
-  String get onboardingStep1Desc =>
-      'Copy and paste a Naver Blog URL (get it from the share button in Naver Blog)';
-
-  @override
-  String get onboardingStep2Title => 'Fetch All Photos';
-
-  @override
-  String get onboardingStep2Desc => 'Tap the button to start downloading';
-
-  @override
-  String get onboardingStep3Title => 'Download & Save';
-
-  @override
-  String get onboardingStep3Desc =>
-      'Save individual or all photos to your device gallery';
-
-  @override
-  String get onboardingStep4Title => 'Browse Photos';
-
-  @override
-  String get onboardingStep4Desc => 'Swipe through photos in immersive mode';
-
-  @override
-  String get whatsNew140Feature1Title => 'What\'s New Page';
-
-  @override
-  String get whatsNew140Feature1Desc =>
-      'See new features after updating, and a getting started guide on first install.';
+  String get whatsNewCloseButton => 'Close';
 }

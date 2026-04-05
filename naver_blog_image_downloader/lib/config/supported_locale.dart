@@ -24,4 +24,19 @@ enum SupportedLocale {
 
   /// 該語言的原生名稱（不做 l10n）。
   final String label;
+
+  /// 從裝置預設語系解析最近的支援語系。
+  ///
+  /// 依語言碼匹配，無法匹配時 fallback 為 [SupportedLocale.zhTW]。
+  ///
+  /// 回傳匹配的 [SupportedLocale]。
+  static SupportedLocale fromDeviceLocale() {
+    final languageCode = PlatformDispatcher.instance.locale.languageCode;
+    for (final supported in values) {
+      if (supported.locale.languageCode == languageCode) {
+        return supported;
+      }
+    }
+    return zhTW;
+  }
 }

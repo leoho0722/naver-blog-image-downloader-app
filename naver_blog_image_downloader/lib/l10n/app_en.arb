@@ -79,14 +79,5 @@
   },
   "whatsNewOnboardingTitle": "Welcome",
   "whatsNewDismissButton": "Got it",
-  "onboardingStep1Title": "Paste Blog URL",
-  "onboardingStep1Desc": "Copy and paste a Naver Blog URL (get it from the share button in Naver Blog)",
-  "onboardingStep2Title": "Fetch All Photos",
-  "onboardingStep2Desc": "Tap the button to start downloading",
-  "onboardingStep3Title": "Download & Save",
-  "onboardingStep3Desc": "Save individual or all photos to your device gallery",
-  "onboardingStep4Title": "Browse Photos",
-  "onboardingStep4Desc": "Swipe through photos in immersive mode",
-  "whatsNew140Feature1Title": "What's New Page",
-  "whatsNew140Feature1Desc": "See new features after updating, and a getting started guide on first install."
+  "whatsNewCloseButton": "Close"
 }

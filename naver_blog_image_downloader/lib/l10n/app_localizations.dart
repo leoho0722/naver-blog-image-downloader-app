@@ -491,65 +491,11 @@ abstract class AppLocalizations {
   /// **'知道了'**
   String get whatsNewDismissButton;
 
-  /// No description provided for @onboardingStep1Title.
+  /// No description provided for @whatsNewCloseButton.
   ///
   /// In zh_TW, this message translates to:
-  /// **'貼上 Blog 網址'**
-  String get onboardingStep1Title;
-
-  /// No description provided for @onboardingStep1Desc.
-  ///
-  /// In zh_TW, this message translates to:
-  /// **'複製 Naver Blog 網址並貼上（從 Naver Blog 小飛機分享按鈕取得）'**
-  String get onboardingStep1Desc;
-
-  /// No description provided for @onboardingStep2Title.
-  ///
-  /// In zh_TW, this message translates to:
-  /// **'取得所有照片'**
-  String get onboardingStep2Title;
-
-  /// No description provided for @onboardingStep2Desc.
-  ///
-  /// In zh_TW, this message translates to:
-  /// **'點擊按鈕進行下載'**
-  String get onboardingStep2Desc;
-
-  /// No description provided for @onboardingStep3Title.
-  ///
-  /// In zh_TW, this message translates to:
-  /// **'下載儲存'**
-  String get onboardingStep3Title;
-
-  /// No description provided for @onboardingStep3Desc.
-  ///
-  /// In zh_TW, this message translates to:
-  /// **'選擇單張/全部照片儲存至手機相簿內'**
-  String get onboardingStep3Desc;
-
-  /// No description provided for @onboardingStep4Title.
-  ///
-  /// In zh_TW, this message translates to:
-  /// **'照片瀏覽'**
-  String get onboardingStep4Title;
-
-  /// No description provided for @onboardingStep4Desc.
-  ///
-  /// In zh_TW, this message translates to:
-  /// **'滑動照片，沈浸式瀏覽'**
-  String get onboardingStep4Desc;
-
-  /// No description provided for @whatsNew140Feature1Title.
-  ///
-  /// In zh_TW, this message translates to:
-  /// **'新功能介紹頁'**
-  String get whatsNew140Feature1Title;
-
-  /// No description provided for @whatsNew140Feature1Desc.
-  ///
-  /// In zh_TW, this message translates to:
-  /// **'更新版本後自動顯示新功能介紹，首次安裝顯示操作引導。'**
-  String get whatsNew140Feature1Desc;
+  /// **'關閉'**
+  String get whatsNewCloseButton;
 }
 
 class _AppLocalizationsDelegate

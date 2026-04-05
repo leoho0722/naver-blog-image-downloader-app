@@ -7,6 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/dtos/job_status_response.dart';
 import '../models/dtos/photo_download_request.dart';
+import '../models/dtos/whats_new_request.dart';
 
 part 'api_service.g.dart';
 
@@ -17,11 +18,24 @@ part 'api_service.g.dart';
 @Riverpod(keepAlive: true)
 ApiService apiService(Ref ref) => ApiService();
 
+/// 後端 API endpoint 路徑列舉。
+enum ApiEndpoint {
+  /// 照片下載與任務狀態查詢。
+  photos('/api/photos'),
+
+  /// 版本新功能與首次安裝引導。
+  whatsNew('/api/whatsNew');
+
+  /// 建立 [ApiEndpoint]。
+  ///
+  /// [path] 為 API endpoint 路徑。
+  const ApiEndpoint(this.path);
+
+  /// API endpoint 路徑。
+  final String path;
+}
+
 /// 與後端 API Gateway 溝通的服務層，使用 AWS Amplify SDK 發送 REST 請求。
-///
-/// 採用非同步任務模式：
-/// 1. [submitJob] 提交下載任務，Lambda 立即回傳 job_id（HTTP 202）
-/// 2. [checkJobStatus] 輪詢任務狀態（HTTP 200 或 500）
 class ApiService {
   /// 建立 [ApiService]。
   ///
@@ -38,9 +52,6 @@ class ApiService {
   /// 單次 HTTP 請求逾時時間。
   final Duration timeout;
 
-  /// API endpoint 路徑。
-  static const _path = '/api/photos';
-
   /// 提交非同步下載任務。
   ///
   /// [blogUrl] 為要爬取的 Naver Blog 網址。
@@ -49,7 +60,7 @@ class ApiService {
   /// 伺服器回應非 2xx 或回應中缺少 `job_id` 時拋出 [ApiServiceException]。
   Future<String> submitJob(String blogUrl) async {
     final payload = PhotoDownloadRequest.download(blogUrl: blogUrl).toJson();
-    final response = await _post(payload);
+    final response = await _post(payload, path: ApiEndpoint.photos.path);
 
     final jobId = response['job_id'] as String?;
     if (jobId == null) {
@@ -69,13 +80,33 @@ class ApiService {
   Future<JobStatusResponse> checkJobStatus(String jobId) async {
     final payload = PhotoDownloadRequest.status(jobId: jobId).toJson();
     // 狀態查詢接受 200（processing/completed）和 500（failed）
-    final response = await _post(payload, acceptStatusCodes: {200, 500});
+    final response = await _post(
+      payload,
+      path: ApiEndpoint.photos.path,
+      acceptStatusCodes: {200, 500},
+    );
     return JobStatusResponse.fromJson(response);
+  }
+
+  /// 取得「版本新功能 / 首次安裝引導」內容。
+  ///
+  /// [version] 為當前 App 版本號。
+  /// [locale] 為使用者語系（如 `"zh-TW"`、`"en"`）。
+  ///
+  /// 回傳解析後的 JSON [Map]，包含 `version`、`onboarding`、`whatsNew` 欄位。
+  /// 伺服器回應非 2xx 時拋出 [ApiServiceException]。
+  Future<Map<String, dynamic>> fetchWhatsNew({
+    required String version,
+    required String locale,
+  }) async {
+    final payload = WhatsNewRequest(version: version, locale: locale).toJson();
+    return _post(payload, path: ApiEndpoint.whatsNew.path);
   }
 
   /// 發送 POST 請求並解析回應 JSON。
   ///
   /// [body] 為請求的 JSON body。
+  /// [path] 為 API endpoint 路徑。
   /// [acceptStatusCodes] 指定可接受的 HTTP 狀態碼集合，其餘拋出 [ApiServiceException]；
   /// 若為 `null` 則預設接受 200-299 範圍。
   ///
@@ -83,14 +114,15 @@ class ApiService {
   /// 逾時時拋出 [TimeoutException]，其餘錯誤拋出 [ApiServiceException]。
   Future<Map<String, dynamic>> _post(
     Map<String, dynamic> body, {
+    required String path,
     Set<int>? acceptStatusCodes,
   }) async {
     try {
-      debugPrint('[ApiService] POST $_path');
+      debugPrint('[ApiService] POST $path');
       debugPrint('[ApiService] Request: ${jsonEncode(body)}');
 
       final restOperation = Amplify.API.post(
-        _path,
+        path,
         apiName: apiName,
         body: HttpPayload.json(body),
       );
