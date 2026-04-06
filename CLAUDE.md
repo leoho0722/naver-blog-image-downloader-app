@@ -39,9 +39,9 @@ ViewModel（Notifier<State> / AsyncNotifier<State>，@riverpod 註解）
   ↓ ref.read
 Repository（PhotoRepository / CacheRepository / LogRepository）— SSOT
   ↓
-Service（ApiService / FileDownloadService / PhotoService / PhotoViewerService / AuthService / LogService / CrashlyticsService）— 無狀態
+Service（ApiService / FileDownloadService / PhotoService / PhotoViewerService / AppIconService / AuthService / LogService / CrashlyticsService）— 無狀態
   ↓
-Native（Swift / Kotlin via MethodChannel）— PhotoService 橋接原生相簿 API、PhotoViewerService 橋接原生圖片檢視器
+Native（Swift / Kotlin via MethodChannel）— PhotoService 橋接原生相簿 API、PhotoViewerService 橋接原生圖片檢視器、AppIconService 橋接原生 App 圖示切換
 Firebase（Auth + Firestore + Crashlytics）— AuthService / LogService / CrashlyticsService 橋接
 ```
 

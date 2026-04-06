@@ -225,4 +225,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatsNewCloseButton => 'Close';
+
+  @override
+  String get settingsSectionAppIcon => 'App Icon';
+
+  @override
+  String get settingsAppIconSheetTitle => 'Choose App Icon';
+
+  @override
+  String get settingsAppIconStyleScroll => 'Scroll View';
+
+  @override
+  String get settingsAppIconStyleSheet => 'Grid View';
+
+  @override
+  String get settingsAppIconDefault => 'Default';
+
+  @override
+  String get settingsAppIconNew => 'New';
 }

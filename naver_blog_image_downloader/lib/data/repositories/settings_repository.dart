@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../config/app_icon.dart';
 import '../../config/app_settings_keys.dart';
 import '../../config/supported_locale.dart';
 import '../services/local_storage_service.dart';
@@ -91,5 +92,22 @@ class SettingsRepository {
   /// [version] 為當前 App 版本號，儲存後同版本不再重複顯示新功能頁面。
   Future<void> saveLastSeenVersion(String version) async {
     await _storage.setString(AppSettingsKeys.lastSeenVersion, version);
+  }
+
+  /// 從持久化儲存載入 App 圖示偏好，未設定時回傳 [AppIcon.defaultIcon]（預設）。
+  ///
+  /// 回傳使用者先前儲存的 [AppIcon]，若無記錄或值無法識別則回傳 [AppIcon.defaultIcon]。
+  AppIcon loadAppIcon() {
+    final value = _storage.getString(AppSettingsKeys.appIcon);
+    if (value == null) return AppIcon.defaultIcon;
+    final matched = AppIcon.values.where((e) => e.nativeKey == value);
+    return matched.isEmpty ? AppIcon.defaultIcon : matched.first;
+  }
+
+  /// 將 App 圖示偏好持久化至儲存。
+  ///
+  /// [icon] 為要儲存的 [AppIcon]。
+  Future<void> saveAppIcon(AppIcon icon) async {
+    await _storage.setString(AppSettingsKeys.appIcon, icon.nativeKey);
   }
 }

@@ -23,9 +23,33 @@
               />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
+        <!-- 預設圖示的 activity-alias（預設啟用） -->
+        <activity-alias
+            android:name=".MainActivityClassic"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:targetActivity=".applications.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <!-- 新版圖示的 activity-alias（預設停用） -->
+        <activity-alias
+            android:name=".MainActivityNew"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_new"
+            android:targetActivity=".applications.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
         <activity
             android:name=".features.photoviewer.view.PhotoViewerActivity"
             android:exported="false"

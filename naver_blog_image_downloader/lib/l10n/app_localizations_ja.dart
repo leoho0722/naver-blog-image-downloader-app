@@ -222,4 +222,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get whatsNewCloseButton => '閉じる';
+
+  @override
+  String get settingsSectionAppIcon => 'アプリアイコン';
+
+  @override
+  String get settingsAppIconSheetTitle => 'アプリアイコンを選択';
+
+  @override
+  String get settingsAppIconStyleScroll => 'スクロール表示';
+
+  @override
+  String get settingsAppIconStyleSheet => 'グリッド表示';
+
+  @override
+  String get settingsAppIconDefault => 'デフォルト';
+
+  @override
+  String get settingsAppIconNew => '新バージョン';
 }

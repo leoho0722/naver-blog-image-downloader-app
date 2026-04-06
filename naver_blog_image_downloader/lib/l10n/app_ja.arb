@@ -74,5 +74,12 @@
   "whatsNewTitle": "v{version} の新機能",
   "whatsNewOnboardingTitle": "ようこそ",
   "whatsNewDismissButton": "了解",
-  "whatsNewCloseButton": "閉じる"
+  "whatsNewCloseButton": "閉じる",
+
+  "settingsSectionAppIcon": "アプリアイコン",
+  "settingsAppIconSheetTitle": "アプリアイコンを選択",
+  "settingsAppIconStyleScroll": "スクロール表示",
+  "settingsAppIconStyleSheet": "グリッド表示",
+  "settingsAppIconDefault": "デフォルト",
+  "settingsAppIconNew": "新バージョン"
 }

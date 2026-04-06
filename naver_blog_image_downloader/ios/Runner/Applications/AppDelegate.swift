@@ -42,5 +42,6 @@ import UIKit
         let messenger = registrar.messenger()
         setupGalleryChannel(messenger: messenger)
         setupPhotoViewerChannel(messenger: messenger)
+        setupAppIconChannel(messenger: messenger)
     }
 }

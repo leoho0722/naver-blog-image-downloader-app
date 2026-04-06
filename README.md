@@ -11,6 +11,7 @@
 - **檔案下載**：Dio（串流 + 指數退避重試）
 - **相簿存取**：原生 MethodChannel（iOS: PhotoKit / Android: MediaStore）
 - **照片檢視器**：原生實作（iOS: SwiftUI / Android: Jetpack Compose），透過 MethodChannel 橋接
+- **App 圖示切換**：原生 MethodChannel（iOS: `setAlternateIconName` / Android: `activity-alias`）
 - **快取**：磁碟快取 + SharedPreferences metadata
 - **Firebase**：Firebase Auth（匿名登入）+ Cloud Firestore（操作 Log）+ Crashlytics（crash 回報）
 - **裝置資訊**：device_info_plus（記錄 log 時附帶平台/系統版本/機型）
@@ -41,9 +42,9 @@ ViewModel（Notifier<State> / AsyncNotifier<State>，@riverpod 註解）
   ↓ ref.read
 Repository（PhotoRepository / CacheRepository / LogRepository）— SSOT
   ↓
-Service（ApiService / FileDownloadService / PhotoService / PhotoViewerService / AuthService / LogService / CrashlyticsService）— 無狀態
+Service（ApiService / FileDownloadService / PhotoService / PhotoViewerService / AppIconService / AuthService / LogService / CrashlyticsService）— 無狀態
   ↓
-Native（Swift / Kotlin via MethodChannel）— PhotoService 橋接原生相簿 API、PhotoViewerService 橋接原生圖片檢視器
+Native（Swift / Kotlin via MethodChannel）— PhotoService 橋接原生相簿 API、PhotoViewerService 橋接原生圖片檢視器、AppIconService 橋接原生 App 圖示切換
 Firebase（Auth + Firestore + Crashlytics）— AuthService / LogService / CrashlyticsService 橋接
 ```
 

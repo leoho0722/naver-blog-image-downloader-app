@@ -113,5 +113,12 @@
   },
   "whatsNewOnboardingTitle": "歡迎使用",
   "whatsNewDismissButton": "知道了",
-  "whatsNewCloseButton": "關閉"
+  "whatsNewCloseButton": "關閉",
+
+  "settingsSectionAppIcon": "App 圖示",
+  "settingsAppIconSheetTitle": "選擇 App 圖示",
+  "settingsAppIconStyleScroll": "以滑動檢視",
+  "settingsAppIconStyleSheet": "以網格檢視",
+  "settingsAppIconDefault": "預設",
+  "settingsAppIconNew": "新版"
 }

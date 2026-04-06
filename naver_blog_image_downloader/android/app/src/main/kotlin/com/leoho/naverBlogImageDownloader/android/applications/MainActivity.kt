@@ -1,5 +1,6 @@
 package com.leoho.naverBlogImageDownloader.android.applications
 
+import com.leoho.naverBlogImageDownloader.android.applications.channels.features.setupAppIconChannel
 import com.leoho.naverBlogImageDownloader.android.applications.channels.features.setupGalleryChannel
 import com.leoho.naverBlogImageDownloader.android.applications.channels.features.setupPhotoViewerChannel
 import io.flutter.embedding.android.FlutterActivity
@@ -19,6 +20,7 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         setupGalleryChannel(flutterEngine)
         setupPhotoViewerChannel(flutterEngine)
+        setupAppIconChannel(flutterEngine)
     }
 
     // endregion

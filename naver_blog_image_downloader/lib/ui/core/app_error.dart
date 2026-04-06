@@ -15,6 +15,9 @@ enum AppErrorType {
   /// 伺服器端處理錯誤（如任務處理失敗）。
   serverError,
 
+  /// App 圖示切換錯誤（如原生平台切換圖示失敗）。
+  appIcon,
+
   /// 無法歸類的未知錯誤。
   unknown,
 }

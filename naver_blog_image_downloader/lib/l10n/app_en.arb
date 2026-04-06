@@ -79,5 +79,12 @@
   },
   "whatsNewOnboardingTitle": "Welcome",
   "whatsNewDismissButton": "Got it",
-  "whatsNewCloseButton": "Close"
+  "whatsNewCloseButton": "Close",
+
+  "settingsSectionAppIcon": "App Icon",
+  "settingsAppIconSheetTitle": "Choose App Icon",
+  "settingsAppIconStyleScroll": "Scroll View",
+  "settingsAppIconStyleSheet": "Grid View",
+  "settingsAppIconDefault": "Default",
+  "settingsAppIconNew": "New"
 }

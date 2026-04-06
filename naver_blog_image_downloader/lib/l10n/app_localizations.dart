@@ -496,6 +496,42 @@ abstract class AppLocalizations {
   /// In zh_TW, this message translates to:
   /// **'關閉'**
   String get whatsNewCloseButton;
+
+  /// No description provided for @settingsSectionAppIcon.
+  ///
+  /// In zh_TW, this message translates to:
+  /// **'App 圖示'**
+  String get settingsSectionAppIcon;
+
+  /// No description provided for @settingsAppIconSheetTitle.
+  ///
+  /// In zh_TW, this message translates to:
+  /// **'選擇 App 圖示'**
+  String get settingsAppIconSheetTitle;
+
+  /// No description provided for @settingsAppIconStyleScroll.
+  ///
+  /// In zh_TW, this message translates to:
+  /// **'以滑動檢視'**
+  String get settingsAppIconStyleScroll;
+
+  /// No description provided for @settingsAppIconStyleSheet.
+  ///
+  /// In zh_TW, this message translates to:
+  /// **'以網格檢視'**
+  String get settingsAppIconStyleSheet;
+
+  /// No description provided for @settingsAppIconDefault.
+  ///
+  /// In zh_TW, this message translates to:
+  /// **'預設'**
+  String get settingsAppIconDefault;
+
+  /// No description provided for @settingsAppIconNew.
+  ///
+  /// In zh_TW, this message translates to:
+  /// **'新版'**
+  String get settingsAppIconNew;
 }
 
 class _AppLocalizationsDelegate

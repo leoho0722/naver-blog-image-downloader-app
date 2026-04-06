@@ -222,4 +222,22 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get whatsNewCloseButton => '닫기';
+
+  @override
+  String get settingsSectionAppIcon => '앱 아이콘';
+
+  @override
+  String get settingsAppIconSheetTitle => '앱 아이콘 선택';
+
+  @override
+  String get settingsAppIconStyleScroll => '스크롤 보기';
+
+  @override
+  String get settingsAppIconStyleSheet => '그리드 보기';
+
+  @override
+  String get settingsAppIconDefault => '기본';
+
+  @override
+  String get settingsAppIconNew => '새 버전';
 }

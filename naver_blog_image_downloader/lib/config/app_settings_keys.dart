@@ -8,4 +8,7 @@ abstract final class AppSettingsKeys {
 
   /// 上次顯示「版本新功能」或「首次安裝引導」頁面時的 App 版本號。
   static const String lastSeenVersion = 'app_last_seen_version';
+
+  /// App 圖示的儲存 key。
+  static const String appIcon = 'app_icon';
 }

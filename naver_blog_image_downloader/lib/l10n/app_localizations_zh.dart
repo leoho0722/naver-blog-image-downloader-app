@@ -221,6 +221,24 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get whatsNewCloseButton => '關閉';
+
+  @override
+  String get settingsSectionAppIcon => 'App 圖示';
+
+  @override
+  String get settingsAppIconSheetTitle => '選擇 App 圖示';
+
+  @override
+  String get settingsAppIconStyleScroll => '以滑動檢視';
+
+  @override
+  String get settingsAppIconStyleSheet => '以網格檢視';
+
+  @override
+  String get settingsAppIconDefault => '預設';
+
+  @override
+  String get settingsAppIconNew => '新版';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -440,4 +458,22 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get whatsNewCloseButton => '關閉';
+
+  @override
+  String get settingsSectionAppIcon => 'App 圖示';
+
+  @override
+  String get settingsAppIconSheetTitle => '選擇 App 圖示';
+
+  @override
+  String get settingsAppIconStyleScroll => '以滑動檢視';
+
+  @override
+  String get settingsAppIconStyleSheet => '以網格檢視';
+
+  @override
+  String get settingsAppIconDefault => '預設';
+
+  @override
+  String get settingsAppIconNew => '新版';
 }
